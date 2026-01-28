@@ -34,4 +34,5 @@ backend/_build/dev/
 backend/_build/dev/lib/samvadini/ebin/Elixir.SamvadiniWeb.Router.beam
 FcmNodeServer/node_modules
 Backend/lib/samvadini_web/scripts
-/node_modules
+callnodebackend/node_modules
+callnodebackend/firebase-admin-key.json
