@@ -16,9 +16,11 @@ import { useColorScheme } from 'react-native';
 // Screens
 import SplashScreen from '../screens/SplashScreen';
 import HomeScreen from '../screens/HomeScreen';
+import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
+  LanguageSelection: { currentScreen?: string } | undefined;
   Home: undefined;
 };
 
@@ -37,6 +39,7 @@ export default function MainNavigator() {
           animation: 'fade',
         }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
       </Stack.Navigator>
     </NavigationContainer>

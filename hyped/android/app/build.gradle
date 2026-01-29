@@ -117,3 +117,34 @@ dependencies {
         implementation jscFlavor
     }
 }
+project.ext.vectoricons = [
+    iconFontNames: [ 'FontAwesome5_Solid.ttf', 
+    'MaterialCommunityIcons.ttf',
+    'Ionicons.ttf', 'MaterialIcons.ttf', 
+    'MaterialIconsOutlined.ttf',
+    'FontAwesome.ttf', 
+    'Entypo.ttf', 
+    'Poppins-Regular.ttf', 
+    'Poppins-Medium.ttf', 
+    'Poppins-Bold.ttf', 
+    'Poppins-Light.ttf',
+    'CandydaycolorpersonaluseBold-Wy2VY.otf',
+    'blackpast-blackpast-400.ttf',
+    'ConfettiStream-A6o6.ttf',
+    'center-voyage-center-voyage-700.ttf',
+    'JellyjampersonaluseBold-Rpjev.otf',
+    'funky-games-funky-games-svg-400.otf',
+    'fireside-fireside-400.ttf',
+    'funky-games-funky-games-svg-400.otf',
+    'FunkymoreRegular.ttf',
+    "ConfettiStream-A6o6.ttf",
+    "KLORE_DEMO.ttf",
+    "PrairieWagonDEMO.ttf",
+    "LucySaidOkPersonalUse.ttf",
+    "Wake-The-Warrior.ttf",
+    "Couch-Cuddles.ttf",
+    "Autumn-Free.ttf",
+    "Flindrich-Demo.ttf"]
+]
+
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
