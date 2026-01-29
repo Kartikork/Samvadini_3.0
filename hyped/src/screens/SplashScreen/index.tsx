@@ -21,8 +21,8 @@ export default function SplashScreen() {
   useEffect(() => {
     // Simulate initialization delay
     const timer = setTimeout(() => {
-      navigation.replace('Home');
-    }, 2000);
+      navigation.replace('LanguageSelection');
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [navigation]);

@@ -24,9 +24,11 @@ import SignupScreen from '../screens/AuthScreens/SignupScreen';
 // Non-critical screens - can be lazy loaded in production
 // For now, direct import for simplicity
 import HomeScreen from '../screens/HomeScreen';
+import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
+  LanguageSelection: { currentScreen?: string } | undefined;
   Login: undefined;
   Signup: undefined;
   Home: undefined;
@@ -65,6 +67,7 @@ export default function MainNavigator() {
           component={SplashScreen}
           options={{ animation: 'none' }}
         />
+        <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
         <Stack.Screen 
           name="Login" 
           component={LoginScreen}

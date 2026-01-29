@@ -10,11 +10,19 @@
 import { configureStore } from '@reduxjs/toolkit';
 import chatReducer from './chatSlice';
 import callReducer from './callSlice';
+import languageReducer from './languageSlice';
+import fontSizeReducer from './fontSizeSlice';
+import countryReducer from './countrySlice';
+import authReducer from './authSlice';
 
 export const store = configureStore({
   reducer: {
     chat: chatReducer,
     call: callReducer,
+    language: languageReducer,
+    fontSize: fontSizeReducer,
+    country: countryReducer,
+    auth: authReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -37,9 +37,12 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+
+// Redux
+import { useAppDispatch } from '../../../state/hooks';
+import { setAuthData } from '../../../state/authSlice';
 
 // Components - all memoized
 import {
@@ -57,8 +60,6 @@ import { useCountdown } from '../../../hooks';
 // API
 import { authAPI } from '../../../api';
 
-// Config
-import { STORAGE_KEYS } from '../../../config';
 
 // Types
 import type { Country, AuthStep } from '../../../types/auth';
@@ -76,6 +77,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const dispatch = useAppDispatch();
   
   // ─────────────────────────────────────────────────────────────
   // STATE - Minimal, focused updates
@@ -241,22 +243,9 @@ function LoginScreen() {
       // Store auth data
       const { token, user, user_setting, isRegister } = response;
       
-      // Save auth data to AsyncStorage
-      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-      await AsyncStorage.setItem('uniqueId', user.ekatma_chinha);
-      await AsyncStorage.setItem('isRegister', JSON.stringify(isRegister));
-      await AsyncStorage.setItem('userCountryCode', selectedCountry.dialCode);
+      // Save auth data to Redux
+      dispatch(setAuthData({ token, uniqueId: user.ekatma_chinha }));
       
-      if (user_setting.upayogakarta_nama) {
-        await AsyncStorage.setItem('uniqueUsername', user_setting.upayogakarta_nama);
-      }
-      if (user_setting.praman_patrika) {
-        await AsyncStorage.setItem('userName', user_setting.praman_patrika);
-      }
-      if (user_setting.parichayapatra) {
-        await AsyncStorage.setItem('userProfilePhoto', user_setting.parichayapatra);
-      }
-
       setOtpSuccess(true);
       Keyboard.dismiss();
 
@@ -296,7 +285,7 @@ function LoginScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [phoneNumber, email, selectedCountry.dialCode, navigation]);
+  }, [phoneNumber, email, selectedCountry.dialCode, navigation, dispatch]);
 
   const handleEditDetails = useCallback(() => {
     setStep('input');
