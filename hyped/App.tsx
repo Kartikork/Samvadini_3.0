@@ -9,6 +9,7 @@
 import React from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import MainNavigator from './src/navigation/MainNavigator';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         translucent={false}
       />
       <MainNavigator />
+      <Toast />
     </SafeAreaProvider>
   );
 }
