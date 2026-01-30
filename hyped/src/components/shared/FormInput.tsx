@@ -1,12 +1,3 @@
-/**
- * FormInput Component
- * 
- * PERFORMANCE:
- * - Memoized component
- * - Stable callback references
- * - Optimized re-renders with custom comparison
- */
-
 import React, { memo, useCallback, useState } from 'react';
 import {
   View,

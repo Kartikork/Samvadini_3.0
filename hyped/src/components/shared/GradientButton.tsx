@@ -1,12 +1,3 @@
-/**
- * GradientButton Component
- * 
- * PERFORMANCE:
- * - Memoized to prevent unnecessary re-renders
- * - Stable callback reference
- * - Optimized TouchableOpacity
- */
-
 import React, { memo, useCallback } from 'react';
 import {
   TouchableOpacity,

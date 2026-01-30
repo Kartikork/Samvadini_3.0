@@ -25,6 +25,7 @@ import SignupScreen from '../screens/AuthScreens/SignupScreen';
 // For now, direct import for simplicity
 import HomeScreen from '../screens/HomeScreen';
 import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
+import { DashboardScreen } from '../screens/DashboardScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -32,6 +33,7 @@ export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   Home: undefined;
+  Dashboard: undefined;
   ChatList: undefined;
   Chat: { chatId: string; username: string };
   GroupChat: { chatId: string; groupName: string };
@@ -83,6 +85,11 @@ export default function MainNavigator() {
         <Stack.Screen 
           name="Home" 
           component={HomeScreen}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen 
+          name="Dashboard" 
+          component={DashboardScreen}
           options={{ animation: 'fade' }}
         />
         
