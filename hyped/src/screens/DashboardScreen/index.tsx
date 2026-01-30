@@ -24,10 +24,8 @@ import GlobalDashboard from '../../components/GlobalDashboard';
 import { useAppSelector } from '../../state/hooks';
 import { getDashboardTexts } from './translations';
 import styles from './DashboardStyles';
+import { anuvadiniLogo, ellipsCallBottom, ellipsCallTop } from '../../assets';
 
-const PLACEHOLDER_IMG = require('../../assets/images/hypedLogo.png');
-const ANUVADINI_LOGO = require('../../assets/images/anuvadini-logo.png');
-const MAKE_IN_INDIA = require('../../assets/images/MakeInIndia.png');
 
 const NavigationCard = memo(function NavigationCard({
   icon,
@@ -50,8 +48,8 @@ const NavigationCard = memo(function NavigationCard({
     <TouchableOpacity onPress={onPress} style={cardStyle}>
       <Icon name={icon as any} size={iconSize} color={iconColor} style={styles.iconCenter} />
       <Text style={textStyle}>{text}</Text>
-      <Image source={PLACEHOLDER_IMG} style={[styles.shapes, { width: 50, height: 50 }]} />
-      <Image source={PLACEHOLDER_IMG} style={[styles.shapesbottom, { width: 30, height: 30 }]} />
+      <Image source={ellipsCallTop} style={[styles.shapes, { width: 50, height: 50 }]} />
+      <Image source={ellipsCallBottom} style={[styles.shapesbottom, { width: 30, height: 30 }]} />
     </TouchableOpacity>
   );
 });
@@ -115,16 +113,12 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.welcomeRow}>
                 <Text style={styles.welcomeText}>{welcomeText}</Text>
-                {isUserNameLoaded && (
-                  <TextToVoiceIconWrapper ref={textToVoiceRef} text={welcomeText} lang={lang} autoplay={false} />
-                )}
+                
               </View>
 
               <View style={[styles.gridContainer, { flexWrap: 'nowrap' }]}>
                 <View style={styles.ordersCard}>
-                  <View style={styles.absoluteIcon}>
-                    <TextToVoiceIconWrapper text={dashboardTexts.globalCommunicator} lang={lang} autoplay={false} size={28} iconColor="#fff" />
-                  </View>
+                 
                   <NavigationCard
                     icon="call-outline"
                     text={dashboardTexts.calls}
@@ -134,9 +128,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                   />
                 </View>
                 <View style={styles.ordersCard}>
-                  <View style={styles.absoluteIcon}>
-                    <TextToVoiceIconWrapper text={dashboardTexts.globalCommunicator} lang={lang} autoplay={false} size={28} iconColor="#fff" />
-                  </View>
+                 
                   <NavigationCard
                     icon="chatbox-ellipses-outline"
                     text={dashboardTexts.chats}
@@ -168,9 +160,6 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 15 }}>
                 <View style={{ flex: 1, marginRight: 5 }}>
                   <View style={[styles.gameZoneContainer, { backgroundColor: '#0293A3', marginRight: 0 }]}>
-                    <View style={{ position: 'absolute', top: 5, right: 8, zIndex: 2 }}>
-                      <TextToVoiceIconWrapper text="Learn Language" lang={lang} iconColor="#fff" autoplay={false} size={20} />
-                    </View>
                     <TouchableOpacity style={styles.gameZoneButton} onPress={() => navigation.navigate('lingoweb')}>
                       <Icon name="language-outline" size={40} color="#fff" />
                       <Text style={styles.whiteCenterText} numberOfLines={1}>{dashboardTexts.learn}</Text>
@@ -179,9 +168,6 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                 </View>
                 <View style={{ flex: 1, marginLeft: 10 }}>
                   <View style={styles.gameZoneContainer}>
-                    <View style={styles.gameZoneIcon}>
-                      <TextToVoiceIconWrapper text="Game Zone" lang={lang} iconColor="#fff" autoplay={false} size={20} />
-                    </View>
                     <TouchableOpacity style={[styles.gameZoneButton, { padding: 0, width: '100%' }]} onPress={() => navigation.navigate('LanguageGameScreen')}>
                       <Icon name="game-controller-outline" size={40} color="#fff" />
                       <Text style={styles.whiteCenterText} numberOfLines={1}>{dashboardTexts.gameZone}</Text>
@@ -192,16 +178,12 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
 
               <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
                 <TouchableOpacity style={styles.dailyPlannerButton} onPress={navigateToDailyPlanner}>
-                  <View style={styles.absoluteRightNeg5}>
-                    <TextToVoiceIconWrapper text={[dashboardTexts.evMang, dashboardTexts.dailyPlanner]} lang={lang} autoplay={false} size={28} iconColor="#fff" />
-                  </View>
+                  
                   <Icon name="alarm-outline" size={26} color="#fff" />
                   <Text style={[styles.whiteCenterText, { marginLeft: 10, flexShrink: 1 }]} numberOfLines={1}>{dashboardTexts.dailyPlanner}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={navigateToHomeScreen} style={styles.eventButton}>
-                  <View style={styles.absoluteRightNeg5}>
-                    <TextToVoiceIconWrapper text={dashboardTexts.evMang} lang={lang} autoplay={false} size={28} iconColor="#fff" />
-                  </View>
+                 
                   <Icon name="calendar-outline" size={26} color="#fff" />
                   <Text style={[styles.whiteCenterText, { marginLeft: 10, flexShrink: 1 }]} numberOfLines={1}>{dashboardTexts.evMang}</Text>
                 </TouchableOpacity>
@@ -229,16 +211,12 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                 <View style={styles.bankingbg}>
                   <View style={styles.banking}>
                     <TouchableOpacity style={styles.jobsButton} onPress={() => navigation.navigate('JobScreen')}>
-                      <View style={styles.absoluteIcon}>
-                        <TextToVoiceIconWrapper text={dashboardTexts.jobs} lang={lang} autoplay={false} size={28} iconColor="#fff" />
-                      </View>
+                      
                       <Icon name="briefcase-outline" size={28} color="#fff" />
                       <Text style={[styles.whiteCenterText, { marginLeft: 8 }]}>{dashboardTexts.jobs}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.admissions} onPress={() => navigation.navigate('AdmissionTabsScreen')}>
-                      <View style={styles.absoluteIcon}>
-                        <TextToVoiceIconWrapper text={dashboardTexts.jobs} lang={lang} autoplay={false} size={28} iconColor="#fff" />
-                      </View>
+                     
                       <Icon name="school-outline" size={28} color="#fff" />
                       <Text style={[styles.whiteCenterText, { marginLeft: 10 }]}>Admission, Competition, Event & Course</Text>
                     </TouchableOpacity>
@@ -246,9 +224,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                       style={styles.startupsButton}
                       onPress={() => navigation.navigate('Category', { id: 'Startups, MSMEs, SMEs', name: 'startups' })}
                     >
-                      <View style={styles.absoluteIcon}>
-                        <TextToVoiceIconWrapper text={dashboardTexts.startups} lang={lang} autoplay={false} size={28} iconColor="#fff" />
-                      </View>
+                      
                       <Icon name="rocket-outline" size={28} color="#fff" />
                       <Text style={[styles.whiteCenterText, { marginLeft: 10 }]}>{dashboardTexts.startups}</Text>
                     </TouchableOpacity>
@@ -256,9 +232,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                       style={styles.govtSchemesButton}
                       onPress={() => navigation.navigate('Category', { name: 'govtSchemes', id: 'Central Govt. Schemes, Policies' })}
                     >
-                      <View style={styles.absoluteIcon}>
-                        <TextToVoiceIconWrapper text={dashboardTexts.govtSchemesShort} lang={lang} autoplay={false} iconColor="#fff" />
-                      </View>
+                      
                       <Icon name="document-text-outline" size={28} color="#fff" />
                       <Text style={styles.govtText}>{dashboardTexts.govtSchemesShort}</Text>
                     </TouchableOpacity>
@@ -266,9 +240,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                       style={styles.womenButton}
                       onPress={() => navigation.navigate('Category', { name: 'Women empowerment, Parenting', id: 'Women empowerment, Parenting, Children care' })}
                     >
-                      <View style={styles.absoluteIcon}>
-                        <TextToVoiceIconWrapper text={dashboardTexts.women} lang={lang} autoplay={false} size={28} iconColor="#fff" />
-                      </View>
+                     
                       <Icon name="people-outline" size={28} color="#fff" />
                       <Text style={styles.womenText}>{dashboardTexts.women}</Text>
                     </TouchableOpacity>
@@ -276,16 +248,14 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                       style={styles.farmersButton}
                       onPress={() => navigation.navigate('Category', { id: 'Farmers, Agriculture, Rural Development', name: 'agriculture' })}
                     >
-                      <View style={styles.absoluteIcon}>
-                        <TextToVoiceIconWrapper text={dashboardTexts.farmersRural} lang={lang} iconColor="#FFF" />
-                      </View>
+                      
                       <Icon name="leaf-outline" size={28} color="#fff" />
                       <Text style={[styles.whiteCenterText, { marginLeft: 10 }]}>{dashboardTexts.farmersRural}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.aboutButton} onPress={() => Linking.openURL('https://anuvadini.aicte-india.org/AboutUs')}>
                       <Text style={styles.aboutText}>About Anuvadini</Text>
                       <View style={styles.anuvadiniLogoContainer}>
-                        <Image source={ANUVADINI_LOGO} style={styles.anuvadiniLogo} />
+                        <Image source={anuvadiniLogo} style={styles.anuvadiniLogo} />
                       </View>
                     </TouchableOpacity>
                   </View>
