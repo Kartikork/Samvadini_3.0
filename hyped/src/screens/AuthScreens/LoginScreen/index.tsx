@@ -44,6 +44,9 @@ import { useNavigation } from '@react-navigation/native';
 import { useAppDispatch } from '../../../state/hooks';
 import { setAuthData } from '../../../state/authSlice';
 
+// Services
+import { AppBootstrap } from '../../../services/AppBootstrap';
+
 // Components - all memoized
 import {
   GradientButton,
@@ -250,23 +253,42 @@ function LoginScreen() {
       Keyboard.dismiss();
 
       // Navigate based on registration status
-      setTimeout(() => {
-        if (isRegister) {
-          // User is already registered - go to Home
-          console.log('[LoginScreen] User registered, navigating to Home');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Home' }],
-          });
-        } else {
-          // New user - go to Signup/Profile setup
-          console.log('[LoginScreen] New user, navigating to Signup');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Signup' }],
-          });
+      if (isRegister) {
+        // User is already registered - bootstrap and go to Home
+        console.log('[LoginScreen] User registered, starting app bootstrap...');
+        
+        /**
+         * AppBootstrap Flow for existing users:
+         * 1. Save auth token to Redux ✓ (done above)
+         * 2. PARALLEL: User Profile API + Local DB setup
+         * 3. PARALLEL: ChatManager.initialize() + CallManager.initialize()
+         * 4. Socket connect
+         * 5. Join Phoenix Channel (chat:user:id)
+         * 6. App Ready
+         */
+        const bootstrapResult = await AppBootstrap.bootstrapAfterLogin(
+          token,
+          user.ekatma_chinha
+        );
+
+        if (!bootstrapResult.success) {
+          console.warn('[LoginScreen] Bootstrap warning:', bootstrapResult.error);
+          // Continue anyway - app can recover
         }
-      }, 500);
+
+        console.log('[LoginScreen] Bootstrap complete, navigating to Home');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      } else {
+        // New user - go to Signup/Profile setup (bootstrap will happen after signup)
+        console.log('[LoginScreen] New user, navigating to Signup');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Signup' }],
+        });
+      }
     } catch (error: any) {
       console.error('[LoginScreen] Verify OTP Error:', error);
       console.error('[LoginScreen] Error details:', {

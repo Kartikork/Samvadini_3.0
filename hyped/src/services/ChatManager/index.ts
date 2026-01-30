@@ -71,21 +71,24 @@ class ChatManagerClass {
   /**
    * Initialize ChatManager
    * Three phases: Restore → Sync → Realtime
+   * 
+   * @param userId - The current user's unique ID
+   * @param isFirstSync - Whether this is first sync (after signup/login)
    */
-  public async initialize(userId: string): Promise<void> {
+  public async initialize(userId: string, isFirstSync: boolean = false): Promise<void> {
     if (this.isInitialized) {
       console.log('[ChatManager] Already initialized');
       return;
     }
 
-    console.log('[ChatManager] Initializing...');
+    console.log('[ChatManager] Initializing...', { userId, isFirstSync });
     this.currentUserId = userId;
 
     // Phase 1: Restore State (instant UI)
     await this.restoreState();
 
     // Phase 2: Sync Safety Net (background)
-    this.syncMessages().catch(err => 
+    this.syncMessages(isFirstSync).catch(err => 
       console.error('[ChatManager] Sync failed:', err)
     );
 
@@ -130,32 +133,26 @@ class ChatManagerClass {
   /**
    * Phase 2: Sync Safety Net
    * Fetch missed messages from server
+   * 
+   * Syncs in order:
+   * 1. Chat List (conversations)
+   * 2. 1-to-1 Chat Messages
+   * 3. Group Messages
    */
-  private async syncMessages(): Promise<void> {
-    console.log('[ChatManager] Phase 2: Syncing messages...');
+  private async syncMessages(isFirstSync: boolean = false): Promise<void> {
+    console.log('[ChatManager] Phase 2: Syncing messages...', { isFirstSync });
 
     try {
-      // Get last sync cursor from DB
-      const lastSyncCursor = await conversationDB.getGlobalSyncCursor();
+      // Full sync: chat list + chat messages + group messages
+      const syncResult = await syncAPI.fullSync(isFirstSync);
 
-      // Fetch missed messages from server
-      const syncResult = await syncAPI.getMessagesSince(lastSyncCursor);
+      const totalSynced = 
+        syncResult.chatList.count + 
+        syncResult.chatMessages.count + 
+        syncResult.groupMessages.count;
 
-      if (syncResult.messages.length > 0) {
-        console.log(`[ChatManager] Synced ${syncResult.messages.length} messages`);
-
-        // Write messages to DB
-        for (const message of syncResult.messages) {
-          await chatDB.insertMessage(message);
-        }
-
-        // Update conversations
-        for (const conversation of syncResult.conversations) {
-          await conversationDB.updateConversation(conversation);
-        }
-
-        // Update sync cursor
-        await conversationDB.setGlobalSyncCursor(syncResult.cursor);
+      if (totalSynced > 0) {
+        console.log(`[ChatManager] Synced: ${syncResult.chatList.count} chats, ${syncResult.chatMessages.count} messages, ${syncResult.groupMessages.count} group messages`);
 
         // Notify Redux to refresh from DB
         store.dispatch(chatSlice.actions.refreshConversations());
@@ -165,6 +162,64 @@ class ChatManagerClass {
     } catch (error) {
       console.error('[ChatManager] Phase 2 failed:', error);
       // Don't throw - UI still works with local data
+    }
+  }
+
+  /**
+   * Sync only chat list (conversations)
+   */
+  public async syncChatList(): Promise<void> {
+    console.log('[ChatManager] Syncing chat list...');
+    try {
+      const result = await syncAPI.syncChatList();
+      if (result.count > 0) {
+        store.dispatch(chatSlice.actions.refreshConversations());
+      }
+    } catch (error) {
+      console.error('[ChatManager] Chat list sync failed:', error);
+    }
+  }
+
+  /**
+   * Sync only 1-to-1 chat messages
+   */
+  public async syncChatMessages(): Promise<void> {
+    console.log('[ChatManager] Syncing chat messages...');
+    try {
+      const result = await syncAPI.syncChatMessages();
+      if (result.count > 0) {
+        store.dispatch(chatSlice.actions.refreshConversations());
+      }
+    } catch (error) {
+      console.error('[ChatManager] Chat messages sync failed:', error);
+    }
+  }
+
+  /**
+   * Sync only group messages
+   */
+  public async syncGroupMessages(): Promise<void> {
+    console.log('[ChatManager] Syncing group messages...');
+    try {
+      const result = await syncAPI.syncGroupMessages();
+      if (result.count > 0) {
+        store.dispatch(chatSlice.actions.refreshConversations());
+      }
+    } catch (error) {
+      console.error('[ChatManager] Group messages sync failed:', error);
+    }
+  }
+
+  /**
+   * Full background sync
+   */
+  public async backgroundSync(): Promise<void> {
+    console.log('[ChatManager] Running background sync...');
+    try {
+      await syncAPI.backgroundSync();
+      store.dispatch(chatSlice.actions.refreshConversations());
+    } catch (error) {
+      console.error('[ChatManager] Background sync failed:', error);
     }
   }
 

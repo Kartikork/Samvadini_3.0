@@ -19,7 +19,6 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -29,6 +28,12 @@ import { GradientButton, FormInput } from '../../../components/shared';
 
 // API
 import { userAPI } from '../../../api';
+
+// Redux
+import { useAppSelector } from '../../../state/hooks';
+
+// Services
+import { AppBootstrap } from '../../../services/AppBootstrap';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -40,12 +45,16 @@ const GENDER_OPTIONS = [
 
 export default function SignupScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  
+  // Get auth data from Redux
+  const { token, uniqueId } = useAppSelector(state => state.auth);
 
   // Form state
   const [name, setName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [gender, setGender] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   // Validation
   const isFormValid = name.trim().length >= 2;
@@ -81,17 +90,27 @@ export default function SignupScreen() {
       return;
     }
 
+    if (!uniqueId || !token) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Session expired. Please login again.',
+      });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+      return;
+    }
+
     setIsLoading(true);
     Keyboard.dismiss();
 
     try {
-      const uniqueId = await AsyncStorage.getItem('uniqueId');
-
-      if (!uniqueId) {
-        throw new Error('User ID not found. Please login again.');
-      }
-
-      // Call update profile API
+      // Step 1: Update profile API
+      setLoadingMessage('Saving profile...');
+      console.log('[SignupScreen] Step 1: Updating profile...');
+      
       const response = await userAPI.updateProfile({
         uniqueId,
         name: name.trim(),
@@ -101,30 +120,50 @@ export default function SignupScreen() {
 
       console.log('[SignupScreen] Profile updated:', response);
 
-    //   Toast.show({
-    //     type: 'success',
-    //     text1: 'Success',
-    //     text2: 'Profile created successfully!',
-    //   });
+      // Step 2: Bootstrap the app (orchestrated flow)
+      setLoadingMessage('Setting up app...');
+      console.log('[SignupScreen] Step 2: Starting app bootstrap...');
+      
+      /**
+       * AppBootstrap Flow:
+       * 1. Save auth token to Redux ✓ (already done in LoginScreen)
+       * 2. PARALLEL: User Profile API + Local DB setup
+       * 3. PARALLEL: ChatManager.initialize() + CallManager.initialize()
+       * 4. Socket connect
+       * 5. Join Phoenix Channel (chat:user:id)
+       * 6. App Ready
+       */
+      const bootstrapResult = await AppBootstrap.bootstrapAfterSignup(
+        token,
+        uniqueId,
+        true // isNewUser
+      );
+
+      if (!bootstrapResult.success) {
+        console.warn('[SignupScreen] Bootstrap warning:', bootstrapResult.error);
+        // Continue anyway - app can recover
+      }
+
+      console.log('[SignupScreen] Bootstrap complete, navigating to Home');
 
       // Navigate to Home
-      setTimeout(() => {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        });
-      }, 500);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
+
     } catch (error: any) {
       console.error('[SignupScreen] Error:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error?.message || 'Failed to update profile. Please try again.',
+        text2: error?.message || 'Failed to setup. Please try again.',
       });
     } finally {
       setIsLoading(false);
+      setLoadingMessage('');
     }
-  }, [isFormValid, name, dateOfBirth, gender, navigation]);
+  }, [isFormValid, name, dateOfBirth, gender, navigation, token, uniqueId]);
 
   return (
     <KeyboardAvoidingView
