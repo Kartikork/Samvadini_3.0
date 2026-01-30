@@ -21,7 +21,7 @@ export default function SplashScreen() {
   useEffect(() => {
     // Simulate initialization delay
     const timer = setTimeout(() => {
-      navigation.replace('LanguageSelection');
+      navigation.replace('Signup' as never);
     }, 1000);
 
     return () => clearTimeout(timer);

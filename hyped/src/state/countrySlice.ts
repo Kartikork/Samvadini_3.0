@@ -8,10 +8,12 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface CountryState {
   isIndia: boolean;
+  countryCode: string | null; // e.g. 'IN', '+91'
 }
 
 const initialState: CountryState = {
-  isIndia: true, // Default to India, can be changed based on user location or settings
+  isIndia: true,
+  countryCode: null,
 };
 
 const countrySlice = createSlice({
@@ -21,8 +23,11 @@ const countrySlice = createSlice({
     setIsIndia: (state, action: PayloadAction<boolean>) => {
       state.isIndia = action.payload;
     },
+    setUserCountryCode: (state, action: PayloadAction<string | null>) => {
+      state.countryCode = action.payload;
+    },
   },
 });
 
-export const { setIsIndia } = countrySlice.actions;
+export const { setIsIndia, setUserCountryCode } = countrySlice.actions;
 export default countrySlice.reducer;
