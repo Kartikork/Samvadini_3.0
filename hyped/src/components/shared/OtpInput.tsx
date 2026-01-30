@@ -15,6 +15,7 @@ import {
   TextInput,
   StyleSheet,
   Keyboard,
+  TextStyle,
 } from 'react-native';
 import { useOtpInput } from '../../hooks';
 
@@ -57,7 +58,7 @@ const OtpInput = forwardRef<OtpInputRef, OtpInputProps>(function OtpInput(
   }), [reset, focusFirst]);
 
   const getInputStyle = useCallback((index: number) => {
-    const baseStyle = [styles.input];
+    const baseStyle: TextStyle[] = [styles.input];
     
     if (focusedIndex === index) {
       baseStyle.push(styles.inputFocused);
@@ -77,7 +78,7 @@ const OtpInput = forwardRef<OtpInputRef, OtpInputProps>(function OtpInput(
       {Array.from({ length }).map((_, index) => (
         <TextInput
           key={index}
-          ref={el => (inputRefs.current[index] = el)}
+          ref={el => { inputRefs.current[index] = el; }}
           style={getInputStyle(index)}
           value={otp[index] || ''}
           onChangeText={value => handleChange(value, index)}

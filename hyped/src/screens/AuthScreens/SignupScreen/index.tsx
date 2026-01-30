@@ -101,15 +101,11 @@ export default function SignupScreen() {
 
       console.log('[SignupScreen] Profile updated:', response);
 
-      // Update local storage
-      await AsyncStorage.setItem('userName', name.trim());
-      await AsyncStorage.setItem('isRegister', 'true');
-
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Profile created successfully!',
-      });
+    //   Toast.show({
+    //     type: 'success',
+    //     text1: 'Success',
+    //     text2: 'Profile created successfully!',
+    //   });
 
       // Navigate to Home
       setTimeout(() => {

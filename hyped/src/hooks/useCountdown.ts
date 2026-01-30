@@ -18,7 +18,7 @@ interface UseCountdownReturn {
 export function useCountdown(initialSeconds: number = 60): UseCountdownReturn {
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);;
 
   // Cleanup on unmount
   useEffect(() => {
