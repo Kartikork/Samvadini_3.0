@@ -504,7 +504,7 @@ export default function SignupScreen() {
                           style={[styles.input, { flex: 1, marginBottom: 0 }]}
                         />
                         <TouchableOpacity style={styles.calendarButton} onPress={onOpenDatePicker}>
-                          <Icon name="calendar" size={24} color="#4fc6b2" />
+                          <Icon name="calendar" size={24} color="#6665A8" />
                         </TouchableOpacity>
                       </View>
                       {dateOfBirthError ? (
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
   dateInputContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   dateInputText: { fontSize: 16, color: '#000000' },
   placeholderText: { color: '#999' },
-  dateInputWrapper: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  dateInputWrapper: { flexDirection: 'row', alignItems: 'center', },
   calendarButton: { padding: 10, marginLeft: -45, justifyContent: 'center', position: 'relative', top: -7 },
   dateErrorText: { color: 'red', fontSize: 12, marginTop: -12, marginBottom: 10 },
   button: { alignItems: 'center', marginTop: 10 },
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
   },
   uploadPlaceholder: { backgroundColor: '#E8E8E8' },
   // uploadPlaceholderWrapper: { position: 'absolute', zIndex: 999, top: 30, left: 45 },
-  dropdownContainer: {width:'100%',},
+  dropdownContainer: {width:'100%', marginBottom:20},
   dropdownOptions: {
     position: 'absolute',
     top: '100%',
