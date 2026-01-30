@@ -27,6 +27,9 @@ import HomeScreen from '../screens/HomeScreen';
 import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 
+// Header wrapper
+import { withHeader } from '../components/withHeader';
+
 export type RootStackParamList = {
   Splash: undefined;
   LanguageSelection: { currentScreen?: string } | undefined;
@@ -42,6 +45,11 @@ export type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+// Helper to wrap screens with Header (exclude auth screens)
+const wrapWithHeader = <P extends object>(Component: React.ComponentType<P>) => {
+  return withHeader(Component, true);
+};
 
 // Loading fallback for lazy screens
 const ScreenLoader = () => (
@@ -81,15 +89,15 @@ export default function MainNavigator() {
           options={{ animation: 'slide_from_right' }}
         />
         
-        {/* Main App */}
+        {/* Main App - with Header automatically */}
         <Stack.Screen 
           name="Home" 
-          component={HomeScreen}
+          component={wrapWithHeader(HomeScreen)}
           options={{ animation: 'fade' }}
         />
         <Stack.Screen 
           name="Dashboard" 
-          component={DashboardScreen}
+          component={wrapWithHeader(DashboardScreen)}
           options={{ animation: 'fade' }}
         />
         
