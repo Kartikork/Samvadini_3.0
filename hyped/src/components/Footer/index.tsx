@@ -61,13 +61,7 @@ const styles = StyleSheet.create({
     width: width,
     paddingTop: 0,
     height: 40,
-    // Note: boxShadow is not supported in React Native, use elevation for Android
-    elevation: 1, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-  },
+    },
   footerText: {
     color: '#212121',
     fontSize: 14,

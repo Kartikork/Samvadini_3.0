@@ -41,6 +41,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 
 // Redux
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppDispatch } from '../../../state/hooks';
 import { setAuthData } from '../../../state/authSlice';
 
@@ -56,28 +57,15 @@ import {
   Checkbox,
   type OtpInputRef,
 } from '../../../components/shared';
-
-// Hooks
 import { useCountdown } from '../../../hooks';
-
-// API
 import { authAPI } from '../../../api';
-
-
-// Types
 import type { Country, AuthStep } from '../../../types/auth';
+import { hypedLogo } from '../../../assets';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Default country
 const DEFAULT_COUNTRY: Country = { name: 'India', code: 'IN', dialCode: '+91' };
-
-// Email validation regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/**
- * Main LoginScreen Component
- */
 function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const dispatch = useAppDispatch();
@@ -245,10 +233,17 @@ function LoginScreen() {
 
       // Store auth data
       const { token, user, user_setting, isRegister } = response;
-      
+      const uniqueId = user.ekatma_chinha ?? '';
+
       // Save auth data to Redux
-      dispatch(setAuthData({ token, uniqueId: user.ekatma_chinha }));
-      
+      dispatch(setAuthData({ token, uniqueId }));
+
+      // Persist to AsyncStorage so LanguageSelection and other flows can use it
+      await AsyncStorage.setItem('userToken', token);
+      await AsyncStorage.setItem('uniqueId', uniqueId);
+      const displayName = user?.praman_patrika ?? user?.upayogakarta_nama;
+      if (displayName) await AsyncStorage.setItem('userName', displayName);
+
       setOtpSuccess(true);
       Keyboard.dismiss();
 
@@ -279,7 +274,7 @@ function LoginScreen() {
         console.log('[LoginScreen] Bootstrap complete, navigating to Home');
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Home' }],
+          routes: [{ name: 'Dashboard' }],
         });
       } else {
         // New user - go to Signup/Profile setup (bootstrap will happen after signup)
@@ -344,7 +339,7 @@ function LoginScreen() {
           {/* Logo */}
           <View style={styles.logoContainer}>
             <Image
-              source={require('../../../assets/images/Splash_screen.png')}
+            source={hypedLogo}
               style={styles.logo}
               resizeMode="contain"
             />
