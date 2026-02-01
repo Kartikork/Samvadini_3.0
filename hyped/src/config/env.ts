@@ -30,7 +30,7 @@ const envConfigs: Record<Environment, EnvConfig> = {
     ENABLE_LOGGING: true,
     REQUEST_TIMEOUT: 30000,
     APP_NAME: 'Hyped Dev',
-    SAS_KEY: 'sp=r&st=2025-01-21T06:42:11Z&se=2025-07-01T14:42:11Z&spr=https&sv=2022-11-02&sr=c&sig=kcxKjDWoBFKHGr0p3wauAghAlov4Y0OfJND4WgDX7cM%3D',
+    SAS_KEY: '?sp=racwdl&st=2025-12-02T09:15:41Z&se=2026-03-20T17:30:41Z&spr=https&sv=2024-11-04&sr=c&sig=S8%2Bu1KJqnlz%2FtkdU4qkxguFZg8xK5vY3YuRzr02alQ8%3D',
   },  
   staging: {
     API_BASE_URL: 'https://staging-api.hyped.com/api/v1',
