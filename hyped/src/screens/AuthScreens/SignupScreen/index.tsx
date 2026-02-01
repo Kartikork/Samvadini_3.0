@@ -294,19 +294,9 @@ export default function SignupScreen() {
       return;
     }
 
-    const uniqueId = await AsyncStorage.getItem('uniqueId');
-    if (!uniqueId) {
-      Alert.alert(t.Error, 'Session expired. Please login again.');
-      return;
-    }
-
-
+    // Check auth from Redux (Redux Persist has restored it)
     if (!uniqueId || !token) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Session expired. Please login again.',
-      });
+      Alert.alert(t.Error, 'Session expired. Please login again.');
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' }],

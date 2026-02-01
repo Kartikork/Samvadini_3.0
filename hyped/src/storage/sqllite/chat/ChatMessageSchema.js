@@ -2,7 +2,7 @@ import SQLite from 'react-native-sqlite-storage';
 import { downloadFile } from '../../helper/Helper';
 import { getEncryptionKey } from './Participants';
 import { decryptMessage } from '../../../helper/Encryption';
-import { socketService } from '../../services/socketService';
+import { socketService } from '../../../services/socketService';
 import { getRandomLayout } from '../../../helper/MessageLayout';
 
 SQLite.enablePromise(true);

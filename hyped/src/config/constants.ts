@@ -69,3 +69,4 @@ export const ANIMATIONS = {
   SLOW: 500,
 } as const;
 
+

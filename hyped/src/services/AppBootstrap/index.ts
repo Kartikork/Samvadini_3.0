@@ -2,12 +2,21 @@
  * AppBootstrap - Singleton
  * 
  * RESPONSIBILITY:
- * - Orchestrates the app initialization flow after auth
+ * - Orchestrates the app initialization flow
  * - Coordinates parallel initialization of services
- * - Manages the startup sequence
+ * - Manages the startup sequence for both new and returning users
  * 
- * FLOW:
- * 1. Save auth token to Redux
+ * FLOW FOR APP LAUNCH (Returning User):
+ * 1. Redux Persist auto-restores auth token
+ * 2. SocketService.initialize()
+ * 3. ChatManager.initialize()
+ *    - Load Local DB
+ *    - Render UI instantly
+ *    - Sync missed messages (background)
+ * 4. UI Ready
+ * 
+ * FLOW FOR LOGIN/SIGNUP:
+ * 1. Save auth token to Redux (auto-persists via Redux Persist)
  * 2. PARALLEL: User Profile API + Local DB setup
  * 3. PARALLEL: ChatManager.initialize() + CallManager.initialize()
  * 4. Socket connect
@@ -16,7 +25,7 @@
  */
 
 import { store } from '../../state/store';
-import { setAuthData, setUserProfile, setAppReady } from '../../state/authSlice';
+import { setAuthData, setUserProfile, setAppReady, clearAuth } from '../../state/authSlice';
 import { userAPI } from '../../api';
 import { SocketService } from '../SocketService';
 import { ChatManager } from '../ChatManager';
@@ -79,6 +88,92 @@ class AppBootstrapClass {
   }
 
   /**
+   * Check if user is logged in (has token in Redux)
+   * Redux Persist automatically restores auth on app start
+   */
+  public isUserLoggedIn(): boolean {
+    const state = store.getState();
+    return !!(state.auth?.token && state.auth?.uniqueId);
+  }
+
+  /**
+   * Bootstrap on App Launch (Returning User)
+   * 
+   * FLOW:
+   * 1. Redux Persist already restored auth token
+   * 2. SocketService.initialize()
+   * 3. ChatManager.initialize() 
+   *    - Load Local DB → Render UI instantly
+   *    - Sync missed messages (background)
+   * 4. UI Ready
+   */
+  public async bootstrapOnAppLaunch(): Promise<BootstrapResult> {
+    if (this.isBootstrapping) {
+      console.warn('[AppBootstrap] Already bootstrapping');
+      return { success: false, error: 'Already bootstrapping' };
+    }
+
+    this.isBootstrapping = true;
+    console.log('[AppBootstrap] 🚀 App Launch - Starting bootstrap...');
+
+    try {
+      // Step 1: Get auth from Redux (already restored by Redux Persist)
+      this.setPhase('saving_auth');
+      console.log('[AppBootstrap] Step 1: Checking auth...');
+      
+      const state = store.getState();
+      const { token, uniqueId } = state.auth;
+
+      if (!token || !uniqueId) {
+        console.log('[AppBootstrap] No auth token found - user not logged in');
+        this.setPhase('idle');
+        return { success: false, error: 'Not logged in' };
+      }
+
+      console.log('[AppBootstrap] Auth restored for user:', uniqueId);
+
+      // Step 2: Initialize SocketService (connects and joins user channel)
+      this.setPhase('connecting_socket');
+      console.log('[AppBootstrap] Step 2: Initializing SocketService...');
+      
+      // Don't await - let socket connect in background
+      SocketService.initialize({
+        url: env.SOCKET_URL,
+        authToken: token,
+        userId: uniqueId,
+      }).catch(err => {
+        console.warn('[AppBootstrap] Socket init error (will retry):', err);
+      });
+
+      // Step 3: Initialize ChatManager (loads DB, renders UI, syncs in background)
+      this.setPhase('initializing_services');
+      console.log('[AppBootstrap] Step 3: Initializing ChatManager...');
+      
+      await ChatManager.initialize(uniqueId, false); // false = incremental sync
+
+      // Initialize CallManager in background
+      CallManager.initialize(uniqueId).catch(err => {
+        console.warn('[AppBootstrap] CallManager init error:', err);
+      });
+
+      // Step 4: UI Ready!
+      this.setPhase('ready');
+      console.log('[AppBootstrap] Step 4: ✅ UI Ready!');
+      
+      store.dispatch(setAppReady(true));
+
+      return { success: true };
+
+    } catch (error: any) {
+      console.error('[AppBootstrap] App launch bootstrap failed:', error);
+      this.setPhase('error');
+      return { success: false, error: error?.message || 'Bootstrap failed' };
+    } finally {
+      this.isBootstrapping = false;
+    }
+  }
+
+  /**
    * Bootstrap app after signup (new user)
    * Flow: Token → Profile API + DB Setup → Managers → Socket → Channel → Ready
    */
@@ -96,7 +191,7 @@ class AppBootstrapClass {
     console.log('[AppBootstrap] Starting bootstrap flow (new user:', isNewUser, ')');
 
     try {
-      // Phase 1: Save auth token to Redux
+      // Phase 1: Save auth token to Redux (Redux Persist auto-saves to AsyncStorage)
       this.setPhase('saving_auth');
       console.log('[AppBootstrap] Phase 1: Saving auth data...');
       store.dispatch(setAuthData({ token, uniqueId }));
@@ -295,6 +390,10 @@ class AppBootstrapClass {
   public async cleanup(): Promise<void> {
     console.log('[AppBootstrap] Cleaning up...');
     
+    // Clear Redux auth state (Redux Persist auto-clears from AsyncStorage)
+    store.dispatch(clearAuth());
+    
+    // Cleanup services
     ChatManager.cleanup();
     CallManager.cleanup();
     SocketService.disconnect();
@@ -302,6 +401,13 @@ class AppBootstrapClass {
     this.reset();
     
     console.log('[AppBootstrap] Cleanup complete');
+  }
+
+  /**
+   * Logout user - alias for cleanup
+   */
+  public async logout(): Promise<void> {
+    return this.cleanup();
   }
 }
 

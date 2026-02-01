@@ -235,12 +235,10 @@ function LoginScreen() {
       const { token, user, user_setting, isRegister } = response;
       const uniqueId = user.ekatma_chinha ?? '';
 
-      // Save auth data to Redux
+      // Save auth data to Redux (Redux Persist auto-saves to AsyncStorage)
       dispatch(setAuthData({ token, uniqueId }));
 
-      // Persist to AsyncStorage so LanguageSelection and other flows can use it
-      await AsyncStorage.setItem('userToken', token);
-      await AsyncStorage.setItem('uniqueId', uniqueId);
+      // Save display name for other flows (optional - not critical)
       const displayName = user?.praman_patrika ?? user?.upayogakarta_nama;
       if (displayName) await AsyncStorage.setItem('userName', displayName);
 

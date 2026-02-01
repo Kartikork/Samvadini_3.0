@@ -22,10 +22,10 @@ interface EnvConfig {
 
 const envConfigs: Record<Environment, EnvConfig> = {
   development: {
-    // API_BASE_URL: 'https://qasamvadini.aicte-india.org/api', // Local development server
-    // SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
-    API_BASE_URL: 'http://192.168.1.102:4000/api', // Local development server
-    SOCKET_URL: 'ws://192.168.1.102:4000/socket',
+    API_BASE_URL: 'https://qasamvadini.aicte-india.org/api', // Local development server
+    SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
+    // API_BASE_URL: 'http://192.168.0.112:4000/api', // Local development server
+    // SOCKET_URL: 'ws://192.168.0.112:4000/socket',
     ENABLE_LOGGING: true,
     REQUEST_TIMEOUT: 30000,
     APP_NAME: 'Hyped Dev',

@@ -2,8 +2,8 @@ import SQLite from 'react-native-sqlite-storage';
 import { downloadFile } from '../../helper/Helper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getEncryptionKey } from './Participants';
-import { decryptMessage } from '../../helper/Encryption';
-import { socketService } from '../../services/socketService';
+import { decryptMessage } from '../../../helper/Encryption';
+import { socketService } from '../../../services/socketService';
 import { getRandomLayout } from '../../../helper/MessageLayout';
 
 SQLite.enablePromise(true);
