@@ -215,6 +215,52 @@ class SocketServiceClass {
         this.scheduleReconnect();
       }
     });
+
+    // ─────────────────────────────────────────────────────────────
+    // GLOBAL EVENT FORWARDING (Phoenix → Local Event Emitter)
+    // ─────────────────────────────────────────────────────────────
+    // Forward Phoenix channel events to local event emitter
+    // This allows ChatListScreen and other components to listen via SocketService.on()
+
+    // Forward new_message events
+    this.channel.on('new_message', (payload: any) => {
+      console.log('[SocketService] 📨 Phoenix new_message received:', {
+        chatId: payload?.samvada_chinha,
+        sender: payload?.pathakah_chinha,
+        messageType: payload?.sandesha_prakara,
+        timestamp: new Date().toISOString(),
+      });
+      
+      // Emit to local event emitter (for ChatListScreen, etc.)
+      this.emit('new_message', payload);
+    });
+
+    // Forward chat_update events
+    this.channel.on('chat_update', (payload: any) => {
+      console.log('[SocketService] 💬 Phoenix chat_update received:', {
+        chatId: payload?.samvada_chinha,
+        timestamp: new Date().toISOString(),
+      });
+      this.emit('chat_update', payload);
+    });
+
+    // Forward group_update events
+    this.channel.on('group_update', (payload: any) => {
+      console.log('[SocketService] 👥 Phoenix group_update received:', {
+        chatId: payload?.samvada_chinha,
+        timestamp: new Date().toISOString(),
+      });
+      this.emit('group_update', payload);
+    });
+
+    // Forward request_accepted events (if exists)
+    this.channel.on('request_accepted', (payload: any) => {
+      console.log('[SocketService] ✅ Phoenix request_accepted received:', {
+        chatId: payload?.samvada_chinha,
+        timestamp: new Date().toISOString(),
+      });
+      this.emit('request_accepted', payload);
+    });
   }
 
   private startHeartbeat(): void {
@@ -579,18 +625,41 @@ class SocketServiceClass {
       this.eventListeners.set(eventName, new Set());
     }
     this.eventListeners.get(eventName)!.add(callback);
+    
+    console.log(`[SocketService] 👂 Listener registered for ${eventName}`, {
+      eventName,
+      totalListeners: this.eventListeners.get(eventName)!.size,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   public off(eventName: string, callback: EventHandler): void {
-    this.eventListeners.get(eventName)?.delete(callback);
+    const removed = this.eventListeners.get(eventName)?.delete(callback);
+    if (removed) {
+      console.log(`[SocketService] 🧹 Listener removed for ${eventName}`, {
+        eventName,
+        remainingListeners: this.eventListeners.get(eventName)?.size || 0,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
   public emit(eventName: string, data: any): void {
-    this.eventListeners.get(eventName)?.forEach(callback => {
+    const listeners = this.eventListeners.get(eventName);
+    const listenerCount = listeners?.size || 0;
+    
+    console.log(`[SocketService] 📤 Emitting ${eventName} to ${listenerCount} listener(s)`, {
+      eventName,
+      listenerCount,
+      hasData: !!data,
+      timestamp: new Date().toISOString(),
+    });
+
+    listeners?.forEach(callback => {
       try {
         callback(data);
       } catch (error) {
-        console.error(`[SocketService] Error in ${eventName} listener:`, error);
+        console.error(`[SocketService] ❌ Error in ${eventName} listener:`, error);
       }
     });
   }

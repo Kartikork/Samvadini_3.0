@@ -98,6 +98,7 @@ export const testAddColumn = async () => {
           { columnName: 'vayah_max', columnType: 'INTEGER', defaultValue: 0 },
           { columnName: 'onlyAdminsCanMessage', columnType: 'INTEGER', defaultValue: 0 },
           { columnName: 'guptata', columnType: 'Varchar(50)', defaultValue: 'Public' },
+          { columnName: 'is_pinned', columnType: 'INTEGER', defaultValue: 0 },
         ],
       },
       {

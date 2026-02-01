@@ -27,13 +27,14 @@ import languageReducer from './languageSlice';
 import fontSizeReducer from './fontSizeSlice';
 import countryReducer from './countrySlice';
 import authReducer from './authSlice';
+import chatListReducer from './chatListSlice';
 
 // Persist configuration
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
   whitelist: ['auth'], // Only persist auth slice (token, uniqueId, profile)
-  // blacklist: ['chat', 'call'], // Don't persist these - they reload from DB
+  // blacklist: ['chat', 'call', 'chatList'], // Don't persist these - they reload from DB
 };
 
 // Combine all reducers
@@ -44,6 +45,7 @@ const rootReducer = combineReducers({
   fontSize: fontSizeReducer,
   country: countryReducer,
   auth: authReducer,
+  chatList: chatListReducer,
 });
 
 // Create persisted reducer

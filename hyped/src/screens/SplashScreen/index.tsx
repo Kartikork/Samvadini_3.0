@@ -57,7 +57,7 @@ export default function SplashScreen() {
           
           // Small delay to show "Ready!" message
           setTimeout(() => {
-            navigation.replace('Home');
+            navigation.replace('ChatList');
           }, 500);
         } else {
           // Bootstrap failed - maybe token expired, go to login
