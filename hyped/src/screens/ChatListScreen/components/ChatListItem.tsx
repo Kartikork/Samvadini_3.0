@@ -23,6 +23,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ChatListItem as ChatListItemType } from '../hooks/useChatListData';
+import { getImageUrlWithSas } from '../../../config/env';
 
 interface Props {
   chat: ChatListItemType;
@@ -48,14 +49,16 @@ export const ChatListItem = memo<Props>(({
   // ============================================
 
   /**
-   * Avatar source (memoized)
+   * Avatar source (memoized) - with SAS key for Azure Blob Storage
    */
   const avatarSource = useMemo(() => {
     if (chat.prakara === 'Group' && chat.samuha_chitram) {
-      return { uri: chat.samuha_chitram };
+      const imageUrl = getImageUrlWithSas(chat.samuha_chitram);
+      return imageUrl ? { uri: imageUrl } : null;
     }
     if (chat.contact_photo) {
-      return { uri: chat.contact_photo };
+      const imageUrl = getImageUrlWithSas(chat.contact_photo);
+      return imageUrl ? { uri: imageUrl } : null;
     }
     return null;
   }, [chat.prakara, chat.samuha_chitram, chat.contact_photo]);
@@ -188,12 +191,17 @@ export const ChatListItem = memo<Props>(({
 
       {/* Avatar */}
       <View style={styles.avatarContainer}>
+      {(() => {
+    console.log('avatarSource ==>', avatarSource);
+    return null;
+  })()}
         {avatarSource ? (
           <Image 
             source={avatarSource} 
             style={styles.avatar}
             resizeMode="cover"
           />
+
         ) : (
           <View style={styles.avatarPlaceholder}>
             <Icon name={avatarIcon} size={32} color="#999" />

@@ -162,6 +162,11 @@ export const chatListSlice = createSlice({
     setCategory: (state, action: PayloadAction<string>) => {
       state.selectedCategory = action.payload;
     },
+    
+    // Force refresh trigger
+    setLastUpdateTime: (state, action: PayloadAction<number>) => {
+      state.lastUpdateTime = action.payload;
+    },
   },
 });
 

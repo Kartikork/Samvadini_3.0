@@ -31,7 +31,7 @@ export interface ChatListItem {
   is_request: boolean;
   is_private_room: boolean;
   is_emergency: boolean;
-  is_pinned: number;
+  is_pinned?: number;
   room_code?: string;
   vargah?: string;
   samvadaspashtah: number;
@@ -50,6 +50,7 @@ export interface ChatListItem {
 export function useChatListData(chatIds: string[], activeTab: string) {
   const { uniqueId } = useAppSelector(state => state.auth);
   const selectedCategory = useAppSelector(state => state.chatList.selectedCategory);
+  const lastUpdateTime = useAppSelector(state => state.chatList.lastUpdateTime);
   
   const [chats, setChats] = useState<ChatListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,7 +152,7 @@ export function useChatListData(chatIds: string[], activeTab: string) {
     return () => {
       isMounted = false;
     };
-  }, [uniqueId, activeTab, selectedCategory, chatIdsKey]);
+  }, [uniqueId, activeTab, selectedCategory, chatIdsKey, lastUpdateTime]);
 
   // Memoize to prevent unnecessary re-renders
   const memoizedChats = useMemo(() => chats, [chats]);

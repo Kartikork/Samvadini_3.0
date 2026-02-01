@@ -30,7 +30,7 @@ import {
   UIManager,
   Platform,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, FlashListProps } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/MainNavigator';
@@ -148,7 +148,49 @@ export default function ChatListScreen() {
   // REFS (Stable references)
   // ============================================
 
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ============================================
+  // HANDLERS (Stable callbacks) - Defined before effects that use them
+  // ============================================
+
+  /**
+   * Load chats from DB
+   */
+  const loadChats = useCallback(() => {
+    if (!uniqueId) {
+      console.log('[ChatListScreen] ⚠️ Cannot load chats: no uniqueId');
+      return;
+    }
+
+    console.log('[ChatListScreen] 📥 Loading chats from DB...');
+    dispatch(chatListActions.setLoading(true));
+    
+    // Data loading happens in useChatListData hook
+    // This just sets loading state for UI feedback
+    
+    setTimeout(() => {
+      dispatch(chatListActions.setLoading(false));
+      console.log('[ChatListScreen] ✅ Chats loaded');
+    }, 100);
+  }, [uniqueId, dispatch]);
+
+  /**
+   * Debounced refresh (prevents UI thrashing)
+   */
+  const debouncedRefresh = useCallback(() => {
+    console.log('[ChatListScreen] 🔄 Debounced refresh triggered');
+    
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      console.log('[ChatListScreen] ⏱️ Clearing previous debounce timer');
+    }
+    
+    debounceTimerRef.current = setTimeout(() => {
+      console.log('[ChatListScreen] ✅ Executing debounced refresh');
+      dispatch(chatListActions.setLastUpdateTime(Date.now()));
+    }, 300); // 300ms debounce
+  }, [dispatch]);
 
   // ============================================
   // EFFECTS
@@ -230,48 +272,6 @@ export default function ChatListScreen() {
       SocketService.off('request_accepted', handleRequestAccepted);
     };
   }, [uniqueId, debouncedRefresh]);
-
-  // ============================================
-  // HANDLERS (Stable callbacks)
-  // ============================================
-
-  /**
-   * Load chats from DB
-   */
-  const loadChats = useCallback(() => {
-    if (!uniqueId) {
-      console.log('[ChatListScreen] ⚠️ Cannot load chats: no uniqueId');
-      return;
-    }
-
-    console.log('[ChatListScreen] 📥 Loading chats from DB...');
-    dispatch(chatListActions.setLoading(true));
-    
-    // Data loading happens in useChatListData hook
-    // This just sets loading state for UI feedback
-    
-    setTimeout(() => {
-      dispatch(chatListActions.setLoading(false));
-      console.log('[ChatListScreen] ✅ Chats loaded');
-    }, 100);
-  }, [uniqueId, dispatch]);
-
-  /**
-   * Debounced refresh (prevents UI thrashing)
-   */
-  const debouncedRefresh = useCallback(() => {
-    console.log('[ChatListScreen] 🔄 Debounced refresh triggered');
-    
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      console.log('[ChatListScreen] ⏱️ Clearing previous debounce timer');
-    }
-    
-    debounceTimerRef.current = setTimeout(() => {
-      console.log('[ChatListScreen] ✅ Executing debounced refresh');
-      loadChats();
-    }, 300); // 300ms debounce
-  }, [loadChats]);
 
   /**
    * Pull to refresh
@@ -387,24 +387,26 @@ export default function ChatListScreen() {
   }, [bulkUnarchive, loadChats]);
 
   const handleBulkPin = useCallback(async () => {
-    // Check if any selected chats are already pinned
+    // Check if any selected chats are already pinned (handle undefined)
     const selectedChats = chats.filter(c => selectedChatIds.includes(c.samvada_chinha));
-    const hasPinned = selectedChats.some(c => c.is_pinned === 1);
+    const hasPinned = selectedChats.some(c => (c.is_pinned ?? 0) === 1);
     
     if (hasPinned) {
       // Unpin if any are pinned
       const success = await bulkUnpin();
       if (success) {
-        loadChats();
+        // Force refresh by updating lastUpdateTime
+        dispatch(chatListActions.setLastUpdateTime(Date.now()));
       }
     } else {
       // Pin if none are pinned
       const success = await bulkPin();
       if (success) {
-        loadChats();
+        // Force refresh by updating lastUpdateTime
+        dispatch(chatListActions.setLastUpdateTime(Date.now()));
       }
     }
-  }, [bulkPin, bulkUnpin, loadChats, chats, selectedChatIds]);
+  }, [bulkPin, bulkUnpin, dispatch, chats, selectedChatIds]);
 
   // ============================================
   // RENDER FUNCTIONS (Stable)
@@ -482,7 +484,7 @@ export default function ChatListScreen() {
           onDelete={handleBulkDelete}
           isArchivedTab={activeTab === 'archived'}
           hasPinnedChats={chats.some(c => 
-            selectedChatIds.includes(c.samvada_chinha) && c.is_pinned === 1
+            selectedChatIds.includes(c.samvada_chinha) && (c.is_pinned ?? 0) === 1
           )}
         />
       ) : (
@@ -513,7 +515,8 @@ export default function ChatListScreen() {
             data={chats}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
-            estimatedItemSize={72} // Critical for FlashList performance
+            // @ts-ignore - estimatedItemSize is required for FlashList performance
+            estimatedItemSize={72}
             refreshControl={
               <RefreshControl
                 refreshing={isRefreshing}
@@ -524,13 +527,6 @@ export default function ChatListScreen() {
             ListHeaderComponent={activeTab === 'all' ? renderArchivedHeader() : null}
             ListEmptyComponent={renderEmptyComponent}
             contentContainerStyle={styles.listContent}
-            // Performance optimizations
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={10}
-            updateCellsBatchingPeriod={50}
-            windowSize={10}
-            // Smooth scrolling
-            drawDistance={500}
           />
         </Animated.View>
       )}
