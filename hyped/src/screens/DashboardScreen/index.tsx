@@ -13,7 +13,8 @@ import {
   SafeAreaView,
   Linking,
   Alert,
-  Text
+  Text,
+  ImageBackground
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -24,8 +25,7 @@ import GlobalDashboard from '../../components/GlobalDashboard';
 import { useAppSelector } from '../../state/hooks';
 import { getDashboardTexts } from './translations';
 import styles from './DashboardStyles';
-import { anuvadiniLogo, ellipsCallBottom, ellipsCallTop } from '../../assets';
-
+import {addContact, addEmergency, addGroup, addPlanner, addReminder, anuvadiniLogo, ellipsCallBottom, ellipsCallTop, farmerIcon, gameIcon, governmentIcon, jobIcon, learnIcon, startupIcon, temporaryId, womenIcon } from '../../assets';
 
 const NavigationCard = memo(function NavigationCard({
   icon,
@@ -144,16 +144,23 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                   <TextToVoiceIconWrapper text={[dashboardTexts.addContact, dashboardTexts.addGroup, dashboardTexts.temporaryId]} lang={lang} autoplay={false} size={28} iconColor="#fff" />
                 </View>
                 <TouchableOpacity style={[styles.row, styles.addContactRow]} onPress={navigateToNewContactForm}>
-                  <Icon name="person-add-outline" size={24} color="#333" />
-                  <Text style={styles.addText} numberOfLines={1}>{dashboardTexts.addContact}</Text>
+                  <View style={styles.quickParent}>
+                  <Image source={addContact}  />
+                  </View>
+                  <Text style={styles.qucikText} numberOfLines={1}>{dashboardTexts.addContact}</Text>
+                  
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.row, styles.addGroupRow]} onPress={navigateToCreateNewGroup}>
-                  <Icon name="people-outline" size={24} color="#333" />
-                  <Text style={styles.addGroupText} numberOfLines={1}>{dashboardTexts.addGroup}</Text>
+                  <View style={styles.quickParent}>
+                  <Image source={addGroup}  />
+                  </View>
+                  <Text style={styles.qucikText} numberOfLines={1}>{dashboardTexts.addGroup}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.row, styles.temporaryRow]} onPress={navigateToPrivateRoom}>
-                  <Icon name="key-outline" size={24} color="#333" />
-                  <Text style={styles.temporaryIdText} numberOfLines={1}>{dashboardTexts.temporaryId}</Text>
+                   <View style={styles.quickParent}>
+                  <Image source={temporaryId}  />
+                  </View>
+                  <Text style={styles.qucikText} numberOfLines={1}>{dashboardTexts.temporaryId}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -161,7 +168,9 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                 <View style={{ flex: 1, marginRight: 5 }}>
                   <View style={[styles.gameZoneContainer, { backgroundColor: '#0293A3', marginRight: 0 }]}>
                     <TouchableOpacity style={styles.gameZoneButton} onPress={() => navigation.navigate('lingoweb')}>
-                      <Icon name="language-outline" size={40} color="#fff" />
+                      <Image source={learnIcon}  />
+                      <Image source={require('../../assets/images/Dashboard/languages-bg.png')} style={styles.shapeslng} />
+                      
                       <Text style={styles.whiteCenterText} numberOfLines={1}>{dashboardTexts.learn}</Text>
                     </TouchableOpacity>
                   </View>
@@ -169,7 +178,8 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                 <View style={{ flex: 1, marginLeft: 10 }}>
                   <View style={styles.gameZoneContainer}>
                     <TouchableOpacity style={[styles.gameZoneButton, { padding: 0, width: '100%' }]} onPress={() => navigation.navigate('LanguageGameScreen')}>
-                      <Icon name="game-controller-outline" size={40} color="#fff" />
+                      <Image source={gameIcon}  />
+                      <Image source={require('../../assets/images/Dashboard/gamebg.png')} style={styles.shapeslng} />
                       <Text style={styles.whiteCenterText} numberOfLines={1}>{dashboardTexts.gameZone}</Text>
                     </TouchableOpacity>
                   </View>
@@ -180,12 +190,12 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                 <TouchableOpacity style={styles.dailyPlannerButton} onPress={navigateToDailyPlanner}>
                   
                   <Icon name="alarm-outline" size={26} color="#fff" />
-                  <Text style={[styles.whiteCenterText, { marginLeft: 10, flexShrink: 1 }]} numberOfLines={1}>{dashboardTexts.dailyPlanner}</Text>
+                  <Text style={[styles.cardText, { marginLeft: 10, flexShrink: 1 }]} numberOfLines={1}>{dashboardTexts.dailyPlanner}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={navigateToHomeScreen} style={styles.eventButton}>
                  
                   <Icon name="calendar-outline" size={26} color="#fff" />
-                  <Text style={[styles.whiteCenterText, { marginLeft: 10, flexShrink: 1 }]} numberOfLines={1}>{dashboardTexts.evMang}</Text>
+                  <Text style={[styles.cardText, { marginLeft: 10, flexShrink: 1 }]} numberOfLines={1}>{dashboardTexts.evMang}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -194,15 +204,21 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                   <TextToVoiceIconWrapper text={[dashboardTexts.addPlan, dashboardTexts.addReminder, dashboardTexts.addEmergency]} lang={lang} autoplay={false} size={28} iconColor="#fff" />
                 </View>
                 <TouchableOpacity style={styles.addPlanRow} onPress={() => navigation.navigate('AddPlan')}>
-                  <Icon name="calendar-outline" size={24} color="#333" />
+                  <View style={styles.quickParent}>
+              <Image source={addPlanner}  />
+                  </View>
                   <Text style={styles.addPlanText} numberOfLines={1}>{dashboardTexts.addPlan}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.addReminderRow} onPress={() => navigation.navigate('AddReminder')}>
-                  <Icon name="alarm-outline" size={24} color="#333" />
+                <TouchableOpacity style={styles.addPlanRow} onPress={() => navigation.navigate('AddReminder')}>
+                 <View style={styles.quickParent}>
+              <Image source={addReminder}  />
+                  </View>
                   <Text style={styles.addReminderText} numberOfLines={1}>{dashboardTexts.addReminder}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.addReminderRow} onPress={() => navigation.navigate('EmergencyContactScreen')}>
-                  <Icon name="medkit-outline" size={24} color="#333" />
+                <TouchableOpacity style={styles.addPlanRow} onPress={() => navigation.navigate('EmergencyContactScreen')}>
+                  <View style={styles.quickParent}>
+              <Image source={addEmergency}  />
+                  </View>
                   <Text style={styles.emergencyText} numberOfLines={1}>{dashboardTexts.addEmergency}</Text>
                 </TouchableOpacity>
               </View>
@@ -211,46 +227,48 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                 <View style={styles.bankingbg}>
                   <View style={styles.banking}>
                     <TouchableOpacity style={styles.jobsButton} onPress={() => navigation.navigate('JobScreen')}>
-                      
-                      <Icon name="briefcase-outline" size={28} color="#fff" />
-                      <Text style={[styles.whiteCenterText, { marginLeft: 8 }]}>{dashboardTexts.jobs}</Text>
+                      <View style={styles.iconParent}>
+                      <Image source={jobIcon} style={styles.iconSize}  />
+                      </View>
+                      <Text style={styles.fontStyle}>{dashboardTexts.jobs}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.admissions} onPress={() => navigation.navigate('AdmissionTabsScreen')}>
-                     
-                      <Icon name="school-outline" size={28} color="#fff" />
-                      <Text style={[styles.whiteCenterText, { marginLeft: 10 }]}>Admission, Competition, Event & Course</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+
+                     <TouchableOpacity
                       style={styles.startupsButton}
                       onPress={() => navigation.navigate('Category', { id: 'Startups, MSMEs, SMEs', name: 'startups' })}
                     >
-                      
-                      <Icon name="rocket-outline" size={28} color="#fff" />
-                      <Text style={[styles.whiteCenterText, { marginLeft: 10 }]}>{dashboardTexts.startups}</Text>
+                      <View style={styles.iconParent}>
+                       <Image source={startupIcon} style={styles.iconSize}  />
+                       </View>
+                      <Text style={styles.fontStyle}>{dashboardTexts.startups}</Text>
                     </TouchableOpacity>
+                    
                     <TouchableOpacity
                       style={styles.govtSchemesButton}
                       onPress={() => navigation.navigate('Category', { name: 'govtSchemes', id: 'Central Govt. Schemes, Policies' })}
                     >
-                      
-                      <Icon name="document-text-outline" size={28} color="#fff" />
-                      <Text style={styles.govtText}>{dashboardTexts.govtSchemesShort}</Text>
+                      <View style={styles.iconParent}>
+                       <Image source={governmentIcon} style={styles.iconSize}  />
+                       </View>
+                      <Text style={styles.fontStyle}>{dashboardTexts.govtSchemesShort}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.womenButton}
                       onPress={() => navigation.navigate('Category', { name: 'Women empowerment, Parenting', id: 'Women empowerment, Parenting, Children care' })}
                     >
-                     
-                      <Icon name="people-outline" size={28} color="#fff" />
-                      <Text style={styles.womenText}>{dashboardTexts.women}</Text>
+                      <View style={styles.iconParent}>
+                      <Image source={womenIcon} style={styles.iconSize}  />
+                      </View>
+                      <Text style={styles.fontStyle}>{dashboardTexts.women}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.farmersButton}
                       onPress={() => navigation.navigate('Category', { id: 'Farmers, Agriculture, Rural Development', name: 'agriculture' })}
                     >
-                      
-                      <Icon name="leaf-outline" size={28} color="#fff" />
-                      <Text style={[styles.whiteCenterText, { marginLeft: 10 }]}>{dashboardTexts.farmersRural}</Text>
+                     <View style={styles.iconParent}> 
+                      <Image source={farmerIcon} style={styles.iconSize}  />
+                      </View>
+                      <Text style={styles.fontStyle}>{dashboardTexts.farmersRural}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.aboutButton} onPress={() => Linking.openURL('https://anuvadini.aicte-india.org/AboutUs')}>
                       <Text style={styles.aboutText}>About Anuvadini</Text>

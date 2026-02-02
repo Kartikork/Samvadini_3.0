@@ -78,4 +78,5 @@ export function getDashboardTexts(lang: string) {
     addReminder: getTranslation(lang, 'AddReminder', 'Add Reminder'),
     addEmergency: getTranslation(lang, 'AddEmergency', 'Add Emergency'),
   };
+
 }

@@ -3,6 +3,7 @@
  */
 
 import { StyleSheet, Dimensions } from 'react-native';
+import { authAPI } from '../../api';
 
 const { width: windowWidth } = Dimensions.get('window');
 
@@ -54,16 +55,16 @@ export default StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 10, backgroundColor: '#F8F7F6' },
   scrollView: { flex: 1 },
   welcomeText: { fontSize: SIZES.fontSize.lg, fontWeight: 'bold', color: COLORS.gray.dark, textAlign: 'left', marginTop: 15 },
-  cardText: { ...BASE_STYLES.whiteText, ...BASE_STYLES.centerText, marginTop: SIZES.spacing.xs, marginLeft: 10 },
-  whiteCenterText: { fontSize: 13, color: COLORS.white },
+  cardText: { ...BASE_STYLES.whiteText, ...BASE_STYLES.centerText, marginTop: SIZES.spacing.xs, marginLeft: 10, fontSize: 15,},
+  whiteCenterText: { fontSize: 15, fontWeight: 500, marginTop:10, color: COLORS.white },
   ordersCard: { backgroundColor: '#0a88d2', width: '48%', position: 'relative', borderRadius: 8, marginVertical: 5, marginLeft: 0, padding: 12, paddingLeft: 20, marginTop: 15, overflow: 'hidden' },
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  gameZoneContainer: { ...BASE_STYLES.baseCard, ...BASE_STYLES.cardShadow, borderRadius: SIZES.borderRadius.md, marginVertical: 5, marginLeft: 0, backgroundColor: '#5D5FEF' },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', },
+  gameZoneContainer: { ...BASE_STYLES.baseCard, ...BASE_STYLES.cardShadow, borderRadius: SIZES.borderRadius.md, marginVertical: 5, marginLeft: 0, backgroundColor: '#5D5FEF', padding: 5, },
   reminderContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 },
   gameZoneButton: { ...BASE_STYLES.baseButton, paddingVertical: 15, minHeight: SIZES.gameZoneHeight, overflow: 'hidden' },
   dailyPlannerButton: { width: '48%', flexDirection: 'row', alignItems: 'center', backgroundColor: '#6564a8', paddingVertical: 12, paddingLeft: 15, borderRadius: 8, position: 'relative', overflow: 'hidden', marginRight: 7 },
   eventButton: { width: '48%', flexDirection: 'row', alignItems: 'center', backgroundColor: '#6564a8', marginLeft: 7, paddingVertical: 12, paddingLeft: 15, borderRadius: 8, position: 'relative', overflow: 'hidden' },
-  jobsButton: { width: '100%', backgroundColor: '#7A76B5', borderRadius: 8, position: 'relative', padding: 12, flexDirection: 'row', justifyContent: 'flex-start', marginBottom: 10, alignItems: 'center', paddingRight: 20 },
+  jobsButton: { width: '100%', backgroundColor: '#7A76B5', borderRadius: 8, position: 'relative', padding: 12, flexDirection: 'row', justifyContent: 'flex-start', marginBottom: 10, alignItems: 'center', paddingRight: 20, },
   admissions: { width: '100%', backgroundColor: '#0B88D2', borderRadius: 8, position: 'relative', padding: 12, flexDirection: 'row', justifyContent: 'flex-start', marginBottom: 10, alignItems: 'center' },
   startupsButton: { width: '100%', padding: 12, backgroundColor: '#EE898B', borderRadius: 8, flexDirection: 'row', justifyContent: 'flex-start', marginBottom: 10, alignItems: 'center' },
   govtSchemesButton: { width: '100%', backgroundColor: '#AF7373', padding: 12, borderRadius: 8, marginBottom: 10, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' },
@@ -98,7 +99,7 @@ export default StyleSheet.create({
   shopBtnImage: { width: 30, height: 30, resizeMode: 'contain' as const, alignSelf: 'center', marginBottom: 0 },
   games: { width: 50, height: 50, resizeMode: 'contain' as const, alignSelf: 'center', marginBottom: 0 },
   anuvadiniLogoContainer: { width: wp(40) },
-  anuvadiniLogo: { width: wp(40), height: hp(3) },
+  anuvadiniLogo: { width: 140, height: 40 },
   loadingView: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { fontSize: 16, color: COLORS.gray.medium },
   bottomContainer: { marginTop: 20 },
@@ -107,7 +108,49 @@ export default StyleSheet.create({
   shapesevents: { position: 'absolute', width: 50, height: 50, right: -6, top: 2, resizeMode: 'contain' as const },
   shapesplanevents: { position: 'absolute', width: 50, height: 50, left: -10, bottom: -19, resizeMode: 'contain' as const },
   shapesbottompl: { position: 'absolute', left: 0, top: 0, right: 0, resizeMode: 'contain' as const, width: '100%', height: 90 },
-  shapeslng: { position: 'absolute', left: 15, top: 8, resizeMode: 'contain' as const, height: 90 },
+  shapeslng: { position: 'absolute', left: 0, top: 0, right:0, bottom: 0, margin: 'auto', resizeMode: 'contain' as const, height: 90 },
+  
+  
+  quickParent: {
+    borderWidth: 1,
+    width: 22,
+    height: 22,
+    padding: 15,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderColor: '#E6E6E6',
+  },
+  qucikText: {
+    fontSize: 12,
+    color: '#000000',
+    marginTop: 5,
+  },
+  quickAction: {
+    borderWidth: 1,
+    width:32,
+    height: 32,
+    borderRadius: 50,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconParent: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+  alignItems: 'center',
+  },
+  iconSize: {
+    width: '100%',
+  height: '100%',
+  resizeMode: 'contain',
+  },
+  fontStyle: {
+    fontSize: 15,
+    color: '#ffffff',
+    marginLeft: 10,
+  },
 });
 
 export { COLORS, SIZES };
