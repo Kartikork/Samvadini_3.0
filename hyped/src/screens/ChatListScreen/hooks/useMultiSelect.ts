@@ -10,9 +10,10 @@
 import { useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../../../state/hooks';
 import { chatListActions } from '../../../state/chatListSlice';
-import { openDatabase } from '../../../storage/sqllite/chat/ChatListSchema';
+import { openDatabase, getAllChatLists } from '../../../storage/sqllite/chat/ChatListSchema';
+import { clearSingleChat } from '../../../storage/sqllite/chat/ChatMessageSchema';
+import { chatAPI } from '../../../api';
 import { Alert } from 'react-native';
-import { getAllChatLists } from '../../../storage/sqllite/chat/ChatListSchema';
 
 export function useMultiSelect() {
   const dispatch = useAppDispatch();
@@ -195,7 +196,7 @@ export function useMultiSelect() {
   }, [selectedChatIds, uniqueId, dispatch]);
 
   /**
-   * Bulk delete selected chats
+   * Bulk delete selected chats (API + SQLite)
    */
   const bulkDelete = useCallback(async () => {
     if (selectedChatIds.length === 0 || !uniqueId) return;
@@ -210,31 +211,63 @@ export function useMultiSelect() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const db = await openDatabase();
+              console.log('[useMultiSelect] 🗑️ Starting bulk delete for:', selectedChatIds);
 
-              await new Promise<void>((resolve, reject) => {
-                db.transaction(tx => {
-                  selectedChatIds.forEach(chatId => {
-                    // Mark as deleted (soft delete)
-                    tx.executeSql(
-                      `UPDATE td_chat_qutubminar_211 
-                       SET samvadaspashtah = 1 
-                       WHERE samvada_chinha = ?`,
-                      [chatId],
-                      () => {},
-                      (_, error) => {
-                        console.error('Delete error:', error);
-                        return false;
-                      }
-                    );
-                  });
-                }, reject, resolve);
-              });
+              // Get chat info to determine type (Chat/Group)
+              const allChats = await getAllChatLists(uniqueId);
+              
+              for (const chatId of selectedChatIds) {
+                try {
+                  // Find chat to get its type
+                  const chat = allChats.find((c: any) => c.samvada_chinha === chatId);
+                  const chatType = chat?.prakara === 'Group' ? 'Group' : 'Chat';
 
+                  console.log(`[useMultiSelect] 🗑️ Deleting chat: ${chatId} (type: ${chatType})`);
+
+                  const formData = {
+                    samvada_chinha: chatId,
+                    uniqueId: uniqueId,
+                    type: chatType as 'Chat' | 'Group',
+                    isdelete: true,
+                  };
+
+                  // 1. Delete from local SQLite (messages + mark chat as deleted)
+                  try {
+                    await clearSingleChat(formData);
+                    console.log(`[useMultiSelect] ✅ SQLite cleared for: ${chatId}`);
+                  } catch (sqlError) {
+                    console.warn(`[useMultiSelect] ⚠️ SQLite clear failed for ${chatId}:`, sqlError);
+                  }
+
+                  // 2. Call API to delete from server
+                  try {
+                    await chatAPI.clearSingleChat(formData);
+                    console.log(`[useMultiSelect] ✅ API delete success for: ${chatId}`);
+                  } catch (apiError) {
+                    console.warn(`[useMultiSelect] ⚠️ API delete failed for ${chatId}:`, apiError);
+                    // Continue with other chats even if API fails
+                  }
+
+                } catch (e) {
+                  console.warn(`[useMultiSelect] ❌ Failed to delete chat ${chatId}:`, e);
+                }
+              }
+
+              console.log('[useMultiSelect] ✅ Bulk delete completed');
+              
               dispatch(chatListActions.clearSelection());
+              
+              // Update Redux to refresh the list
+              const updatedChats = await getAllChatLists(uniqueId);
+              dispatch(chatListActions.setChatIds({
+                all: updatedChats.map((c: any) => c.samvada_chinha),
+                filtered: updatedChats.filter((c: any) => c.samvadaspashtah === 0).map((c: any) => c.samvada_chinha),
+                archived: updatedChats.filter((c: any) => c.samvadaspashtah === 1).map((c: any) => c.samvada_chinha),
+              }));
+              
               return true;
             } catch (error) {
-              console.error('[useMultiSelect] Bulk delete error:', error);
+              console.error('[useMultiSelect] ❌ Bulk delete error:', error);
               Alert.alert('Error', 'Failed to delete chats');
               return false;
             }

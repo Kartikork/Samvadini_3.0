@@ -291,6 +291,13 @@ export const contactAPI = {
   getBlockedContacts: () => api.get<Contact[]>('/contacts/blocked'),
 };
 
+export interface ClearChatRequest {
+  samvada_chinha: string;
+  uniqueId: string;
+  type: 'Chat' | 'Group';
+  isdelete: boolean;
+}
+
 export const chatAPI = {
   /**
    * Get all conversations
@@ -341,6 +348,12 @@ export const chatAPI = {
    */
   uploadMedia: (formData: FormData) =>
     api.post<{ mediaUrl: string; thumbnailUrl?: string }>('/media/upload', formData),
+
+  /**
+   * Clear/Delete a single chat (API + marks for deletion)
+   */
+  clearSingleChat: (data: ClearChatRequest) =>
+    api.post<{ success: boolean; message: string }>('/chat/clear-single-chat', data),
 };
 
 export const groupAPI = {

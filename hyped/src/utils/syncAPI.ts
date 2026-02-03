@@ -114,13 +114,36 @@ class SyncAPI {
 
       // Call sync API
       const formData = { uniqueId, updatedAt: lastUpdatedAt || '' };
+      
+      // ⏱️ Start timing API call
+      const apiStartTime = Date.now();
       const response = await axiosConn('post', API_ENDPOINTS.SYNC_CHAT_LIST, formData);
+      const apiEndTime = Date.now();
+      console.log(`⏱️ [SyncAPI] API call took: ${apiEndTime - apiStartTime}ms`);
 
       if (response.data?.data) {
         const chatListData = response.data.data;
         
         if (chatListData && chatListData.length > 0) {
-          console.log(`[SyncAPI] Received ${chatListData.length} chat list items`);
+          // 📊 Detailed data inspection
+          console.log("========== CHAT LIST DATA INSPECTION ==========");
+          console.log(`[SyncAPI] Total items received: ${chatListData.length}`);
+          console.log(`[SyncAPI] Data size (approx): ${JSON.stringify(chatListData).length} bytes`);
+          
+          // Log first item structure (keys and types)
+          if (chatListData[0]) {
+            console.log("[SyncAPI] First item keys:", Object.keys(chatListData[0]));
+            console.log("[SyncAPI] First item sample:", JSON.stringify(chatListData[0], null, 2));
+          }
+          
+          // Log last item for comparison
+          if (chatListData.length > 1) {
+            console.log("[SyncAPI] Last item sample:", JSON.stringify(chatListData[chatListData.length - 1], null, 2));
+          }
+          console.log("================================================");
+          
+          // ⏱️ Start timing DB insert
+          const dbStartTime = Date.now();
           
           // Use appropriate insert method based on whether it's first sync
           if (lastUpdatedAt) {
@@ -130,6 +153,10 @@ class SyncAPI {
             // First sync - bulk insert
             await AllChatListInsert(chatListData, isPhoneNumberHidden, uniqueId);
           }
+          
+          const dbEndTime = Date.now();
+          console.log(`⏱️ [SyncAPI] DB insert took: ${dbEndTime - dbStartTime}ms`);
+          console.log(`⏱️ [SyncAPI] Total sync time: ${dbEndTime - apiStartTime}ms`);
 
           return { success: true, count: chatListData.length };
         }

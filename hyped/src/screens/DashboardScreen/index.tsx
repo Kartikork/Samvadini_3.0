@@ -68,7 +68,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
   );
 
   const navigateToCallHistory = useCallback(() => navigation.navigate('CallHistory'), [navigation]);
-  const navigateToListing = useCallback(() => navigation.navigate('Listing'), [navigation]);
+  const navigateToListing = useCallback(() => navigation.navigate('ChatList'), [navigation]);
   const navigateToNewContactForm = useCallback(() => navigation.navigate('NewContactForm'), [navigation]);
   const navigateToCreateNewGroup = useCallback(() => navigation.navigate('CreateNewGroup'), [navigation]);
   const navigateToPrivateRoom = useCallback(() => navigation.navigate('PrivateRoom'), [navigation]);

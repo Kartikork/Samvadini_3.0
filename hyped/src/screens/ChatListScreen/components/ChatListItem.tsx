@@ -191,10 +191,6 @@ export const ChatListItem = memo<Props>(({
 
       {/* Avatar */}
       <View style={styles.avatarContainer}>
-      {(() => {
-    console.log('avatarSource ==>', avatarSource);
-    return null;
-  })()}
         {avatarSource ? (
           <Image 
             source={avatarSource} 

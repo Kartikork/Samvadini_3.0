@@ -71,11 +71,20 @@ export function useChatListData(chatIds: string[], activeTab: string) {
       setLoading(true);
       
       try {
+        // ⏱️ Start timing DB fetch
+        const dbStartTime = Date.now();
+        
         // Fetch all chats from DB (SQLite)
         const allChats = await getAllChatLists(uniqueId);
         
+        const dbEndTime = Date.now();
+        console.log(`⏱️ [useChatListData] DB fetch took: ${dbEndTime - dbStartTime}ms, Total records: ${allChats?.length || 0}`);
+        
         if (!isMounted) return;
 
+        // ⏱️ Start timing filtering
+        const filterStartTime = Date.now();
+        
         // Filter based on active tab
         let filtered = allChats;
 
@@ -134,6 +143,10 @@ export function useChatListData(chatIds: string[], activeTab: string) {
           return (b.lastMessageDate || 0) - (a.lastMessageDate || 0);
         });
 
+        const filterEndTime = Date.now();
+        console.log(`⏱️ [useChatListData] Filter & Sort took: ${filterEndTime - filterStartTime}ms, Filtered records: ${filtered.length}, Tab: ${activeTab}`);
+        console.log(`⏱️ [useChatListData] TOTAL processing time: ${filterEndTime - dbStartTime}ms`);
+
         setChats(filtered);
       } catch (error) {
         console.error('[useChatListData] Error loading chats:', error);
@@ -184,7 +197,13 @@ export function useArchivedChats() {
       setLoading(true);
       
       try {
+        // ⏱️ Start timing DB fetch
+        const dbStartTime = Date.now();
+        
         const allChats = await getAllChatLists(uniqueId);
+        
+        const dbEndTime = Date.now();
+        console.log(`⏱️ [useArchivedChats] DB fetch took: ${dbEndTime - dbStartTime}ms, Total records: ${allChats?.length || 0}`);
         
         if (!isMounted) return;
 
@@ -193,6 +212,8 @@ export function useArchivedChats() {
           .filter(c => c.samvadaspashtah === 1)
           .sort((a, b) => (b.lastMessageDate || 0) - (a.lastMessageDate || 0));
 
+        const filterEndTime = Date.now();
+        console.log(`⏱️ [useArchivedChats] Filter & Sort took: ${filterEndTime - dbEndTime}ms`);
         console.log('[useArchivedChats] 📦 Loaded archived chats:', archived.length);
         setArchivedChats(archived);
       } catch (error) {
@@ -235,7 +256,14 @@ export function useChatById(chatId: string) {
 
     const loadChat = async () => {
       try {
+        // ⏱️ Start timing DB fetch
+        const dbStartTime = Date.now();
+        
         const allChats = await getAllChatLists(uniqueId);
+        
+        const dbEndTime = Date.now();
+        console.log(`⏱️ [useChatById] DB fetch took: ${dbEndTime - dbStartTime}ms for chatId: ${chatId}`);
+        
         if (isMounted) {
           const found = allChats.find(c => c.samvada_chinha === chatId);
           setChat(found || null);

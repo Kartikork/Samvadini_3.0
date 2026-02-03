@@ -58,6 +58,8 @@ import { SelectionHeader } from './components/SelectionHeader';
 
 // Socket service for real-time updates
 import { SocketService } from '../../services/SocketService';
+// Message handler for saving incoming messages
+import { handleIncomingMessage } from '../../services/MessageHandler';
 
 // ============================================
 // LAZY LOADED COMPONENTS (Event-based)
@@ -232,14 +234,45 @@ export default function ChatListScreen() {
 
     console.log('[ChatListScreen] 🔌 Setting up socket listeners for user:', uniqueId);
 
-    const handleNewMessage = (payload: any) => {
+    const handleNewMessage = async (payload: any) => {
+      const socketReceiveTime = Date.now();
+      
       console.log('[ChatListScreen] 📨 new_message event received:', {
         chatId: payload?.samvada_chinha,
         sender: payload?.pathakah_chinha,
         messageType: payload?.sandesha_prakara,
         timestamp: new Date().toISOString(),
       });
-      debouncedRefresh();
+      
+      // Save message to database first (with decryption)
+      const result = await handleIncomingMessage(payload, socketReceiveTime);
+      
+      if (result.success) {
+        const chatListRefreshStartTime = Date.now();
+        console.log('[ChatListScreen] ✅ Message saved, refreshing chat list');
+        
+        // Refresh after message is saved
+        debouncedRefresh();
+        
+        // Calculate time to show on chat list (approximate)
+        const timeToShow = Date.now() - socketReceiveTime;
+        console.log('[ChatListScreen] ⏱️ Total time from socket to chat list refresh:', {
+          totalTime: `${timeToShow}ms`,
+          messageProcessing: result.timing 
+            ? `${result.timing.totalTime}ms` 
+            : 'N/A',
+          chatListRefresh: `${Date.now() - chatListRefreshStartTime}ms`,
+          breakdown: result.timing ? {
+            decryption: `${result.timing.decryptionTime}ms`,
+            dbInsert: `${result.timing.dbInsertTime}ms`,
+            deduplication: `${result.timing.deduplicationTime}ms`,
+          } : null,
+        });
+      } else {
+        console.log('[ChatListScreen] ⚠️ Message not saved (may be duplicate), refreshing anyway');
+        // Still refresh in case it was a duplicate
+        debouncedRefresh();
+      }
     };
 
     const handleChatUpdate = (payload: any) => {

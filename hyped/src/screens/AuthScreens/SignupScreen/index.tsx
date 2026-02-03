@@ -247,7 +247,7 @@ export default function SignupScreen() {
     }
     try {
       const { api } = await import('../../../api/axios.instance');
-      const res = await api.post<{ success?: boolean; suggestions?: string[] }>('api/username/suggestions', {
+      const res = await api.post<{ success?: boolean; suggestions?: string[] }>('/username/suggestions', {
         name,
       });
       if (res?.data?.success && Array.isArray(res.data.suggestions)) {
