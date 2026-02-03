@@ -27,6 +27,7 @@ import HomeScreen from '../screens/HomeScreen';
 import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import ChatListScreen from '../screens/ChatListScreen';
+import ChatScreen from '../screens/ChatScreen';
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
@@ -108,9 +109,14 @@ export default function MainNavigator() {
           component={wrapWithHeader(ChatListScreen)}
           options={{ animation: 'fade' }}
         />
-        
+
+<Stack.Screen 
+          name="Chat" 
+          component={wrapWithHeader(ChatScreen)}
+          options={{ animation: 'slide_from_right' }}
+        />
+
         {/* TODO: Add these screens
-        <Stack.Screen name="Chat" component={ChatScreen} />
         <Stack.Screen name="GroupChat" component={GroupChatScreen} />
         <Stack.Screen name="Call" component={CallScreen} />
         <Stack.Screen name="IncomingCall" component={IncomingCallScreen} />

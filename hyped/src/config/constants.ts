@@ -10,10 +10,14 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: '@hyped/refresh_token',
   USER_DATA: '@hyped/user_data',
   DEVICE_ID: '@hyped/device_id',
+  UNIQUE_ID: '@hyped/unique_id',
+  IS_REGISTERED: '@hyped/is_registered',
+  USER_COUNTRY_CODE: '@hyped/user_country_code',
   ONBOARDING_COMPLETE: '@hyped/onboarding_complete',
   LANGUAGE: '@hyped/language',
   THEME: '@hyped/theme',
   PUSH_TOKEN: '@hyped/push_token',
+  LAST_MESSAGE_SYNC: '@hyped/last_message_sync',
 } as const;
 
 // OTP Configuration

@@ -333,6 +333,54 @@ export const getSOSChat = async (myId) => {
     }
 };
 
+/**
+ * Get other participant's public key for a chat
+ * @param {string} chatId - samvada_chinha
+ * @param {string} currentUserId - ekatma_chinha of current user
+ * @returns {Promise<{publicKey: string, ekatma_chinha: string} | null>}
+ */
+export const getOtherParticipantPublicKey = async (chatId, currentUserId) => {
+    if (!chatId || !currentUserId) {
+        console.warn('[getOtherParticipantPublicKey] Missing chatId or currentUserId');
+        return null;
+    }
+
+    try {
+        const db = await openDatabase();
+        return new Promise((resolve) => {
+            db.transaction((tx) => {
+                tx.executeSql(
+                    `SELECT tcb.ekatma_chinha, tcb.publicKey, tcq.samvada_chinha_id
+                    FROM td_chat_qutubminar_211 tcq
+                    INNER JOIN td_chat_bhagwah_211 tcb ON tcb.samvada_chinha_id = tcq.samvada_chinha_id
+                    WHERE tcq.samvada_chinha = ? AND tcb.ekatma_chinha != ? AND tcb.sakriyamastiva = 1
+                    LIMIT 1`,
+                    [chatId, currentUserId],
+                    (_, results) => {
+                        if (results.rows.length > 0) {
+                            const participant = results.rows.item(0);
+                            resolve({
+                                publicKey: participant.publicKey,
+                                ekatma_chinha: participant.ekatma_chinha,
+                            });
+                        } else {
+                            console.warn('[getOtherParticipantPublicKey] No other participant found');
+                            resolve(null);
+                        }
+                    },
+                    (_, error) => {
+                        console.error('[getOtherParticipantPublicKey] Error:', error);
+                        resolve(null);
+                    }
+                );
+            });
+        });
+    } catch (error) {
+        console.error('[getOtherParticipantPublicKey] Database error:', error);
+        return null;
+    }
+};
+
 export const getBroadcastEncryptionKey = async (chatIds = []) => {
     if (!Array.isArray(chatIds) || chatIds.length === 0) return [];
 

@@ -354,6 +354,18 @@ export const chatAPI = {
    */
   clearSingleChat: (data: ClearChatRequest) =>
     api.post<{ success: boolean; message: string }>('/chat/clear-single-chat', data),
+
+  /**
+   * Send message (plaintext) - called before encryption
+   */
+  sendMessagePlaintext: (data: any) =>
+    api.post<{ success: boolean }>('/chat/send-message', data),
+
+  /**
+   * Send encrypted message - called after encryption
+   */
+  sendEncryptedMessage: (data: any) =>
+    api.post<{ success: boolean }>('/chat/send-message', data),
 };
 
 export const groupAPI = {
