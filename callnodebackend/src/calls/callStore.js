@@ -4,9 +4,10 @@
  */
 
 import { redisClient } from '../redis/client.js';
-import { callKey, callTimeoutKey } from '../redis/keys.js';
+import { callKey, callTimeoutKey, ringingCallsKey, activeCallKey } from '../redis/keys.js';
 import { createCall, isCallExpired } from './callTypes.js';
 import { CALL_STATES, TTL } from '../utils/constants.js';
+import { config } from '../config/env.js';
 import logger from '../utils/logger.js';
 
 class CallStore {
@@ -19,6 +20,9 @@ class CallStore {
       
       // Store call in Redis with TTL
       await redisClient.set(callKey(callId), call, TTL.CALL_RINGING);
+
+      // Index ringing call for shared timeout processing
+      await redisClient.zAdd(ringingCallsKey(), call.createdAt, callId);
       
       logger.info('[CallStore] Call created', { callId, callerId, calleeId, callType });
       
@@ -26,6 +30,55 @@ class CallStore {
     } catch (error) {
       logger.error('[CallStore] Failed to create call:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Reserve active call slots for caller/callee (prevents concurrent calls)
+   */
+  async reserveActiveCallSlots(callId, callerId, calleeId) {
+    const ttlSeconds = Math.ceil(config.call.ringTimeout / 1000);
+    const callerKey = activeCallKey(callerId);
+    const calleeKey = activeCallKey(calleeId);
+
+    const callerReserved = await redisClient.setIfNotExists(callerKey, callId, ttlSeconds);
+    if (!callerReserved) {
+      return { ok: false, busy: 'caller' };
+    }
+
+    const calleeReserved = await redisClient.setIfNotExists(calleeKey, callId, ttlSeconds);
+    if (!calleeReserved) {
+      await redisClient.del(callerKey);
+      return { ok: false, busy: 'callee' };
+    }
+
+    return { ok: true };
+  }
+
+  /**
+   * Extend active call TTL after acceptance
+   */
+  async extendActiveCallSlots(call) {
+    const ttlSeconds = Math.ceil(config.call.maxDuration / 1000);
+    await redisClient.set(activeCallKey(call.callerId), call.callId, ttlSeconds);
+    await redisClient.set(activeCallKey(call.calleeId), call.callId, ttlSeconds);
+  }
+
+  /**
+   * Release active call slots (if still owned by this call)
+   */
+  async releaseActiveCallSlots(call) {
+    const callerKey = activeCallKey(call.callerId);
+    const calleeKey = activeCallKey(call.calleeId);
+
+    const callerValue = await redisClient.get(callerKey);
+    if (callerValue === call.callId) {
+      await redisClient.del(callerKey);
+    }
+
+    const calleeValue = await redisClient.get(calleeKey);
+    if (calleeValue === call.callId) {
+      await redisClient.del(calleeKey);
     }
   }
 
@@ -74,12 +127,17 @@ class CallStore {
         call.acceptedAt = Date.now();
         // Extend TTL for accepted calls
         await redisClient.set(callKey(callId), call, TTL.CALL_ACTIVE);
+        await redisClient.zRem(ringingCallsKey(), callId);
+        await this.extendActiveCallSlots(call);
       } else if (newState === CALL_STATES.ENDED || 
                  newState === CALL_STATES.CANCELLED ||
-                 newState === CALL_STATES.REJECTED) {
+                 newState === CALL_STATES.REJECTED ||
+                 newState === CALL_STATES.TIMEOUT) {
         call.endedAt = Date.now();
         // Set shorter TTL for ended calls (for potential recovery)
         await redisClient.set(callKey(callId), call, 30);
+        await redisClient.zRem(ringingCallsKey(), callId);
+        await this.releaseActiveCallSlots(call);
       } else {
         await redisClient.set(callKey(callId), call, TTL.CALL_RINGING);
       }
@@ -133,8 +191,14 @@ class CallStore {
    */
   async deleteCall(callId) {
     try {
+      const call = await this.getCall(callId);
       await redisClient.del(callKey(callId));
       await redisClient.del(callTimeoutKey(callId));
+      await redisClient.zRem(ringingCallsKey(), callId);
+
+      if (call) {
+        await this.releaseActiveCallSlots(call);
+      }
       
       logger.info('[CallStore] Call deleted', { callId });
     } catch (error) {
@@ -170,7 +234,11 @@ class CallStore {
       
       let cleaned = 0;
       for (const key of keys) {
-        const callId = key.split(':')[1];
+        const parts = key.split(':');
+        if (parts.length !== 2) continue;
+        if (parts[1] === 'ringing' || parts[1] === 'active') continue;
+
+        const callId = parts[1];
         const call = await this.getCall(callId);
         
         if (!call || isCallExpired(call, 60000)) {
@@ -188,6 +256,14 @@ class CallStore {
       logger.error('[CallStore] Failed to cleanup expired calls:', error);
       return 0;
     }
+  }
+
+  /**
+   * Get ringing calls older than ringTimeoutMs
+   */
+  async getTimedOutCallIds(ringTimeoutMs, limit = 100) {
+    const cutoff = Date.now() - ringTimeoutMs;
+    return await redisClient.zRangeByScore(ringingCallsKey(), 0, cutoff, limit);
   }
 }
 

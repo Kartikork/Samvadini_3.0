@@ -50,6 +50,13 @@ export const canRejectCall = (call) => {
 };
 
 /**
+ * Check if call can be cancelled by caller
+ */
+export const canCancelCall = (call) => {
+  return call && call.state === CALL_STATES.RINGING;
+};
+
+/**
  * Check if call can be ended
  */
 export const canEndCall = (call) => {

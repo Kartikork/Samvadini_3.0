@@ -4,7 +4,7 @@
  */
 
 import { callStore } from './callStore.js';
-import { canAcceptCall, canRejectCall, canEndCall, isValidCallType } from './callTypes.js';
+import { canAcceptCall, canRejectCall, canCancelCall, canEndCall, isValidCallType } from './callTypes.js';
 import { ERROR_CODES } from '../utils/constants.js';
 import logger from '../utils/logger.js';
 
@@ -122,6 +122,43 @@ export const validateCallReject = async (callId, userId) => {
     errors.push({
       code: ERROR_CODES.INVALID_CALL_STATE,
       message: `Call cannot be rejected in state: ${call.state}`,
+    });
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    call,
+  };
+};
+
+/**
+ * Validate call cancellation (caller only)
+ */
+export const validateCallCancel = async (callId, userId) => {
+  const errors = [];
+
+  const call = await callStore.getCall(callId);
+
+  if (!call) {
+    errors.push({
+      code: ERROR_CODES.CALL_NOT_FOUND,
+      message: 'Call not found or expired',
+    });
+    return { valid: false, errors, call: null };
+  }
+
+  if (call.callerId !== userId) {
+    errors.push({
+      code: ERROR_CODES.UNAUTHORIZED,
+      message: 'You are not the caller of this call',
+    });
+  }
+
+  if (!canCancelCall(call)) {
+    errors.push({
+      code: ERROR_CODES.INVALID_CALL_STATE,
+      message: `Call cannot be cancelled in state: ${call.state}`,
     });
   }
 

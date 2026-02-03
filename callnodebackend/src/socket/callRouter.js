@@ -10,13 +10,13 @@ import {
   validateCallInitiate,
   validateCallAccept,
   validateCallReject,
+  validateCallCancel,
   validateCallEnd,
   validateSignalingPayload,
 } from '../calls/callValidator.js';
 import { fcmService } from '../push/fcm.js';
-import { buildIncomingCallPayload, buildCallCancelledPayload } from '../push/payloadBuilder.js';
 import { redisClient } from '../redis/client.js';
-import { userSocketKey } from '../redis/keys.js';
+import { userPresenceKey } from '../redis/keys.js';
 import { SOCKET_EVENTS, ERROR_CODES, CALL_STATES } from '../utils/constants.js';
 import logger from '../utils/logger.js';
 
@@ -47,8 +47,8 @@ class CallRouter {
       }
 
       // Check if callee is online
-      const calleeSocketId = await redisClient.get(userSocketKey(calleeId));
-      const isCalleeOnline = calleeSocketId !== null;
+      const calleePresence = await redisClient.get(userPresenceKey(calleeId));
+      const isCalleeOnline = calleePresence !== null;
 
       logger.debug('[CallRouter] Callee status', {
         calleeId,
@@ -59,8 +59,24 @@ class CallRouter {
       // Generate call ID
       const callId = uuidv4();
 
+      // Reserve active call slots (prevents concurrent calls)
+      const reservation = await callStore.reserveActiveCallSlots(callId, callerId, calleeId);
+      if (!reservation.ok) {
+        logger.warn('[CallRouter] User busy', { callerId, calleeId, busy: reservation.busy });
+        return this.sendError(callback, {
+          code: reservation.busy === 'callee' ? ERROR_CODES.CALLEE_BUSY : ERROR_CODES.CALLER_BUSY,
+          message: reservation.busy === 'callee' ? 'Callee is busy' : 'Caller is busy',
+        });
+      }
+
       // Create call in store
-      const call = await callStore.createCall(callId, callerId, calleeId, callType);
+      let call = null;
+      try {
+        call = await callStore.createCall(callId, callerId, calleeId, callType);
+      } catch (error) {
+        await callStore.releaseActiveCallSlots({ callId, callerId, calleeId });
+        throw error;
+      }
 
       // Start ringing timeout
       callTimeoutManager.startRingingTimeout(callId, this.io, callerId, calleeId);
@@ -224,6 +240,63 @@ class CallRouter {
   }
 
   /**
+   * Handle call cancellation by caller
+   */
+  async handleCallCancel(socket, data, callback) {
+    try {
+      const { callId, reason } = data;
+      const userId = socket.userId;
+
+      logger.info('[CallRouter] Call cancel request', { callId, userId, reason });
+
+      const validation = await validateCallCancel(callId, userId);
+      if (!validation.valid) {
+        logger.warn('[CallRouter] Call cancel validation failed', validation.errors);
+        return this.sendError(callback, validation.errors[0]);
+      }
+
+      const call = validation.call;
+
+      // Clear ringing timeout
+      callTimeoutManager.clearTimeout(callId);
+
+      // Update call state
+      await callStore.cancelCall(callId);
+
+      // Notify callee
+      this.io.to(call.calleeId).emit(SOCKET_EVENTS.CALL_CANCELLED, {
+        callId,
+        callerId: userId,
+        reason: reason || 'cancelled',
+        timestamp: Date.now(),
+      });
+
+      // Push notification fallback
+      if (fcmService.isAvailable()) {
+        await fcmService.sendCallCancelledNotification(call.calleeId, callId);
+      }
+
+      // Response to caller
+      this.sendSuccess(callback, {
+        callId,
+        message: 'Call cancelled',
+      });
+
+      logger.info('[CallRouter] Call cancelled', {
+        callId,
+        callerId: userId,
+        calleeId: call.calleeId,
+      });
+    } catch (error) {
+      logger.error('[CallRouter] Call cancel failed:', error);
+      this.sendError(callback, {
+        code: ERROR_CODES.CALL_SETUP_FAILED,
+        message: 'Failed to cancel call',
+      });
+    }
+  }
+
+  /**
    * Handle call end
    */
   async handleCallEnd(socket, data, callback) {
@@ -304,6 +377,22 @@ class CallRouter {
         });
       }
 
+      // Verify participants
+      if (from !== call.callerId && from !== call.calleeId) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: 'Invalid call participant',
+        });
+      }
+
+      const expectedTo = call.callerId === from ? call.calleeId : call.callerId;
+      if (to !== expectedTo) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: 'Invalid call participant',
+        });
+      }
+
       // Forward SDP offer to recipient
       this.io.to(to).emit(SOCKET_EVENTS.SDP_OFFER, {
         callId,
@@ -338,6 +427,31 @@ class CallRouter {
         return this.sendError(callback, validation.errors[0]);
       }
 
+      // Verify call exists
+      const call = await callStore.getCall(callId);
+      if (!call) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.CALL_NOT_FOUND,
+          message: 'Call not found',
+        });
+      }
+
+      // Verify participants
+      if (from !== call.callerId && from !== call.calleeId) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: 'Invalid call participant',
+        });
+      }
+
+      const expectedTo = call.callerId === from ? call.calleeId : call.callerId;
+      if (to !== expectedTo) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: 'Invalid call participant',
+        });
+      }
+
       // Forward SDP answer to recipient
       this.io.to(to).emit(SOCKET_EVENTS.SDP_ANSWER, {
         callId,
@@ -370,6 +484,31 @@ class CallRouter {
       const validation = validateSignalingPayload(data);
       if (!validation.valid) {
         return this.sendError(callback, validation.errors[0]);
+      }
+
+      // Verify call exists
+      const call = await callStore.getCall(callId);
+      if (!call) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.CALL_NOT_FOUND,
+          message: 'Call not found',
+        });
+      }
+
+      // Verify participants
+      if (from !== call.callerId && from !== call.calleeId) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: 'Invalid call participant',
+        });
+      }
+
+      const expectedTo = call.callerId === from ? call.calleeId : call.callerId;
+      if (to !== expectedTo) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: 'Invalid call participant',
+        });
       }
 
       // Forward ICE candidate to recipient
@@ -428,6 +567,16 @@ export const setupCallRouterHandlers = (io, socket) => {
 
   socket.on(SOCKET_EVENTS.CALL_REJECT, async (data, callback) => {
     await router.handleCallReject(socket, data, callback);
+  });
+
+  // Caller cancels ringing call
+  socket.on(SOCKET_EVENTS.CALL_CANCEL, async (data, callback) => {
+    await router.handleCallCancel(socket, data, callback);
+  });
+
+  // Backward-compatible: treat CALL_CANCELLED as a cancel request if sent by caller
+  socket.on(SOCKET_EVENTS.CALL_CANCELLED, async (data, callback) => {
+    await router.handleCallCancel(socket, data, callback);
   });
 
   socket.on(SOCKET_EVENTS.CALL_END, async (data, callback) => {

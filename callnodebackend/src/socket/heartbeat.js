@@ -3,13 +3,33 @@
  * Handles ping/pong keep-alive mechanism
  */
 
-import { SOCKET_EVENTS } from '../utils/constants.js';
+import { SOCKET_EVENTS, TTL } from '../utils/constants.js';
+import { redisClient } from '../redis/client.js';
+import { userPresenceKey, userSessionKey, userSocketKey, socketUserKey } from '../redis/keys.js';
 import logger from '../utils/logger.js';
 
 /**
  * Setup heartbeat handlers
  */
 export const setupHeartbeatHandlers = (io, socket) => {
+  const refreshPresence = async () => {
+    if (!socket.userId) return;
+
+    try {
+      await redisClient.set(
+        userPresenceKey(socket.userId),
+        { status: 'online', lastSeen: Date.now() },
+        TTL.PRESENCE
+      );
+
+      await redisClient.expire(userSessionKey(socket.userId), TTL.USER_SESSION);
+      await redisClient.expire(userSocketKey(socket.userId), TTL.USER_SESSION);
+      await redisClient.expire(socketUserKey(socket.id), TTL.USER_SESSION);
+    } catch (error) {
+      logger.warn('[Heartbeat] Failed to refresh presence', { socketId: socket.id, error });
+    }
+  };
+
   // Ping handler
   socket.on(SOCKET_EVENTS.PING, (data, callback) => {
     // Respond with pong
@@ -28,6 +48,8 @@ export const setupHeartbeatHandlers = (io, socket) => {
       socketId: socket.id,
       userId: socket.userId,
     });
+
+    refreshPresence();
   });
 
   // Optional: Monitor connection quality
@@ -40,6 +62,8 @@ export const setupHeartbeatHandlers = (io, socket) => {
       socketId: socket.id, 
       latency 
     });
+
+    refreshPresence();
   });
 };
 

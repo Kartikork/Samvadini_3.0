@@ -4,18 +4,20 @@
  */
 
 import { Server } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
 import { config } from '../config/env.js';
-import { authMiddleware, cleanupRateLimit } from './middleware.js';
+import { authMiddleware, cleanupRateLimit, rateLimitMiddleware } from './middleware.js';
 import { setupRegistrationHandlers } from './registration.js';
 import { setupCallRouterHandlers } from './callRouter.js';
 import { setupHeartbeatHandlers } from './heartbeat.js';
 import { SOCKET_EVENTS } from '../utils/constants.js';
+import { redisClient } from '../redis/client.js';
 import logger from '../utils/logger.js';
 
 /**
  * Initialize Socket.IO server
  */
-export const initializeSocket = (httpServer) => {
+export const initializeSocket = async (httpServer) => {
   logger.info('[Socket.IO] Initializing...');
 
   // Create Socket.IO server
@@ -32,6 +34,24 @@ export const initializeSocket = (httpServer) => {
 
   // Apply authentication middleware
   // io.use(authMiddleware);
+  io.use(rateLimitMiddleware);
+
+  // Enable Redis adapter for cross-server routing
+  if (redisClient.isReady()) {
+    try {
+      const pubClient = redisClient.getClient().duplicate();
+      const subClient = pubClient.duplicate();
+
+      await Promise.all([pubClient.connect(), subClient.connect()]);
+      io.adapter(createAdapter(pubClient, subClient));
+
+      logger.info('[Socket.IO] Redis adapter enabled');
+    } catch (error) {
+      logger.warn('[Socket.IO] Failed to enable Redis adapter', { error });
+    }
+  } else {
+    logger.warn('[Socket.IO] Redis not ready, adapter disabled');
+  }
 
   // Connection handler
   io.on(SOCKET_EVENTS.CONNECTION, (socket) => {

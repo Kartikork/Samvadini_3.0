@@ -13,7 +13,7 @@ export const userSessionKey = (userId) => {
 };
 
 /**
- * Generate user socket mapping key (userId -> socketId)
+ * Generate user socket mapping key (userId -> Set<socketId>)
  */
 export const userSocketKey = (userId) => {
   return `${REDIS_KEYS.USER_SOCKET}:${userId}`;
@@ -38,6 +38,34 @@ export const callKey = (callId) => {
  */
 export const callTimeoutKey = (callId) => {
   return `${REDIS_KEYS.CALL_TIMEOUT}:${callId}`;
+};
+
+/**
+ * Generate user presence key
+ */
+export const userPresenceKey = (userId) => {
+  return `${REDIS_KEYS.USER_PRESENCE}:${userId}`;
+};
+
+/**
+ * Generate active call key for user
+ */
+export const activeCallKey = (userId) => {
+  return `${REDIS_KEYS.CALL_ACTIVE}:${userId}`;
+};
+
+/**
+ * Ringing calls sorted set key
+ */
+export const ringingCallsKey = () => {
+  return `${REDIS_KEYS.CALL_RINGING}`;
+};
+
+/**
+ * Online users set key
+ */
+export const onlineUsersKey = () => {
+  return `${REDIS_KEYS.ONLINE_USERS}`;
 };
 
 /**

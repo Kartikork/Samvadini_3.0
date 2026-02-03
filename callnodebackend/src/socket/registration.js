@@ -4,7 +4,7 @@
  */
 
 import { redisClient } from '../redis/client.js';
-import { userSessionKey, userSocketKey, socketUserKey } from '../redis/keys.js';
+import { userSessionKey, userSocketKey, socketUserKey, userPresenceKey, onlineUsersKey } from '../redis/keys.js';
 import { fcmService } from '../push/fcm.js';
 import { SOCKET_EVENTS, ERROR_CODES, TTL } from '../utils/constants.js';
 import logger from '../utils/logger.js';
@@ -56,18 +56,15 @@ class RegistrationHandler {
       );
 
       // Store socket -> user mapping
-      await redisClient.set(
-        socketUserKey(socket.id),
-        userId,
-        TTL.USER_SESSION
-      );
+      await redisClient.set(socketUserKey(socket.id), userId, TTL.USER_SESSION);
 
-      // Store user -> socket mapping
-      await redisClient.set(
-        userSocketKey(userId),
-        socket.id,
-        TTL.USER_SESSION
-      );
+      // Store user -> socket mapping (multi-device)
+      await redisClient.sAdd(userSocketKey(userId), socket.id);
+      await redisClient.expire(userSocketKey(userId), TTL.USER_SESSION);
+
+      // Update presence
+      await redisClient.set(userPresenceKey(userId), { status: 'online', lastSeen: Date.now() }, TTL.PRESENCE);
+      await redisClient.sAdd(onlineUsersKey(), userId);
 
       // Register FCM token if provided
       if (fcmToken) {
@@ -131,7 +128,14 @@ class RegistrationHandler {
       // Remove from Redis
       await redisClient.del(userSessionKey(userId));
       await redisClient.del(socketUserKey(socket.id));
-      await redisClient.del(userSocketKey(userId));
+
+      await redisClient.sRem(userSocketKey(userId), socket.id);
+      const remaining = await redisClient.sCard(userSocketKey(userId));
+      if (remaining === 0) {
+        await redisClient.del(userSocketKey(userId));
+        await redisClient.del(userPresenceKey(userId));
+        await redisClient.sRem(onlineUsersKey(), userId);
+      }
 
       // Unregister FCM token (user is logging out, so delete token)
       await fcmService.unregisterToken(userId);
@@ -176,7 +180,14 @@ class RegistrationHandler {
 
       // Remove socket mappings from Redis (but keep FCM token!)
       await redisClient.del(socketUserKey(socket.id));
-      await redisClient.del(userSocketKey(userId));
+
+      await redisClient.sRem(userSocketKey(userId), socket.id);
+      const remaining = await redisClient.sCard(userSocketKey(userId));
+      if (remaining === 0) {
+        await redisClient.del(userSocketKey(userId));
+        await redisClient.del(userPresenceKey(userId));
+        await redisClient.sRem(onlineUsersKey(), userId);
+      }
       // Note: We keep userSessionKey for potential reconnection
 
       // Remove from in-memory tracking
@@ -225,29 +236,45 @@ class RegistrationHandler {
    * Check if user is online
    */
   async isUserOnline(userId) {
-    const socketId = await redisClient.get(userSocketKey(userId));
-    return socketId !== null;
+    const presence = await redisClient.get(userPresenceKey(userId));
+    return presence !== null;
   }
 
   /**
    * Get user's socket ID
    */
   async getUserSocketId(userId) {
-    return await redisClient.get(userSocketKey(userId));
+    const socketIds = await redisClient.sMembers(userSocketKey(userId));
+    return socketIds.length > 0 ? socketIds[0] : null;
+  }
+
+  /**
+   * Get all socket IDs for a user
+   */
+  async getUserSocketIds(userId) {
+    return await redisClient.sMembers(userSocketKey(userId));
   }
 
   /**
    * Get all registered users (for debugging)
    */
-  getRegisteredUsers() {
-    return Array.from(this.registeredUsers.keys());
+  async getRegisteredUsers() {
+    try {
+      return await redisClient.sMembers(onlineUsersKey());
+    } catch {
+      return Array.from(this.registeredUsers.keys());
+    }
   }
 
   /**
    * Get registered user count
    */
-  getRegisteredUserCount() {
-    return this.registeredUsers.size;
+  async getRegisteredUserCount() {
+    try {
+      return await redisClient.sCard(onlineUsersKey());
+    } catch {
+      return this.registeredUsers.size;
+    }
   }
 }
 

@@ -18,8 +18,6 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
  */
 const required = [
   'PORT',
-  'REDIS_HOST',
-  'REDIS_PORT',
   'JWT_SECRET',
 ];
 
@@ -27,6 +25,10 @@ for (const key of required) {
   if (!process.env[key]) {
     throw new Error(`Missing required environment variable: ${key}`);
   }
+}
+
+if (!process.env.REDIS_URL && (!process.env.REDIS_HOST || !process.env.REDIS_PORT)) {
+  throw new Error('Missing required Redis configuration: REDIS_URL or REDIS_HOST/REDIS_PORT');
 }
 
 /**
@@ -40,10 +42,13 @@ export const config = {
   
   // Redis
   redis: {
+    url: process.env.REDIS_URL,
     host: process.env.REDIS_HOST,
     port: parseInt(process.env.REDIS_PORT, 10),
     password: process.env.REDIS_PASSWORD || undefined,
     db: parseInt(process.env.REDIS_DB, 10) || 0,
+    reconnectMinDelay: parseInt(process.env.REDIS_RECONNECT_MIN_DELAY, 10) || 200,
+    reconnectMaxDelay: parseInt(process.env.REDIS_RECONNECT_MAX_DELAY, 10) || 5000,
   },
   
   // JWT

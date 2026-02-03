@@ -24,6 +24,7 @@ export const SOCKET_EVENTS = {
   CALL_ACCEPT: 'call_accept',
   CALL_REJECT: 'call_reject',
   CALL_END: 'call_end',
+  CALL_CANCEL: 'call_cancel',
   CALL_BUSY: 'call_busy',
   CALL_TIMEOUT: 'call_timeout',
   CALL_CANCELLED: 'call_cancelled',
@@ -78,7 +79,11 @@ export const REDIS_KEYS = {
   USER_SESSION: 'session:user',
   USER_SOCKET: 'socket:user',
   SOCKET_USER: 'user:socket',
+  USER_PRESENCE: 'presence:user',
+  ONLINE_USERS: 'online:users',
   CALL: 'call',
+  CALL_RINGING: 'call:ringing',
+  CALL_ACTIVE: 'call:active:user',
   CALL_TIMEOUT: 'timeout:call',
   FCM_TOKEN: 'fcm:token', // FCM token storage
 };
@@ -99,6 +104,7 @@ export const ERROR_CODES = {
   CALLEE_BUSY: 'E104',
   CALL_EXPIRED: 'E105',
   CALLER_CANCELLED: 'E106',
+  CALLER_BUSY: 'E107',
   
   // Auth errors
   INVALID_TOKEN: 'E201',
@@ -127,6 +133,7 @@ export const TTL = {
   USER_SESSION: 86400, // 24 hours
   CALL_RINGING: 60, // 1 minute
   CALL_ACTIVE: 7200, // 2 hours
+  PRESENCE: 30, // 30 seconds (refreshed by heartbeat)
   FCM_TOKEN: 2592000, // 30 days (FCM tokens can be long-lived)
 };
 

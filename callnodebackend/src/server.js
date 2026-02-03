@@ -13,6 +13,7 @@ import { initializeSocket } from './socket/index.js';
 import { turnService } from './turn/turnService.js';
 import { callStore } from './calls/callStore.js';
 import { callTimeoutManager } from './calls/callTimeouts.js';
+import { startCallTimeoutWorker } from './calls/callTimeoutWorker.js';
 import logger from './utils/logger.js';
 
 /**
@@ -20,6 +21,7 @@ import logger from './utils/logger.js';
  */
 const app = express();
 const httpServer = createServer(app);
+let stopTimeoutWorker = null;
 
 /**
  * Middleware
@@ -132,8 +134,11 @@ const initializeServices = async () => {
     logger.info('[Server] FCM initialized');
 
     // Initialize Socket.IO
-    const io = initializeSocket(httpServer);
+    const io = await initializeSocket(httpServer);
     logger.info('[Server] Socket.IO initialized');
+
+    // Shared timeout worker for multi-node deployments
+    stopTimeoutWorker = startCallTimeoutWorker(io);
 
     // Cleanup expired calls periodically (every 5 minutes)
     setInterval(async () => {
@@ -165,6 +170,12 @@ const gracefulShutdown = async (signal) => {
     // Clear all call timeouts
     callTimeoutManager.clearAllTimeouts();
     logger.info('[Server] Call timeouts cleared');
+
+    // Stop timeout worker
+    if (stopTimeoutWorker) {
+      stopTimeoutWorker();
+      logger.info('[Server] Call timeout worker stopped');
+    }
 
     // Disconnect Redis
     await redisClient.disconnect();

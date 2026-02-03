@@ -23,11 +23,26 @@ class RedisClient {
     }
 
     try {
+      const reconnectStrategy = (retries) => {
+        const delay = Math.min(
+          config.redis.reconnectMaxDelay,
+          config.redis.reconnectMinDelay * 2 ** retries
+        );
+        return delay;
+      };
+
+      const socketOptions = {
+        reconnectStrategy,
+      };
+
+      if (!config.redis.url) {
+        socketOptions.host = config.redis.host;
+        socketOptions.port = config.redis.port;
+      }
+
       this.client = createClient({
-        socket: {
-          host: config.redis.host,
-          port: config.redis.port,
-        },
+        url: config.redis.url,
+        socket: socketOptions,
         password: config.redis.password,
         database: config.redis.db,
       });
@@ -110,6 +125,21 @@ class RedisClient {
   }
 
   /**
+   * Set key if it does not exist (NX) with optional TTL
+   */
+  async setIfNotExists(key, value, ttl = null) {
+    const client = this.getClient();
+    const serialized = typeof value === 'object' ? JSON.stringify(value) : value;
+
+    const result = await client.set(key, serialized, {
+      NX: true,
+      EX: ttl || undefined,
+    });
+
+    return result === 'OK';
+  }
+
+  /**
    * Get key
    */
   async get(key) {
@@ -163,6 +193,58 @@ class RedisClient {
   async keys(pattern) {
     const client = this.getClient();
     return await client.keys(pattern);
+  }
+
+  /**
+   * Set operations
+   */
+  async sAdd(key, members) {
+    const client = this.getClient();
+    if (Array.isArray(members)) {
+      return await client.sAdd(key, members);
+    }
+    return await client.sAdd(key, members);
+  }
+
+  async sRem(key, members) {
+    const client = this.getClient();
+    if (Array.isArray(members)) {
+      return await client.sRem(key, members);
+    }
+    return await client.sRem(key, members);
+  }
+
+  async sMembers(key) {
+    const client = this.getClient();
+    return await client.sMembers(key);
+  }
+
+  async sCard(key) {
+    const client = this.getClient();
+    return await client.sCard(key);
+  }
+
+  /**
+   * Sorted set operations
+   */
+  async zAdd(key, score, member) {
+    const client = this.getClient();
+    return await client.zAdd(key, { score, value: member });
+  }
+
+  async zRem(key, member) {
+    const client = this.getClient();
+    return await client.zRem(key, member);
+  }
+
+  async zRangeByScore(key, min, max, limit = null) {
+    const client = this.getClient();
+    if (limit) {
+      return await client.zRangeByScore(key, min, max, {
+        LIMIT: { offset: 0, count: limit },
+      });
+    }
+    return await client.zRangeByScore(key, min, max);
   }
 
   /**
