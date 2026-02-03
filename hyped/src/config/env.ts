@@ -1,11 +1,3 @@
-/**
- * Environment Configuration
- * 
- * Centralized environment variables for the application.
- * In production, these should be loaded from environment-specific files
- * or build configuration.
- */
-
 export type Environment = 'development' | 'staging' | 'production';
 
 // Current environment - change this based on build
@@ -76,4 +68,6 @@ export const getImageUrlWithSas = (url: string | undefined | null): string | nul
   
   return `${url}?${env.SAS_KEY}`;
 };
+
+
 
