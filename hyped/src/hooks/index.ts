@@ -7,6 +7,7 @@
 export { useDebounce } from './useDebounce';
 export { useOtpInput } from './useOtpInput';
 export { useCountdown } from './useCountdown';
+export { useUnreadChatsCount } from './useUnreadChatsCount';
 
 
 
