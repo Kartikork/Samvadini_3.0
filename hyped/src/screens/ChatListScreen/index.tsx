@@ -56,6 +56,7 @@ import { ChatListSkeletonList } from './components/ChatListItemSkeleton';
 import { TabBar } from './components/TabBar';
 import { SearchBar } from './components/SearchBar';
 import { SelectionHeader } from './components/SelectionHeader';
+import Carousel from './components/Carousel';
 
 // Socket service for real-time updates
 import { SocketService } from '../../services/SocketService';
@@ -533,6 +534,7 @@ export default function ChatListScreen() {
         />
       ) : (
         <>
+          <Carousel />
           <SearchBar
             value={searchQuery}
             onChangeText={handleSearch}
