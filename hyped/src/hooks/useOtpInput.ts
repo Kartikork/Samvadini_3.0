@@ -39,7 +39,7 @@ export function useOtpInput({
   const [otp, setOtp] = useState<string[]>(Array(length).fill(''));
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const inputRefs = useRef<(TextInput | null)[]>([]);
-  const autoSubmitTimer = useRef<NodeJS.Timeout | null>(null);
+  const autoSubmitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSubmittedOtp = useRef<string>('');
 
   // Cleanup timer on unmount

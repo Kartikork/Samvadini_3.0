@@ -45,6 +45,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppDispatch } from '../../../state/hooks';
 import { setAuthData } from '../../../state/authSlice';
 
+// Services
+import { AppBootstrap } from '../../../services/AppBootstrap';
+
 // Components - all memoized
 import {
   GradientButton,
@@ -232,12 +235,10 @@ function LoginScreen() {
       const { token, user, user_setting, isRegister } = response;
       const uniqueId = user.ekatma_chinha ?? '';
 
-      // Save auth data to Redux
+      // Save auth data to Redux (Redux Persist auto-saves to AsyncStorage)
       dispatch(setAuthData({ token, uniqueId }));
 
-      // Persist to AsyncStorage so LanguageSelection and other flows can use it
-      await AsyncStorage.setItem('userToken', token);
-      await AsyncStorage.setItem('uniqueId', uniqueId);
+      // Save display name for other flows (optional - not critical)
       const displayName = user?.praman_patrika ?? user?.upayogakarta_nama;
       if (displayName) await AsyncStorage.setItem('userName', displayName);
 
@@ -245,23 +246,42 @@ function LoginScreen() {
       Keyboard.dismiss();
 
       // Navigate based on registration status
-      setTimeout(() => {
-        if (isRegister) {
-          // User is already registered - go to Dashboard
-          console.log('[LoginScreen] User registered, navigating to Dashboard');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Dashboard' }],
-          });
-        } else {
-          // New user - go to Signup/Profile setup
-          console.log('[LoginScreen] New user, navigating to Signup');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Signup' }],
-          });
+      if (isRegister) {
+        // User is already registered - bootstrap and go to Home
+        console.log('[LoginScreen] User registered, starting app bootstrap...');
+        
+        /**
+         * AppBootstrap Flow for existing users:
+         * 1. Save auth token to Redux ✓ (done above)
+         * 2. PARALLEL: User Profile API + Local DB setup
+         * 3. PARALLEL: ChatManager.initialize() + CallManager.initialize()
+         * 4. Socket connect
+         * 5. Join Phoenix Channel (chat:user:id)
+         * 6. App Ready
+         */
+        const bootstrapResult = await AppBootstrap.bootstrapAfterLogin(
+          token,
+          user.ekatma_chinha
+        );
+
+        if (!bootstrapResult.success) {
+          console.warn('[LoginScreen] Bootstrap warning:', bootstrapResult.error);
+          // Continue anyway - app can recover
         }
-      }, 500);
+
+        console.log('[LoginScreen] Bootstrap complete, navigating to Home');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Dashboard' }],
+        });
+      } else {
+        // New user - go to Signup/Profile setup (bootstrap will happen after signup)
+        console.log('[LoginScreen] New user, navigating to Signup');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Signup' }],
+        });
+      }
     } catch (error: any) {
       console.error('[LoginScreen] Verify OTP Error:', error);
       console.error('[LoginScreen] Error details:', {

@@ -2,24 +2,33 @@
  * Hyped App
  * 
  * Main entry point for the application
+ * Uses Redux Persist to automatically persist auth state
  *
  * @format
  */
 
 import React, { useEffect } from 'react';
-import { StatusBar, useColorScheme } from 'react-native';
+import { StatusBar, useColorScheme, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
-import { store } from './src/state/store';
+import { PersistGate } from 'redux-persist/integration/react';
+import { store, persistor } from './src/state/store';
 import { loadLanguage } from './src/state/languageSlice';
 import { loadFontSize } from './src/state/fontSizeSlice';
 import Toast from 'react-native-toast-message';
 import MainNavigator from './src/navigation/MainNavigator';
 
+// Loading component shown while rehydrating
+const LoadingView = () => (
+  <View style={styles.loadingContainer}>
+    <ActivityIndicator size="large" color="#028BD3" />
+  </View>
+);
+
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
-  // Load persisted state on app start
+  // Load other persisted state on app start
   useEffect(() => {
     store.dispatch(loadLanguage());
     store.dispatch(loadFontSize());
@@ -27,16 +36,27 @@ function App() {
 
   return (
     <Provider store={store}>
-      <SafeAreaProvider>
-        <StatusBar
-          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-          translucent={false}
-        />
-        <MainNavigator />
-        <Toast />
-    </SafeAreaProvider>
+      <PersistGate loading={<LoadingView />} persistor={persistor}>
+        <SafeAreaProvider>
+          <StatusBar
+            barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+            translucent={false}
+          />
+          <MainNavigator />
+          <Toast />
+        </SafeAreaProvider>
+      </PersistGate>
     </Provider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+  },
+});
 
 export default App;

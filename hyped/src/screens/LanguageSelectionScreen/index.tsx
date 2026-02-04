@@ -16,7 +16,6 @@ import {
   Text
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppDispatch, useAppSelector } from '../../state/hooks';
 import { setLanguage } from '../../state/languageSlice';
 import { setFontSize } from '../../state/fontSizeSlice';
@@ -92,6 +91,7 @@ export function LanguageSelectionScreen() {
   const { currentScreen } = (route.params as any) || {};
   const dispatch = useAppDispatch();
   const lang = useAppSelector((state) => state.language.lang);
+  const { token, uniqueId } = useAppSelector((state) => state.auth);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLanguageSelect = async (language: typeof languages[0]) => {
@@ -111,12 +111,10 @@ export function LanguageSelectionScreen() {
         await dispatch(setFontSize('system')).unwrap();
       }
 
-      const uniqueId = await AsyncStorage.getItem('uniqueId');
-      const userToken = await AsyncStorage.getItem('userToken');
-
+      // Check auth from Redux (Redux Persist has restored it)
       if (currentScreen) {
         navigation.goBack();
-      } else if (userToken && uniqueId) {
+      } else if (token && uniqueId) {
         navigation.navigate('Dashboard' as never);
       } else {
         navigation.navigate('Login' as never);

@@ -23,8 +23,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Toast from 'react-native-toast-message';
+
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GradientBackground } from '../../../components/GradientBackground';
@@ -34,6 +35,12 @@ import { useAppSelector, useAppDispatch } from '../../../state/hooks';
 import { setUserCountryCode } from '../../../state/countrySlice';
 import { getSignupTexts } from './signupTranslations';
 import { userAPI } from '../../../api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Redux
+
+// Services
+import { AppBootstrap } from '../../../services/AppBootstrap';
 import type { UpdateProfileRequest } from '../../../api/endpoints';
 import { hypedLogo } from '../../../assets';
 
@@ -109,7 +116,10 @@ function isValidDOB(dob: string): boolean {
 
 export default function SignupScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const dispatch = useAppDispatch();
+  const dispatch = useAppDispatch();  
+  // Get auth data from Redux
+  const { token, uniqueId } = useAppSelector(state => state.auth);
+
   const lang = useAppSelector((state) => state.language.lang);
   const isMountedRef = useRef(true);
   const scrollRef = useRef<ScrollView>(null);
@@ -130,6 +140,7 @@ export default function SignupScreen() {
   const [uniqueUsername, setUniqueUsername] = useState('');
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
   const [isUsernameLoading, setIsUsernameLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [isUsernameValid, setIsUsernameValid] = useState(false);
 
@@ -239,7 +250,7 @@ export default function SignupScreen() {
       const res = await api.post<{ success?: boolean; suggestions?: string[] }>('api/username/suggestions', {
         name,
       });
-      if (res.data?.success && Array.isArray(res.data.suggestions)) {
+      if (res?.data?.success && Array.isArray(res.data.suggestions)) {
         setUsernameSuggestions(res.data.suggestions);
       }
     } catch (_) {
@@ -283,9 +294,13 @@ export default function SignupScreen() {
       return;
     }
 
-    const uniqueId = await AsyncStorage.getItem('uniqueId');
-    if (!uniqueId) {
+    // Check auth from Redux (Redux Persist has restored it)
+    if (!uniqueId || !token) {
       Alert.alert(t.Error, 'Session expired. Please login again.');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
       return;
     }
 
@@ -323,19 +338,46 @@ export default function SignupScreen() {
       } else {
         await AsyncStorage.removeItem('userProfilePhoto');
       }
+ // Step 2: Bootstrap the app (orchestrated flow)
+ setLoadingMessage('Setting up app...');
+ console.log('[SignupScreen] Step 2: Starting app bootstrap...');
+ 
+ /**
+  * AppBootstrap Flow:
+  * 1. Save auth token to Redux ✓ (already done in LoginScreen)
+  * 2. PARALLEL: User Profile API + Local DB setup
+  * 3. PARALLEL: ChatManager.initialize() + CallManager.initialize()
+  * 4. Socket connect
+  * 5. Join Phoenix Channel (chat:user:id)
+  * 6. App Ready
+  */
+ const bootstrapResult = await AppBootstrap.bootstrapAfterSignup(
+   token,
+   uniqueId,
+   true // isNewUser
+ );
+
+ if (!bootstrapResult.success) {
+   console.warn('[SignupScreen] Bootstrap warning:', bootstrapResult.error);
+   // Continue anyway - app can recover
+ }
+
+ console.log('[SignupScreen] Bootstrap complete, navigating to Home');
 
       navigation.reset({
         index: 0,
         routes: [{ name: 'Dashboard' }],
       });
     } catch (error: any) {
-      console.error('Signup error:', error);
-      Alert.alert(
-        t.Error,
-        error?.response?.data?.error || error?.message || 'Failed to save profile. Please try again.'
-      );
+      console.error('[SignupScreen] Error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.response?.data?.error  || 'Failed to setup. Please try again.',
+      });
     } finally {
       setIsLoading(false);
+      setLoadingMessage('');
     }
   }, [
     username,
@@ -699,7 +741,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65, 
   },
   uploadPlaceholder: { backgroundColor: '#E8E8E8' },
-  // uploadPlaceholderWrapper: { position: 'absolute', zIndex: 999, top: 30, left: 45 },
+  uploadPlaceholderWrapper: { position: 'absolute', zIndex: 999, top: 30, left: 45 },
   dropdownContainer: {width:'100%', marginBottom:20},
   dropdownOptions: {
     position: 'absolute',
