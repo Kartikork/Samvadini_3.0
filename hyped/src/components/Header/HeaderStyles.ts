@@ -7,10 +7,16 @@ import { StyleSheet, Dimensions } from 'react-native';
 const { width } = Dimensions.get('window');
 
 export const headerStyles = StyleSheet.create({
+  safeArea: {
+     backgroundColor: '#fff',
+  },
   safeAreaContainer: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 10,
+    shadowRadius: 6,
+    elevation: 4,
   },
   header: {
     flexDirection: 'row',
@@ -26,6 +32,17 @@ export const headerStyles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  boxshadow: {
+    // marginTop: 20,
+    width: '100%',
+    height: 1,
+  backgroundColor: '#eeeeee',
+  shadowColor: '#999',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 6,
+  elevation: 6,
+  },
   headerCenter: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -34,6 +51,7 @@ export const headerStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
+     flex: 1,
   },
   backButton: {
     padding: 8,
@@ -48,6 +66,8 @@ export const headerStyles = StyleSheet.create({
     width: 120,
     height: 35,
     resizeMode: 'contain',
+    flex: 1,
+    alignItems: 'flex-start',
   },
   profilePhoto: {
     width: 36,
@@ -55,6 +75,17 @@ export const headerStyles = StyleSheet.create({
     borderRadius: 18,
     marginRight: 8,
     resizeMode: 'cover',
+  },
+  babyBossIcon: {
+    // width: 100
+    // position: 'relative'
+         flex: 2,
+    alignItems: 'center', 
+  },
+  babyBossIconInner: {
+    width: 70,
+    height: 35,
+
   },
   sosButton: {
     width: 40,
@@ -64,8 +95,13 @@ export const headerStyles = StyleSheet.create({
     marginRight: 8, 
   },
   sosText: {
-      width: 20,
-      height: 20,
+      width: 100,
+      height: 30,
+  },
+  languageIcon: {
+    width: 35,
+    height: 35,
+    marginLeft: 10,
   },
   sosTooltip: {
     position: 'absolute',

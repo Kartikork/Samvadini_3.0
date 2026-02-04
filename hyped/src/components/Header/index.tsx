@@ -30,7 +30,7 @@ import { useAppSelector, useAppDispatch } from '../../state/hooks';
 import { clearAuth } from '../../state/authSlice';
 import { getHeaderTexts } from './headerTranslations';
 import { headerStyles } from './HeaderStyles';
-import { bossBabyIndianFigure, hypedLogo, sos } from '../../assets';
+import { bossBabyIndianFigure, hypedLogo, languageIcon, sos } from '../../assets';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -286,19 +286,21 @@ export const Header = React.memo(() => {
               style={headerStyles.logo}
             />
           </TouchableOpacity>
+          
         </View>
 
-        <View>
+            <View>
           <TouchableOpacity
             onPress={() => navigation.navigate('talkingtom')}
-            style={headerStyles.sosButton}>
+            style={headerStyles.babyBossIcon}>
             <Image
               source={bossBabyIndianFigure}
               resizeMode="contain"
-              style={headerStyles.sosText}
+              style={headerStyles.babyBossIconInner}
             />
           </TouchableOpacity>
         </View>
+        
         <View style={headerStyles.headerRight}>
 
           {/* SOS Button */}
@@ -327,8 +329,8 @@ export const Header = React.memo(() => {
               })
             }>
             <Image
-              source={hypedLogo}
-              style={headerStyles.profilePhoto}
+              source={languageIcon}
+              style={headerStyles.languageIcon}
             />
           </TouchableOpacity>
 
@@ -340,6 +342,8 @@ export const Header = React.memo(() => {
           </TouchableOpacity>
         </View>
       </View>
+
+      <View style={headerStyles.boxshadow}></View>
 
       {/* SOS Timer Modal */}
       <Modal
@@ -431,7 +435,7 @@ export const Header = React.memo(() => {
               }}
               style={headerStyles.modalOptionContainer}>
               <Image
-                source={require('../../assets/images/anuvadini-logo.png')}
+                source={require('../../assets/images/Dashboard/anuvadini-logo.png')}
                 style={headerStyles.anuvadini}
               />
               <Text style={headerStyles.modalOption}>About Anuvadini</Text>
