@@ -23,6 +23,7 @@ export const GradientBackground: React.FC<GradientBackgroundProps> = ({
 
 const styles = StyleSheet.create({
   gradient: {
-    borderRadius: 28,  // 👈 match FAB
+    borderRadius: 28,
+    flex:1  // 👈 match FAB
   },
 });
