@@ -23,7 +23,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/MainNavigator';
 import { useAppSelector, useAppDispatch } from '../../state/hooks';
@@ -58,6 +58,9 @@ interface ChatMessage {
   [key: string]: any;
 }
 
+// Use a loosely-typed alias for FlashList to avoid prop type incompatibilities
+const AnyFlashList = FlashList as unknown as React.ComponentType<any>;
+
 const ChatScreen: React.FC = () => {
   const route = useRoute<ChatScreenRouteProp>();
   const dispatch = useAppDispatch();
@@ -74,12 +77,13 @@ const ChatScreen: React.FC = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  // Use Redux auth.uniqueId as the single source of truth for current user
+  const currentUserId = useAppSelector(state => state.auth.uniqueId) ?? null;
   const [isTyping, setIsTyping] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
 
   // Refs
-  const flashListRef = useRef<FlashList<ChatMessage>>(null);
+  const flashListRef = useRef<FlashListRef<ChatMessage> | null>(null);
   const hasDoneInitialScrollRef = useRef(false);
   const viewabilityConfigRef = useRef({
     viewAreaCoveragePercentThreshold: 50,
@@ -128,13 +132,7 @@ const ChatScreen: React.FC = () => {
   /**
    * Get current user ID
    */
-  useEffect(() => {
-    const getUserId = async () => {
-      const userId = await AsyncStorage.getItem(STORAGE_KEYS.UNIQUE_ID);
-      setCurrentUserId(userId);
-    };
-    getUserId();
-  }, []);
+
 
   /**
    * Load initial messages from existing DB
@@ -435,8 +433,8 @@ const ChatScreen: React.FC = () => {
             </View>
           )}
 
-          {/* Message list */}
-          <FlashList
+        {/* Message list */}
+        <AnyFlashList
           ref={flashListRef}
           data={messages}
           renderItem={renderMessage}
