@@ -24,7 +24,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { useRoute, RouteProp } from '@react-navigation/native';
+import type { RootStackParamList } from '../../navigation/MainNavigator';
+import { useAppSelector, useAppDispatch } from '../../state/hooks';
+import { activeChatActions } from '../../state/activeChatSlice';
 import { SocketService } from '../../services/SocketService';
 import { fetchChatMessages } from '../../storage/sqllite/chat/ChatMessageSchema';
 import { updateChatAvashatha } from '../../storage/sqllite/chat/ChatMessageSchema';
@@ -32,16 +35,12 @@ import MessageBubble from './components/MessageBubble';
 import ChatInput from './components/ChatInput';
 import TypingIndicator from './components/TypingIndicator';
 import DateSeparator from './components/DateSeparator';
+import ChatHeader from '../../components/ChatHeader';
+import { useChatById } from '../ChatListScreen/hooks/useChatListData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../../config/constants';
 
-interface ChatScreenRouteParams {
-  chatId: string;
-  username: string;
-  avatar?: string;
-}
-
-type ChatScreenRouteProp = RouteProp<{ Chat: ChatScreenRouteParams }, 'Chat'>;
+type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
 // Message interface matching existing schema
 interface ChatMessage {
@@ -61,8 +60,14 @@ interface ChatMessage {
 
 const ChatScreen: React.FC = () => {
   const route = useRoute<ChatScreenRouteProp>();
-  const navigation = useNavigation();
-  const { chatId, username, avatar } = route.params;
+  const dispatch = useAppDispatch();
+  const activeChat = useAppSelector((state) => state.activeChat);
+
+  // Chat ID from Redux (primary) or route params (fallback)
+  const chatId = activeChat.chatId ?? route.params.chatId;
+
+  // Sync Redux when opened from deep link (useChatById loads from DB)
+  const chatFromDb = useChatById(chatId);
 
   // Local state
   const [isLoading, setIsLoading] = useState(true);
@@ -80,6 +85,45 @@ const ChatScreen: React.FC = () => {
     viewAreaCoveragePercentThreshold: 50,
     minimumViewTime: 500,
   });
+
+  /**
+   * Ensure chatId is in Redux when on Chat screen (for deep link / direct navigation)
+   */
+  useEffect(() => {
+    if (chatId && activeChat.chatId !== chatId) {
+      dispatch(activeChatActions.setActiveChatId(chatId));
+    }
+  }, [chatId, activeChat.chatId, dispatch]);
+
+  /**
+   * Sync full chat data from DB when opened from deep link (activeChat has chatId but no username)
+   */
+  useEffect(() => {
+    if (
+      chatId &&
+      activeChat.chatId === chatId &&
+      !activeChat.username &&
+      chatFromDb
+    ) {
+      dispatch(
+        activeChatActions.setActiveChat({
+          chatId,
+          username: chatFromDb.contact_name ?? chatFromDb.samvada_nama ?? '',
+          avatar: chatFromDb.contact_photo ?? chatFromDb.samuha_chitram ?? null,
+          isGroup: chatFromDb.prakara === 'Group',
+        })
+      );
+    }
+  }, [chatId, activeChat.chatId, activeChat.username, chatFromDb, dispatch]);
+
+  /**
+   * Clear active chat when leaving screen
+   */
+  useEffect(() => {
+    return () => {
+      dispatch(activeChatActions.clearActiveChat());
+    };
+  }, [dispatch]);
 
   /**
    * Get current user ID
@@ -286,6 +330,18 @@ const ChatScreen: React.FC = () => {
   /**
    * When user scrolls to TOP, load older messages from DB
    */
+  const handleCallPress = useCallback(() => {
+    // TODO: Navigate to audio call
+  }, []);
+
+  const handleVideoPress = useCallback(() => {
+    // TODO: Navigate to video call
+  }, []);
+
+  const handleMenuPress = useCallback(() => {
+    // TODO: Open chat options (view contact, mute, etc.)
+  }, []);
+
   const handleScroll = useCallback(
     (event: any) => {
       const native = event?.nativeEvent;
@@ -354,23 +410,33 @@ const ChatScreen: React.FC = () => {
   }, [shouldScrollToBottom, messages.length]);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-      <View style={styles.container}>
-        {/* Connection status indicator */}
-        {!SocketService.isConnected() && (
-          <View style={styles.connectionBanner}>
-            <Text style={styles.connectionText}>
-              Reconnecting...
-            </Text>
-          </View>
-        )}
+    <View style={styles.container}>
+      <ChatHeader
+        chatId={chatId}
+        showCallButton
+        showVideoButton
+        onCallPress={handleCallPress}
+        onVideoPress={handleVideoPress}
+        onMenuPress={handleMenuPress}
+      />
 
-        {/* Message list */}
-        <FlashList
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <View style={styles.flex}>
+          {/* Connection status indicator */}
+          {!SocketService.isConnected() && (
+            <View style={styles.connectionBanner}>
+              <Text style={styles.connectionText}>
+                Reconnecting...
+              </Text>
+            </View>
+          )}
+
+          {/* Message list */}
+          <FlashList
           ref={flashListRef}
           data={messages}
           renderItem={renderMessage}
@@ -404,12 +470,13 @@ const ChatScreen: React.FC = () => {
           windowSize={5}
           initialNumToRender={20}
           updateCellsBatchingPeriod={50}
-        />
+          />
 
-        {/* Chat input */}
-        <ChatInput chatId={chatId} onMessageSent={appendLatestMessageFromDb} />
-      </View>
-    </KeyboardAvoidingView>
+          {/* Chat input */}
+          <ChatInput chatId={chatId} onMessageSent={appendLatestMessageFromDb} />
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -436,6 +503,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+  },
+  flex: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
