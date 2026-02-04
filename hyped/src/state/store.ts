@@ -28,6 +28,7 @@ import fontSizeReducer from './fontSizeSlice';
 import countryReducer from './countrySlice';
 import authReducer from './authSlice';
 import chatListReducer from './chatListSlice';
+import activeChatReducer from './activeChatSlice';
 
 // Persist configuration
 const persistConfig = {
@@ -46,6 +47,7 @@ const rootReducer = combineReducers({
   country: countryReducer,
   auth: authReducer,
   chatList: chatListReducer,
+  activeChat: activeChatReducer,
 });
 
 // Create persisted reducer
