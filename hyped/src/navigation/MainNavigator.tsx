@@ -46,7 +46,7 @@ export type RootStackParamList = {
   CallHistory: undefined;
   StatusScreen: undefined;
   LanguageGameScreen: undefined;
-  Chat: { chatId: string; username: string };
+  Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
   IncomingCall: { callId: string; callerId: string; callerName: string };

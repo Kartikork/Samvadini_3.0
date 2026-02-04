@@ -38,6 +38,7 @@ import type { RootStackParamList } from '../../navigation/MainNavigator';
 // Redux
 import { useAppSelector, useAppDispatch } from '../../state/hooks';
 import { chatListActions, ChatTab } from '../../state/chatListSlice';
+import { activeChatActions } from '../../state/activeChatSlice';
 import { 
   selectChatIdsForActiveTab, 
   selectLoadingState,
@@ -367,23 +368,33 @@ export default function ChatListScreen() {
     if (isSelectionMode) {
       toggleChatSelection(chatId);
     } else {
-      // Navigate to chat
       const chat = chats.find(c => c.samvada_chinha === chatId);
       if (chat) {
         if (chat.prakara === 'Group') {
+          dispatch(activeChatActions.setActiveChat({
+            chatId: chat.samvada_chinha,
+            username: chat.samvada_nama,
+            avatar: chat.samuha_chitram ?? null,
+            isGroup: true,
+          }));
           navigation.navigate('GroupChat', {
             chatId: chat.samvada_chinha,
             groupName: chat.samvada_nama,
           });
         } else {
-          navigation.navigate('Chat', {
+          dispatch(activeChatActions.setActiveChat({
             chatId: chat.samvada_chinha,
             username: chat.contact_name,
+            avatar: chat.contact_photo ?? null,
+            isGroup: false,
+          }));
+          navigation.navigate('Chat', {
+            chatId: chat.samvada_chinha,
           });
         }
       }
     }
-  }, [isSelectionMode, toggleChatSelection, chats, navigation]);
+  }, [isSelectionMode, toggleChatSelection, chats, navigation, dispatch]);
 
   /**
    * Long press handler (stable)
