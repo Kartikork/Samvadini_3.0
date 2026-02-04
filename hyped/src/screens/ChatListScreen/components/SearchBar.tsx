@@ -1,14 +1,7 @@
-/**
- * SearchBar Component
- * 
- * PERFORMANCE:
- * - Memoized to prevent re-renders
- * - Controlled input with debounced handler
- */
-
 import React, { memo } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface Props {
   value: string;
@@ -25,7 +18,6 @@ export const SearchBar = memo<Props>(({
 }) => {
   return (
     <View style={styles.container}>
-      <Icon name="magnify" size={20} color="#999" style={styles.icon} />
       <TextInput
         style={styles.input}
         placeholder={placeholder}
@@ -40,6 +32,7 @@ export const SearchBar = memo<Props>(({
           <Icon name="close-circle" size={20} color="#999" />
         </TouchableOpacity>
       )}
+      <Ionicons name="mic-outline" size={20} color="#ff0000" style={styles.icon} />
     </View>
   );
 }, (prevProps, nextProps) => {
@@ -52,6 +45,8 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderColor: '#ddd',
+    borderWidth: 1,
     backgroundColor: '#f5f5f5',
     borderRadius: 24,
     paddingHorizontal: 12,

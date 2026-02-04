@@ -590,10 +590,8 @@ export default function ChatListScreen() {
       {/* Floating Action Button - Only show when not in selection mode */}
       {!isSelectionMode && (
         <TouchableOpacity
-          style={[
-            styles.fab,
-            {
-              bottom: 50 + insets.bottom + 15, // Above bottom navigation + safe area + padding
+          style={[styles.fab, {
+              bottom: 20 + insets.bottom + 15,
             },
           ]}
           onPress={handleContactPress}
@@ -651,7 +649,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#25D366', // WhatsApp green
+    backgroundColor: '#25D366',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 6,

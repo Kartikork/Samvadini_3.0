@@ -37,12 +37,12 @@ interface Props {
  * ChatListItem - Memoized for performance
  * Only re-renders when props change
  */
-export const ChatListItem = memo<Props>(({ 
-  chat, 
-  isSelected, 
-  onPress, 
-  onLongPress, 
-  isSelectionMode 
+export const ChatListItem = memo<Props>(({
+  chat,
+  isSelected,
+  onPress,
+  onLongPress,
+  isSelectionMode
 }) => {
   // ============================================
   // MEMOIZED COMPUTED VALUES (No re-calculation)
@@ -70,7 +70,7 @@ export const ChatListItem = memo<Props>(({
     if (chat.is_private_room) return 'lock';
     if (chat.prakara === 'Broadcast') return 'bullhorn';
     if (chat.prakara === 'Group') return 'account-group';
-    return 'account-circle';
+    return 'account';
   }, [chat.is_private_room, chat.prakara]);
 
   /**
@@ -78,7 +78,7 @@ export const ChatListItem = memo<Props>(({
    */
   const formattedTime = useMemo(() => {
     if (!chat.lastMessageDate) return '';
-    
+
     const date = new Date(chat.lastMessageDate);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -102,8 +102,8 @@ export const ChatListItem = memo<Props>(({
     if (chat.isDeleted) return '🚫 This message was deleted';
     if (!chat.lastMessage) return 'No messages yet';
 
-    const senderPrefix = chat.prakara === 'Group' && chat.lastSender 
-      ? 'You: ' 
+    const senderPrefix = chat.prakara === 'Group' && chat.lastSender
+      ? 'You: '
       : '';
 
     // Media type indicators
@@ -123,7 +123,7 @@ export const ChatListItem = memo<Props>(({
    */
   const statusIcon = useMemo(() => {
     if (!chat.lastMessageAvastha) return null;
-    
+
     switch (chat.lastMessageAvastha) {
       case 'sent':
         return <Icon name="check" size={16} color="#999" />;
@@ -192,24 +192,20 @@ export const ChatListItem = memo<Props>(({
       {/* Avatar */}
       <View style={styles.avatarContainer}>
         {avatarSource ? (
-          <Image 
-            source={avatarSource} 
+          <Image
+            source={avatarSource}
             style={styles.avatar}
             resizeMode="cover"
           />
 
         ) : (
           <View style={styles.avatarPlaceholder}>
-            <Icon name={avatarIcon} size={32} color="#999" />
+            <Icon name={avatarIcon} size={32} color="#fff" />
           </View>
         )}
-        
+
         {/* Unread badge */}
-        {chat.unread_count > 0 && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadText}>{unreadBadgeText}</Text>
-          </View>
-        )}
+
       </View>
 
       {/* Content */}
@@ -219,29 +215,44 @@ export const ChatListItem = memo<Props>(({
           <Text style={styles.name} numberOfLines={1}>
             {displayName}
           </Text>
-          <View style={styles.meta}>
-            {(chat.is_pinned ?? 0) === 1 && (
-              <Icon name="pin" size={16} color="#028BD3" style={styles.pinIcon} />
-            )}
-            <Text style={styles.time}>{formattedTime}</Text>
-          </View>
+
         </View>
 
         {/* Message row */}
         <View style={styles.messageRow}>
           <View style={styles.messageContent}>
             {statusIcon}
-            <Text 
+            <Text
               style={[
                 styles.message,
                 chat.unread_count > 0 && styles.messageUnread
-              ]} 
+              ]}
               numberOfLines={1}
             >
               {messagePreview}
             </Text>
           </View>
         </View>
+      </View>
+
+      <View style={styles.meta}>
+        <View style={styles.timeSection}>
+          <Text style={styles.time}>{formattedTime}</Text>
+         </View>
+        
+        <View style={styles.timer}>
+        
+         {(chat.is_pinned ?? 0) === 1 && (
+            <Icon name="pin" size={16} color="#028BD3" style={styles.pinIcon} />
+
+          )}
+          {chat.unread_count > 0 && (
+          <View style={styles.unreadBadge}>
+            <Text style={styles.unreadText}>{unreadBadgeText}</Text>
+          </View>
+        )}
+          </View>
+
       </View>
     </TouchableOpacity>
   );
@@ -294,20 +305,18 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#5D5FEF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   unreadBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
     backgroundColor: '#028BD3',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 'auto',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
     paddingHorizontal: 4,
   },
   unreadText: {
@@ -332,11 +341,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+height: 50,                
+  justifyContent: 'space-between', 
+  },
+  timeSection: {
+      alignItems: 'flex-end', 
+  },
+  timer: {
+  flexDirection: 'row',
+   alignItems: 'flex-end', 
   },
   pinIcon: {
     marginRight: 4,
+    justifyContent: 'flex-end',
+    display: 'flex',
   },
   time: {
     fontSize: 12,
@@ -359,7 +377,7 @@ const styles = StyleSheet.create({
   },
   messageUnread: {
     fontWeight: '600',
-    color: '#000',
+    color: '#666',
   },
 });
 

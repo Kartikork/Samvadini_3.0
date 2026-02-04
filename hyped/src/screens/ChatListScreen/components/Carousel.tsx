@@ -23,7 +23,7 @@ export default function Carousel() {
   const ScreenData = [
     {
       id: "1",
-      image: require("../../../assets/images/Dummy.jpeg"),
+      image: require("../../../assets/images/crouser/govt-schemes-icon.png"),
       screen: "Category",
       bgColor: "#AF7373",
       params: {
@@ -35,7 +35,7 @@ export default function Carousel() {
     },
     {
       id: "2",
-      image: require("../../../assets/images/Dummy.jpeg"),
+      image: require("../../../assets/images/crouser/gamesIcn.png"),
       screen: "LanguageGameScreen",
       bgColor: "#5D5FEF",
       params: {
@@ -47,7 +47,7 @@ export default function Carousel() {
     },
     {
       id: "3",
-      image: require("../../../assets/images/Dummy.jpeg"),
+      image: require("../../../assets/images/crouser/lrnDashboard.png"),
       screen: "lingoweb",
       bgColor: "#0293A3",
       params: {
@@ -60,7 +60,7 @@ export default function Carousel() {
     {
       id: "6",
       title: "Planner",
-      image: require("../../../assets/images/Dummy.jpeg"),
+      image: require("../../../assets/images/crouser/calendar.png"),
       screen: "DailyPlanner",
       bgColor: "#0787d2",
       params: {},
@@ -68,14 +68,14 @@ export default function Carousel() {
     {
       id: "7",
       title: "AddReminder",
-      image: require("../../../assets/images/Dummy.jpeg"),
+      image: require("../../../assets/images/crouser/alarm.png"),
       screen: "AddReminder",
       bgColor: "#6362a7",
       params: {},
     },
     {
       id: "5",
-      image: require("../../../assets/images/Dummy.jpeg"),
+      image: require("../../../assets/images/crouser/jobsnewicn.png"),
       screen: "JobScreen",
       bgColor: "#7A76B5",
       params: {
@@ -88,7 +88,7 @@ export default function Carousel() {
     {
       id: "8",
       title: "Business",
-      image: require("../../../assets/images/Dummy.jpeg"),
+      image: require("../../../assets/images/crouser/startup.png"),
       screen: "Category",
       bgColor: "#EE898B",
       params: {
@@ -101,7 +101,7 @@ export default function Carousel() {
     {
       id: "9",
       title: "Women",
-      image: require("../../../assets/images/Dummy.jpeg"),
+      image: require("../../../assets/images/crouser/women1.png"),
       screen: "Category",
       bgColor: "#FE4AD7",
       params: {
@@ -114,7 +114,7 @@ export default function Carousel() {
     {
       id: "10",
       title: "Farmers",
-      image: require("../../../assets/images/Dummy.jpeg"),
+      image: require("../../../assets/images/crouser/farmerIcn.png"),
       screen: "Category",
       bgColor: "#AD6B55",
       params: {
@@ -223,14 +223,24 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   left: {
+    width:30,
     position: "relative",
-    top: -12,
-    left: -10,
-    paddingLeft: 5
+    top: -1,
+    bottom:0,
+    marginTop: 'auto',
+    marginBottom: 'auto',
+    justifyContent: 'center',
+    left: 0,
+    paddingLeft: 7
   },
   right: {
+    width:30,
     position: "relative",
-    top: -12,
-    right: -10
+    top: -2,
+    right: 7,
+    bottom:0,
+    paddingRight: 3,
+    marginTop: 'auto',
+    marginBottom: 'auto',
   }
 });
