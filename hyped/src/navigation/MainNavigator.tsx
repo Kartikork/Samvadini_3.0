@@ -31,6 +31,7 @@ import ChatScreen from '../screens/ChatScreen';
 import CallHistoryScreen from '../screens/CallHistoryScreen';
 import StatusScreen from '../screens/StatusScreen';
 import LanguageGameScreen from '../screens/LanguageGameScreen';
+import ContactDesignScreen from '../screens/ContactDesignScreen';
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
@@ -46,6 +47,7 @@ export type RootStackParamList = {
   CallHistory: undefined;
   StatusScreen: undefined;
   LanguageGameScreen: undefined;
+  ContactDesignScreen: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -136,6 +138,12 @@ export default function MainNavigator() {
         <Stack.Screen 
           name="Chat" 
           component={wrapWithHeader(ChatScreen)}
+          options={{ animation: 'slide_from_right' }}
+        />
+
+        <Stack.Screen 
+          name="ContactDesignScreen" 
+          component={wrapWithHeader(ContactDesignScreen)}
           options={{ animation: 'slide_from_right' }}
         />
 
