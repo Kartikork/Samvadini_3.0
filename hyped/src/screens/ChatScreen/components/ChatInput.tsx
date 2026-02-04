@@ -1,23 +1,14 @@
-/**
- * ChatInput - Message input component
- * 
- * Features:
- * - Text input
- * - Media attachment
- * - Typing indicator emission
- * - Send button
- */
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
-  Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { SocketService } from '../../../services/SocketService';
 import { OutgoingMessageManager } from '../../../services/OutgoingMessageManager';
 import { useAppSelector } from '../../../state/hooks';
@@ -115,6 +106,22 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
   };
 
   /**
+   * Handle emoji picker
+   */
+  const handleEmojiPicker = () => {
+    // TODO: Implement emoji picker
+    console.log('[ChatInput] Emoji picker pressed');
+  };
+
+  /**
+   * Handle voice recording
+   */
+  const handleVoiceRecord = () => {
+    // TODO: Implement voice recording
+    console.log('[ChatInput] Voice record pressed');
+  };
+
+  /**
    * Cleanup on unmount
    */
   useEffect(() => {
@@ -129,16 +136,17 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
   }, [chatId, currentUserId]);
 
   const canSend = text.trim().length > 0 && !isSending;
+  const hasText = text.trim().length > 0;
 
   return (
     <View style={styles.container}>
-      {/* Attachment button */}
+      {/* Emoji picker button (left side) */}
       <TouchableOpacity
-        style={styles.attachButton}
-        onPress={handleAttachment}
+        style={styles.iconButton}
+        onPress={handleEmojiPicker}
         disabled={isSending}
       >
-        <Text style={styles.attachIcon}>📎</Text>
+        <Icon name="smile-o" size={24} color="#666666" />
       </TouchableOpacity>
 
       {/* Text input */}
@@ -156,19 +164,30 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
         />
       </View>
 
-      {/* Send button */}
+      {/* Attachment button (+ icon) */}
+      <TouchableOpacity
+        style={styles.iconButton}
+        onPress={handleAttachment}
+        disabled={isSending}
+      >
+        <MaterialIcons name="add" size={24} color="#666666" />
+      </TouchableOpacity>
+
+      {/* Conditional button: Send (when text) or Mic (when no text) */}
       <TouchableOpacity
         style={[
-          styles.sendButton,
-          canSend && styles.sendButtonActive,
+          styles.actionButton,
+          hasText && styles.actionButtonActive,
         ]}
-        onPress={handleSend}
-        disabled={!canSend}
+        onPress={hasText ? handleSend : handleVoiceRecord}
+        disabled={hasText ? !canSend : isSending}
       >
         {isSending ? (
           <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : hasText ? (
+          <MaterialIcons name="send" size={20} color="#FFFFFF" />
         ) : (
-          <Text style={styles.sendIcon}>➤</Text>
+          <MaterialIcons name="mic" size={20} color="#666666" />
         )}
       </TouchableOpacity>
     </View>
@@ -185,15 +204,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E5E5',
   },
-  attachButton: {
+  iconButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 4,
-  },
-  attachIcon: {
-    fontSize: 24,
+    marginHorizontal: 4,
   },
   inputContainer: {
     flex: 1,
@@ -208,21 +224,17 @@ const styles = StyleSheet.create({
     color: '#000000',
     maxHeight: 100,
   },
-  sendButton: {
+  actionButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#CCCCCC',
+    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 4,
   },
-  sendButtonActive: {
+  actionButtonActive: {
     backgroundColor: '#007AFF',
-  },
-  sendIcon: {
-    fontSize: 20,
-    color: '#FFFFFF',
   },
 });
 
