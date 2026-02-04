@@ -138,14 +138,14 @@ const BottomNavigation = ({
                 <Icon
                   name={activeScreen === item.name ? item.activeIcon : item.icon}
                   size={ICON_SIZE}
-                  color={activeScreen === item.name ? '#ED713C' : '#555'}
+                  color={activeScreen === item.name ? '#F8732B' : '#484C52'}
                 />
               </View>
               <Text
                 allowFontScaling={false}
                 style={[
                   styles.tabBarLabel,
-                  { color: activeScreen === item.name ? '#ED713C' : '#555' },
+                  { color: activeScreen === item.name ? '#F8732B' : '#484C52' },
                 ]}
               >
                 {item.title}

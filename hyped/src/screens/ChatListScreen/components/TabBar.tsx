@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: '#028BD3',
+    borderBottomColor: '#F8732B',
   },
   activeTabIndicator: {
     // Smooth transition indicator
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeTabText: {
-    color: '#028BD3',
+    color: '#F8732B',
     fontWeight: '600',
   },
   badge: {

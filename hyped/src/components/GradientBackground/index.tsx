@@ -9,7 +9,7 @@ interface GradientBackgroundProps {
 
 export const GradientBackground: React.FC<GradientBackgroundProps> = ({
   children,
-  colors = ['#ffffff', '#ffffff', '#ffffff'],
+  colors = ['#ffffff', '#ffffff'],
 }) => {
   return (
     <LinearGradient
@@ -23,6 +23,6 @@ export const GradientBackground: React.FC<GradientBackgroundProps> = ({
 
 const styles = StyleSheet.create({
   gradient: {
-    flex: 1,
+    borderRadius: 28,  // 👈 match FAB
   },
 });
