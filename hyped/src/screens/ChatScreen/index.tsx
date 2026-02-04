@@ -23,7 +23,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { SocketService } from '../../services/SocketService';
 import { fetchChatMessages } from '../../storage/sqllite/chat/ChatMessageSchema';
@@ -34,6 +34,7 @@ import TypingIndicator from './components/TypingIndicator';
 import DateSeparator from './components/DateSeparator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../../config/constants';
+import { useAppSelector } from '../../state/hooks';
 
 interface ChatScreenRouteParams {
   chatId: string;
@@ -59,6 +60,9 @@ interface ChatMessage {
   [key: string]: any;
 }
 
+// Use a loosely-typed alias for FlashList to avoid prop type incompatibilities
+const AnyFlashList = FlashList as unknown as React.ComponentType<any>;
+
 const ChatScreen: React.FC = () => {
   const route = useRoute<ChatScreenRouteProp>();
   const navigation = useNavigation();
@@ -69,28 +73,18 @@ const ChatScreen: React.FC = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  // Use Redux auth.uniqueId as the single source of truth for current user
+  const currentUserId = useAppSelector(state => state.auth.uniqueId) ?? null;
   const [isTyping, setIsTyping] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
 
   // Refs
-  const flashListRef = useRef<FlashList<ChatMessage>>(null);
+  const flashListRef = useRef<FlashListRef<ChatMessage> | null>(null);
   const hasDoneInitialScrollRef = useRef(false);
   const viewabilityConfigRef = useRef({
     viewAreaCoveragePercentThreshold: 50,
     minimumViewTime: 500,
   });
-
-  /**
-   * Get current user ID
-   */
-  useEffect(() => {
-    const getUserId = async () => {
-      const userId = await AsyncStorage.getItem(STORAGE_KEYS.UNIQUE_ID);
-      setCurrentUserId(userId);
-    };
-    getUserId();
-  }, []);
 
   /**
    * Load initial messages from existing DB
@@ -370,7 +364,7 @@ const ChatScreen: React.FC = () => {
         )}
 
         {/* Message list */}
-        <FlashList
+        <AnyFlashList
           ref={flashListRef}
           data={messages}
           renderItem={renderMessage}
