@@ -32,6 +32,8 @@ import {
 } from 'react-native';
 import { FlashList, FlashListProps } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/MainNavigator';
 
@@ -100,6 +102,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 export default function ChatListScreen() {
   const navigation = useNavigation<ChatListScreenNavigationProp>();
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -453,6 +456,13 @@ export default function ChatListScreen() {
     }
   }, [bulkPin, bulkUnpin, dispatch, chats, selectedChatIds]);
 
+  /**
+   * Navigate to contact screen handler
+   */
+  const handleContactPress = useCallback(() => {
+    (navigation as any).navigate('ContactDesignScreen');
+  }, [navigation]);
+
   // ============================================
   // RENDER FUNCTIONS (Stable)
   // ============================================
@@ -576,6 +586,22 @@ export default function ChatListScreen() {
           />
         </Animated.View>
       )}
+
+      {/* Floating Action Button - Only show when not in selection mode */}
+      {!isSelectionMode && (
+        <TouchableOpacity
+          style={[
+            styles.fab,
+            {
+              bottom: 50 + insets.bottom + 15, // Above bottom navigation + safe area + padding
+            },
+          ]}
+          onPress={handleContactPress}
+          activeOpacity={0.8}
+        >
+          <MaterialIcons name="add" size={24} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -618,6 +644,30 @@ const styles = StyleSheet.create({
   },
   archivedSection: {
     backgroundColor: '#fff',
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#25D366', // WhatsApp green
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    zIndex: 1000,
+    ...Platform.select({
+      ios: {
+        shadowOpacity: 0.3,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
   },
 });
 
