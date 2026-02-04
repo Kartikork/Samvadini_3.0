@@ -1,11 +1,3 @@
-/**
- * Environment Configuration
- * 
- * Centralized environment variables for the application.
- * In production, these should be loaded from environment-specific files
- * or build configuration.
- */
-
 export type Environment = 'development' | 'staging' | 'production';
 
 // Current environment - change this based on build
@@ -23,10 +15,10 @@ interface EnvConfig {
 
 const envConfigs: Record<Environment, EnvConfig> = {
   development: {
-    API_BASE_URL: 'https://qasamvadini.aicte-india.org/api', // Local development server
-    SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
-    // API_BASE_URL: 'http://192.168.0.112:4000/api', // Local development server
-    // SOCKET_URL: 'ws://192.168.0.112:4000/socket',
+    // API_BASE_URL: 'https://qasamvadini.aicte-india.org/api', // Local development server
+    // SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
+    API_BASE_URL: 'http://192.168.0.111:4000/api', // Local development server
+    SOCKET_URL: 'ws://192.168.0.111:4000/socket',
     ENABLE_LOGGING: true,
     REQUEST_TIMEOUT: 30000,
     APP_NAME: 'Hyped Dev',
@@ -76,4 +68,6 @@ export const getImageUrlWithSas = (url: string | undefined | null): string | nul
   
   return `${url}?${env.SAS_KEY}`;
 };
+
+
 

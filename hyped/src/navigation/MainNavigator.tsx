@@ -27,6 +27,10 @@ import HomeScreen from '../screens/HomeScreen';
 import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import ChatListScreen from '../screens/ChatListScreen';
+import ChatScreen from '../screens/ChatScreen';
+import CallHistoryScreen from '../screens/CallHistoryScreen';
+import StatusScreen from '../screens/StatusScreen';
+import LanguageGameScreen from '../screens/LanguageGameScreen';
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
@@ -39,6 +43,9 @@ export type RootStackParamList = {
   Home: undefined;
   Dashboard: undefined;
   ChatList: undefined;
+  CallHistory: undefined;
+  StatusScreen: undefined;
+  LanguageGameScreen: undefined;
   Chat: { chatId: string; username: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -108,9 +115,31 @@ export default function MainNavigator() {
           component={wrapWithHeader(ChatListScreen)}
           options={{ animation: 'fade' }}
         />
-        
+
+        {/* Bottom Nav Screens */}
+        <Stack.Screen 
+          name="CallHistory" 
+          component={wrapWithHeader(CallHistoryScreen)}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen 
+          name="StatusScreen" 
+          component={wrapWithHeader(StatusScreen)}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen 
+          name="LanguageGameScreen" 
+          component={wrapWithHeader(LanguageGameScreen)}
+          options={{ animation: 'fade' }}
+        />
+
+        <Stack.Screen 
+          name="Chat" 
+          component={wrapWithHeader(ChatScreen)}
+          options={{ animation: 'slide_from_right' }}
+        />
+
         {/* TODO: Add these screens
-        <Stack.Screen name="Chat" component={ChatScreen} />
         <Stack.Screen name="GroupChat" component={GroupChatScreen} />
         <Stack.Screen name="Call" component={CallScreen} />
         <Stack.Screen name="IncomingCall" component={IncomingCallScreen} />

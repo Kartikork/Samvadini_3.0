@@ -70,6 +70,10 @@ class SocketServiceClass {
   
   // Local event emitter
   private eventListeners: Map<string, Set<EventHandler>> = new Map();
+  
+  // Message tracking for debugging/monitoring
+  private lastMessageReceived: { timestamp: number; payload: any } | null = null;
+  private messageCount = 0;
 
   private constructor() {
     if (SocketServiceClass.instance) {
@@ -224,11 +228,19 @@ class SocketServiceClass {
 
     // Forward new_message events
     this.channel.on('new_message', (payload: any) => {
+      // Track message reception
+      this.lastMessageReceived = {
+        timestamp: Date.now(),
+        payload,
+      };
+      this.messageCount++;
+      
       console.log('[SocketService] 📨 Phoenix new_message received:', {
         chatId: payload?.samvada_chinha,
         sender: payload?.pathakah_chinha,
         messageType: payload?.sandesha_prakara,
         timestamp: new Date().toISOString(),
+        messageCount: this.messageCount,
       });
       
       // Emit to local event emitter (for ChatListScreen, etc.)
@@ -697,6 +709,42 @@ class SocketServiceClass {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Check if new messages are being received
+   * Returns information about the last received message and connection status
+   */
+  public checkNewMessageStatus(): {
+    isConnected: boolean;
+    hasReceivedMessages: boolean;
+    lastMessageTime: number | null;
+    lastMessage: any | null;
+    messageCount: number;
+    timeSinceLastMessage: number | null; // milliseconds
+  } {
+    const now = Date.now();
+    const timeSinceLastMessage = this.lastMessageReceived
+      ? now - this.lastMessageReceived.timestamp
+      : null;
+
+    return {
+      isConnected: this.isConnected(),
+      hasReceivedMessages: this.messageCount > 0,
+      lastMessageTime: this.lastMessageReceived?.timestamp ?? null,
+      lastMessage: this.lastMessageReceived?.payload ?? null,
+      messageCount: this.messageCount,
+      timeSinceLastMessage,
+    };
+  }
+
+  /**
+   * Reset message tracking counters (useful for testing or debugging)
+   */
+  public resetMessageTracking(): void {
+    this.lastMessageReceived = null;
+    this.messageCount = 0;
+    console.log('[SocketService] Message tracking reset');
   }
 
   // ─────────────────────────────────────────────────────────────

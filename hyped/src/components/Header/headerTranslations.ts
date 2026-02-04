@@ -1,9 +1,7 @@
-/**
- * Header translations
- */
-
 const headerTranslations: Record<string, Record<string, string>> = {
   en: {
+    updates: 'Updates',
+    status: 'Status',
     HolSec: 'Please hold for three seconds',
     NoEmAdded: 'No Emergency Contact is added yet!',
     Dangerlog: 'I am in danger.',
@@ -25,6 +23,8 @@ const headerTranslations: Record<string, Record<string, string>> = {
     logout: 'Logout',
   },
   hi: {
+    updates: 'अपडेट',
+    status: 'स्टेटस',
     HolSec: 'कृपया तीन सेकंड तक दबाए रखें',
     NoEmAdded: 'अभी तक कोई आपातकालीन संपर्क नहीं जोड़ा गया है!',
     Dangerlog: 'मैं खतरे में हूं।',

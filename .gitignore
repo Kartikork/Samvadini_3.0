@@ -37,3 +37,5 @@ Backend/lib/samvadini_web/scripts
 callnodebackend/node_modules
 callnodebackend/firebase-admin-key.json
 hyped/src/ARCHITECTURE.md
+hyped/node_modules
+hyped/package-lock.json
