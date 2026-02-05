@@ -7,6 +7,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { SocketService } from '../../../services/SocketService';
@@ -19,6 +20,7 @@ interface ChatInputProps {
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
+  const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const currentUserId = useAppSelector(state => state.auth.uniqueId);
@@ -139,7 +141,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
   const hasText = text.trim().length > 0;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: 8 + insets.bottom }]}>
       {/* Emoji picker button (left side) */}
       <TouchableOpacity
         style={styles.iconButton}

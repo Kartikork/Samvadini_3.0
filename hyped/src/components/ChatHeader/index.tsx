@@ -14,7 +14,6 @@ import {
   StyleSheet,
   ImageSourcePropType,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getImageUrlWithSas } from '../../config/env';
@@ -80,22 +79,22 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
     return isGroup ? 'account-group' : 'account-circle';
   }, [isGroup]);
 
-  const handleBack = () => {
-    navigation.goBack();
-  };
+  // const handleBack = () => {
+  //   navigation.goBack();
+  // };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <View style={styles.header}>
         {/* Left: Back + Avatar + Title */}
         <View style={styles.leftSection}>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.backButton}
             onPress={handleBack}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Icon name="arrow-left" size={24} color="#000000" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <View style={styles.avatarContainer}>
             {avatarSource ? (
@@ -141,7 +140,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 });
 
