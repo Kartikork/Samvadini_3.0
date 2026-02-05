@@ -226,6 +226,118 @@ class OutgoingMessageManagerClass {
   }
 
   /**
+   * Public API: Send media message (images, gifs, stickers)
+   * type should be something like 'image', 'image/gif', 'sticker', 'gif'
+   */
+  public async sendMediaMessage(
+    chatId: string,
+    mediaUrl: string,
+    type: string,
+    options?: {
+      replyMessage?: any;
+      blockedIds?: string[];
+      disappearTime?: { disappear_at: string | null; is_disappearing: boolean };
+    }
+  ): Promise<void> {
+    if (!mediaUrl) return;
+
+    // 1. Auth / validation
+    const { auth } = store.getState();
+    const currentUserId = auth.uniqueId;
+    if (!currentUserId) {
+      console.warn('[OutgoingMessageManager] Cannot send media message, no current user id');
+      return;
+    }
+
+    if (!chatId) {
+      console.warn('[OutgoingMessageManager] Cannot send media message, no chatId');
+      return;
+    }
+
+    // metadata
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const refrenceId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Reply message (pratisandeshah)
+    const pratisandeshah = options?.replyMessage
+      ? JSON.stringify({
+          lastRefrenceId: options.replyMessage.refrenceId,
+          lastSenderId: options.replyMessage.pathakah_chinha,
+          lastType: options.replyMessage.sandesha_prakara,
+          lastContent: options.replyMessage.vishayah,
+          lastUkti: options.replyMessage.ukti || '',
+        })
+      : '';
+
+    const basePayload = {
+      samvada_chinha: chatId,
+      pathakah_chinha: currentUserId,
+      vishayah: mediaUrl,
+      sandesha_prakara: type,
+      anuvadata_sandesham: false,
+      pratisandeshah,
+      refrenceId,
+      samvada_spashtam: null,
+      kimFwdSandesha: false,
+      preritam_tithih: nowIso,
+      nirastah: false,
+      avastha: 'sent',
+      disappear_at: options?.disappearTime?.disappear_at || null,
+      is_disappearing: options?.disappearTime?.is_disappearing || false,
+      ukti: '',
+      kimTaritaSandesha: false,
+      sthapitam_sandesham: null,
+      sampaditam: false,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      prasaranamId: '',
+    };
+
+    try {
+      await insertChatMessage(basePayload);
+      console.log('[OutgoingMessageManager] Inserted outgoing media message into DB:', { chatId, refrenceId });
+    } catch (error) {
+      console.error('[OutgoingMessageManager] Failed to insert media message into DB:', error);
+    }
+
+    // Encryption + send similar to text
+    const otherParticipant = await getOtherParticipantPublicKey(chatId, currentUserId);
+    if (!otherParticipant || !otherParticipant.publicKey) {
+      console.warn('[OutgoingMessageManager] No public key found for other participant, sending plaintext media');
+      await this.sendViaSocket(basePayload);
+      return;
+    }
+
+    let encryptedPayload;
+    try {
+      const encryptedBody = await encryptMessage(basePayload.vishayah, otherParticipant.publicKey);
+      encryptedPayload = {
+        ...basePayload,
+        samvada_spashtam: options?.blockedIds || null,
+        vishayah: encryptedBody,
+      };
+      console.log('[OutgoingMessageManager] Media message encrypted successfully');
+    } catch (error) {
+      console.error('[OutgoingMessageManager] Media encryption failed, sending plaintext as fallback:', error);
+      encryptedPayload = {
+        ...basePayload,
+        samvada_spashtam: options?.blockedIds || null,
+        vishayah: basePayload.vishayah,
+      };
+    }
+
+    try {
+      await chatAPI.sendEncryptedMessage({ ...encryptedPayload, ip_address: 'Unknown' });
+      console.log('[OutgoingMessageManager] Encrypted media message sent to API:', { chatId, refrenceId });
+    } catch (error) {
+      console.error('[OutgoingMessageManager] Error sending encrypted media to API:', error);
+    }
+
+    await this.sendViaSocket(encryptedPayload);
+  }
+
+  /**
    * Send message via socket (with retry logic)
    */
   private async sendViaSocket(payload: any): Promise<void> {
