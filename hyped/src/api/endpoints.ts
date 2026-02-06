@@ -214,12 +214,6 @@ export const authAPI = {
    * Delete account
    */
   deleteAccount: () => api.delete<{ success: boolean }>('/auth/account'),
-
-  /**
-   * Register FCM token for push notifications
-   */
-  registerToken: (data: { ekatma_chinha: string; token: string }) =>
-    api.post<{ success: boolean }>('/chat/register-token', data),
 };
 
 export const userAPI = {
@@ -366,6 +360,12 @@ export const chatAPI = {
    */
   sendEncryptedMessage: (data: any) =>
     api.post<{ success: boolean }>('/chat/send-message', data),
+
+  /**
+   * Register FCM token for push notifications
+   */
+  registerToken: (data: { ekatma_chinha: string; token: string }) =>
+    api.post<{ message: string; status: 'success' }>('/chat/register-token', data),
 };
 
 export const groupAPI = {

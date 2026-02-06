@@ -7,6 +7,7 @@ const ENV: Environment = __DEV__ ? 'development' : 'production';
 interface EnvConfig {
   API_BASE_URL: string;
   SOCKET_URL: string;
+  CALL_SOCKET_URL: string;
   ENABLE_LOGGING: boolean;
   REQUEST_TIMEOUT: number;
   APP_NAME: string;
@@ -15,10 +16,11 @@ interface EnvConfig {
 
 const envConfigs: Record<Environment, EnvConfig> = {
   development: {
-    API_BASE_URL: 'https://qasamvadini.aicte-india.org/api', // Local development server
-    SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
-    // API_BASE_URL: 'http://192.168.0.104:4000/api', // Local development server
-    // SOCKET_URL: 'ws://192.168.0.104:4000/socket',
+    // API_BASE_URL: 'https://qasamvadini.aicte-india.org/api', // Local development server
+    // SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
+    CALL_SOCKET_URL: 'http://192.168.1.100:8000',
+    API_BASE_URL: 'http://192.168.1.100:4000/api', // Local development server
+    SOCKET_URL: 'ws://192.168.1.100:4000/socket',
     ENABLE_LOGGING: true,
     REQUEST_TIMEOUT: 30000,
     APP_NAME: 'Hyped Dev',
@@ -27,6 +29,7 @@ const envConfigs: Record<Environment, EnvConfig> = {
   staging: {
     API_BASE_URL: 'https://staging-api.hyped.com/api/v1',
     SOCKET_URL: 'wss://staging-api.hyped.com',
+    CALL_SOCKET_URL: 'http://74.225.150.128:8000',
     ENABLE_LOGGING: true,
     REQUEST_TIMEOUT: 30000,
     APP_NAME: 'Hyped Staging',
@@ -35,6 +38,7 @@ const envConfigs: Record<Environment, EnvConfig> = {
   production: {
     API_BASE_URL: 'https://api.hyped.com/api/v1',
     SOCKET_URL: 'wss://api.hyped.com',
+    CALL_SOCKET_URL: 'http://74.225.150.128:8000',
     ENABLE_LOGGING: false,
     REQUEST_TIMEOUT: 30000,
     APP_NAME: 'Hyped',

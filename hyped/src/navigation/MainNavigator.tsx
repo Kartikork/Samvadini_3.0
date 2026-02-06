@@ -32,6 +32,7 @@ import CallHistoryScreen from '../screens/CallHistoryScreen';
 import StatusScreen from '../screens/StatusScreen';
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
+import CallScreen from '../screens/CallScreen';
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
@@ -51,7 +52,6 @@ export type RootStackParamList = {
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
-  IncomingCall: { callId: string; callerId: string; callerName: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -147,11 +147,18 @@ export default function MainNavigator() {
           options={{ animation: 'slide_from_right' }}
         />
 
-        {/* TODO: Add these screens
-        <Stack.Screen name="GroupChat" component={GroupChatScreen} />
-        <Stack.Screen name="Call" component={CallScreen} />
-        <Stack.Screen name="IncomingCall" component={IncomingCallScreen} />
-        */}
+        {/* Call Screen - No header, full screen */}
+        <Stack.Screen 
+          name="Call" 
+          component={CallScreen}
+          options={{ 
+            animation: 'slide_from_bottom',
+            headerShown: false,
+            presentation: 'fullScreenModal',
+          }}
+        />
+
+        {/* TODO: Add GroupChat screen when needed */}
       </Stack.Navigator>
     </NavigationContainer>
   );

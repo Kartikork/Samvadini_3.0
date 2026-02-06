@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   ScrollView,
   BackHandler,
-  SafeAreaView,
   Linking,
   Alert,
   Text,
@@ -18,6 +17,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Footer } from '../../components/Footer';
 import TextToVoiceIconWrapper from '../../components/TextToVoiceIconWrapper';
