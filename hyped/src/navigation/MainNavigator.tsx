@@ -1,6 +1,6 @@
 /**
  * Main Navigation Structure
- * 
+ *
  * PERFORMANCE OPTIMIZATIONS:
  * - Lazy loading for non-critical screens
  * - Screen options with animation presets
@@ -14,7 +14,12 @@ import {
   DarkTheme,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useColorScheme, View, ActivityIndicator, StyleSheet } from 'react-native';
+import {
+  useColorScheme,
+  View,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 
 // Critical screens - imported directly
 import SplashScreen from '../screens/SplashScreen';
@@ -30,6 +35,10 @@ import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
 import CallHistoryScreen from '../screens/CallHistoryScreen';
 import StatusScreen from '../screens/StatusScreen';
+import { JobScreen } from '../screens/CategoryScreen/JobScreen.js';
+import { JobsDetailsScreen } from '../screens/CategoryScreen/JobsDetailsScreen.js';
+import { CategoryScreen } from '../screens/CategoryScreen/CategoryScreen.js';
+import { CategoryDetailsScreen } from '../screens/CategoryScreen/CategoryDetailsScreen.js';
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
 
@@ -46,8 +55,12 @@ export type RootStackParamList = {
   ChatList: undefined;
   CallHistory: undefined;
   StatusScreen: undefined;
+  JobScreen: undefined;
+  JobsDetailsScreen: undefined;
   LanguageGameScreen: undefined;
   ContactDesignScreen: undefined;
+  CategoryScreen: undefined;
+  CategoryDetailsScreen: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -57,7 +70,9 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Helper to wrap screens with Header (exclude auth screens)
-const wrapWithHeader = <P extends object>(Component: React.ComponentType<P>) => {
+const wrapWithHeader = <P extends object>(
+  Component: React.ComponentType<P>,
+) => {
   return withHeader(Component, true);
 };
 
@@ -80,69 +95,93 @@ export default function MainNavigator() {
           headerShown: false,
           animation: 'fade',
           contentStyle: { backgroundColor: isDarkMode ? '#121212' : '#F5F7FA' },
-        }}>
+        }}
+      >
         {/* Auth Flow */}
-        <Stack.Screen 
-          name="Splash" 
+        <Stack.Screen
+          name="Splash"
           component={SplashScreen}
           options={{ animation: 'none' }}
         />
-        <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
-        <Stack.Screen 
-          name="Login" 
+        <Stack.Screen
+          name="LanguageSelection"
+          component={LanguageSelectionScreen}
+        />
+        <Stack.Screen
+          name="Login"
           component={LoginScreen}
           options={{ animation: 'slide_from_right' }}
         />
-        <Stack.Screen 
-          name="Signup" 
+        <Stack.Screen
+          name="Signup"
           component={SignupScreen}
           options={{ animation: 'slide_from_right' }}
         />
-        
+
         {/* Main App - with Header automatically */}
-        <Stack.Screen 
-          name="Home" 
+        <Stack.Screen
+          name="Home"
           component={wrapWithHeader(HomeScreen)}
           options={{ animation: 'fade' }}
         />
-        <Stack.Screen 
-          name="Dashboard" 
+        <Stack.Screen
+          name="Dashboard"
           component={wrapWithHeader(DashboardScreen)}
           options={{ animation: 'fade' }}
         />
-        
+
         {/* Chat Screens */}
-        <Stack.Screen 
-          name="ChatList" 
+        <Stack.Screen
+          name="ChatList"
           component={wrapWithHeader(ChatListScreen)}
           options={{ animation: 'fade' }}
         />
 
         {/* Bottom Nav Screens */}
-        <Stack.Screen 
-          name="CallHistory" 
+        <Stack.Screen
+          name="CallHistory"
           component={wrapWithHeader(CallHistoryScreen)}
           options={{ animation: 'fade' }}
         />
-        <Stack.Screen 
-          name="StatusScreen" 
+        <Stack.Screen
+          name="StatusScreen"
           component={wrapWithHeader(StatusScreen)}
           options={{ animation: 'fade' }}
         />
-        <Stack.Screen 
-          name="LanguageGameScreen" 
+        <Stack.Screen
+          name="JobScreen"
+          component={wrapWithHeader(JobScreen)}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="JobsDetailsScreen"
+          component={wrapWithHeader(JobsDetailsScreen)}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="CategoryScreen"
+          component={wrapWithHeader(CategoryScreen)}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="CategoryDetailsScreen"
+          component={wrapWithHeader(CategoryDetailsScreen)}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="LanguageGameScreen"
           component={wrapWithHeader(LanguageGameScreen)}
           options={{ animation: 'fade' }}
         />
 
-        <Stack.Screen 
-          name="Chat" 
+        <Stack.Screen
+          name="Chat"
           component={wrapWithHeader(ChatScreen)}
           options={{ animation: 'slide_from_right' }}
         />
 
-        <Stack.Screen 
-          name="ContactDesignScreen" 
+        <Stack.Screen
+          name="ContactDesignScreen"
           component={wrapWithHeader(ContactDesignScreen)}
           options={{ animation: 'slide_from_right' }}
         />
