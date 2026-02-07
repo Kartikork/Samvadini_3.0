@@ -20,36 +20,69 @@ const CALL_STORAGE_KEYS = {
 
 class PersistenceServiceClass {
   async saveActiveCall(call: PersistedCall): Promise<void> {
+    console.log('[PersistenceService] 💾 Saving active call:', call.callId);
     await AsyncStorage.setItem(CALL_STORAGE_KEYS.ACTIVE_CALL, JSON.stringify(call));
     await AsyncStorage.setItem(CALL_STORAGE_KEYS.CALL_TIMESTAMP, String(call.timestamp));
+    console.log('[PersistenceService] ✅ Call saved to AsyncStorage');
   }
 
   async getActiveCall(): Promise<PersistedCall | null> {
     const raw = await AsyncStorage.getItem(CALL_STORAGE_KEYS.ACTIVE_CALL);
-    if (!raw) return null;
+    if (!raw) {
+      console.log('[PersistenceService] No active call in storage');
+      return null;
+    }
     try {
-      return JSON.parse(raw) as PersistedCall;
-    } catch {
+      const call = JSON.parse(raw) as PersistedCall;
+      console.log('[PersistenceService] 📥 Retrieved active call:', call.callId);
+      return call;
+    } catch (error) {
+      console.error('[PersistenceService] Failed to parse active call:', error);
       return null;
     }
   }
 
   async clearActiveCall(): Promise<void> {
+    console.log('[PersistenceService] 🗑️ Clearing active call');
     await AsyncStorage.removeItem(CALL_STORAGE_KEYS.ACTIVE_CALL);
     await AsyncStorage.removeItem(CALL_STORAGE_KEYS.CALL_TIMESTAMP);
   }
 
   async savePendingAction(action: PendingCallAction): Promise<void> {
-    await AsyncStorage.setItem(CALL_STORAGE_KEYS.PENDING_ACTION, action);
+    console.log('[PersistenceService] 💾 Saving pending action:', action);
+    try {
+      await AsyncStorage.setItem(CALL_STORAGE_KEYS.PENDING_ACTION, action);
+      // Verify it was saved
+      const verify = await AsyncStorage.getItem(CALL_STORAGE_KEYS.PENDING_ACTION);
+      if (verify === action) {
+        console.log('[PersistenceService] ✅ Action saved and verified:', action);
+      } else {
+        console.warn('[PersistenceService] ⚠️ Action save verification failed. Expected:', action, 'Got:', verify);
+      }
+    } catch (error) {
+      console.error('[PersistenceService] ❌ Failed to save pending action:', error);
+      throw error;
+    }
   }
 
   async getPendingAction(): Promise<PendingCallAction | null> {
-    const raw = await AsyncStorage.getItem(CALL_STORAGE_KEYS.PENDING_ACTION);
-    if (raw === 'accept' || raw === 'reject') return raw;
-    return null;
+    try {
+      const raw = await AsyncStorage.getItem(CALL_STORAGE_KEYS.PENDING_ACTION);
+      console.log('[PersistenceService] 📥 Retrieved pending action raw value:', raw);
+      if (raw === 'accept' || raw === 'reject') {
+        console.log('[PersistenceService] ✅ Valid pending action found:', raw);
+        return raw;
+      }
+      console.log('[PersistenceService] ℹ️ No valid pending action (raw:', raw, ')');
+      return null;
+    } catch (error) {
+      console.error('[PersistenceService] ❌ Error reading pending action:', error);
+      return null;
+    }
   }
 
   async clearPendingAction(): Promise<void> {
+    console.log('[PersistenceService] 🗑️ Clearing pending action');
     await AsyncStorage.removeItem(CALL_STORAGE_KEYS.PENDING_ACTION);
   }
 

@@ -89,25 +89,30 @@ class WebRTCServiceClass {
 
     this.isConnecting = true;
     this.connectPromise = new Promise(resolve => {
+      console.log('[WebRTCService] Connecting to:', env.CALL_SOCKET_URL);
+      
       this.socket = io(env.CALL_SOCKET_URL, {
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 10000,
         timeout: 20000,
         autoConnect: false,
+        forceNew: true, // Force new connection
       });
 
       this.setupSocketListeners();
       this.socket.connect();
 
       const connectTimeout = setTimeout(() => {
+        console.warn('[WebRTCService] Connection timeout after 15s');
         this.isConnecting = false;
         resolve();
       }, 15000);
 
       this.socket.on('connect', () => {
+        console.log('[WebRTCService] Connected successfully');
         clearTimeout(connectTimeout);
         this.isConnecting = false;
         this.registerIfNeeded();
@@ -115,10 +120,26 @@ class WebRTCServiceClass {
         resolve();
       });
 
-      this.socket.on('connect_error', () => {
+      this.socket.on('connect_error', (error: Error) => {
+        console.error('[WebRTCService] Connection error:', error.message, error);
         clearTimeout(connectTimeout);
         this.isConnecting = false;
         resolve();
+      });
+
+      this.socket.on('disconnect', (reason: string) => {
+        console.log('[WebRTCService] Disconnected:', reason);
+        this.isRegistered = false;
+        this.emit('disconnected', { reason });
+      });
+
+      this.socket.on('reconnect', (attemptNumber: number) => {
+        console.log('[WebRTCService] Reconnected after', attemptNumber, 'attempts');
+        this.emit('reconnecting', { attemptNumber });
+      });
+
+      this.socket.on('reconnect_error', (error: Error) => {
+        console.error('[WebRTCService] Reconnection error:', error.message);
       });
     });
 
@@ -158,20 +179,16 @@ class WebRTCServiceClass {
   private setupSocketListeners(): void {
     if (!this.socket) return;
 
-    this.socket.on('disconnect', () => {
-      this.isRegistered = false;
-      this.emit('disconnected', {});
-    });
-
-    this.socket.on('reconnect_attempt', () => {
-      this.emit('reconnecting', {});
-    });
+    // Note: disconnect, reconnect listeners are handled in connect() method
+    // to avoid duplicates and ensure proper error logging
 
     this.socket.on(SOCKET_EVENTS.REGISTERED, () => {
+      console.log('[WebRTCService] Registered successfully');
       this.isRegistered = true;
     });
 
-    this.socket.on(SOCKET_EVENTS.REGISTRATION_ERROR, () => {
+    this.socket.on(SOCKET_EVENTS.REGISTRATION_ERROR, (error: any) => {
+      console.error('[WebRTCService] Registration error:', error);
       this.isRegistered = false;
     });
 
@@ -192,9 +209,33 @@ class WebRTCServiceClass {
     this.socket.on(SOCKET_EVENTS.CALL_TIMEOUT, (payload: any) => this.emit('call_timeout', payload));
     this.socket.on(SOCKET_EVENTS.CALL_CANCELLED, (payload: any) => this.emit('call_cancelled', payload));
 
-    this.socket.on(SOCKET_EVENTS.SDP_OFFER, (payload: any) => this.emit('sdp_offer', payload));
-    this.socket.on(SOCKET_EVENTS.SDP_ANSWER, (payload: any) => this.emit('sdp_answer', payload));
-    this.socket.on(SOCKET_EVENTS.ICE_CANDIDATE, (payload: any) => this.emit('ice_candidate', payload));
+    this.socket.on(SOCKET_EVENTS.SDP_OFFER, (payload: any) => {
+      console.log('[WebRTCService] 📥 Received SDP_OFFER event from socket:', {
+        callId: payload?.callId,
+        from: payload?.from,
+        to: payload?.to,
+        hasSDP: !!payload?.sdp,
+      });
+      this.emit('sdp_offer', payload);
+    });
+    this.socket.on(SOCKET_EVENTS.SDP_ANSWER, (payload: any) => {
+      console.log('[WebRTCService] 📥 Received SDP_ANSWER event from socket:', {
+        callId: payload?.callId,
+        from: payload?.from,
+        to: payload?.to,
+        hasSDP: !!payload?.sdp,
+      });
+      this.emit('sdp_answer', payload);
+    });
+    this.socket.on(SOCKET_EVENTS.ICE_CANDIDATE, (payload: any) => {
+      console.log('[WebRTCService] 📥 Received ICE_CANDIDATE event from socket:', {
+        callId: payload?.callId,
+        from: payload?.from,
+        to: payload?.to,
+        hasCandidate: !!payload?.candidate,
+      });
+      this.emit('ice_candidate', payload);
+    });
   }
 
   private registerIfNeeded(): void {
@@ -282,14 +323,34 @@ class WebRTCServiceClass {
   }
 
   sendOffer(callId: string, to: string, sdp: any): void {
+    console.log('[WebRTCService] 📤 Sending SDP_OFFER:', {
+      callId,
+      to,
+      hasSDP: !!sdp,
+      sdpType: sdp?.type,
+      sdpLength: sdp?.sdp?.length || 0,
+    });
     this.socket?.emit(SOCKET_EVENTS.SDP_OFFER, { callId, to, sdp });
   }
 
   sendAnswer(callId: string, to: string, sdp: any): void {
+    console.log('[WebRTCService] 📤 Sending SDP_ANSWER:', {
+      callId,
+      to,
+      hasSDP: !!sdp,
+      sdpType: sdp?.type,
+      sdpLength: sdp?.sdp?.length || 0,
+    });
     this.socket?.emit(SOCKET_EVENTS.SDP_ANSWER, { callId, to, sdp });
   }
 
   sendCandidate(callId: string, to: string, candidate: any): void {
+    console.log('[WebRTCService] 📤 Sending ICE_CANDIDATE:', {
+      callId,
+      to,
+      hasCandidate: !!candidate,
+      candidateType: candidate?.type,
+    });
     this.socket?.emit(SOCKET_EVENTS.ICE_CANDIDATE, { callId, to, candidate });
   }
 }

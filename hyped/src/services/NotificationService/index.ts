@@ -75,9 +75,73 @@ class NotificationServiceClass {
 
     notifee.onForegroundEvent(async ({ type, detail }) => {
       if (type === EventType.ACTION_PRESS) {
+        console.log('[NotificationService] 🔔 Foreground action pressed:', detail.pressAction?.id);
         await this.handleAction(detail.notification, detail.pressAction?.id);
       }
     });
+    
+    // Check for initial notification immediately when app opens (handles cold start from notification)
+    // This is critical for real devices where background handler might not execute
+    this.checkInitialNotification();
+  }
+  
+  private async checkInitialNotification(): Promise<void> {
+    try {
+      const initialNotification = await notifee.getInitialNotification();
+      if (initialNotification) {
+        console.log('[NotificationService] 🔍 App opened from notification:', initialNotification.notification?.id);
+        console.log('[NotificationService] 🔍 Press action:', initialNotification.pressAction?.id);
+        
+        // If there's a pressAction, it means an action button was tapped
+        if (initialNotification.pressAction?.id) {
+          const actionId = initialNotification.pressAction.id;
+          console.log('[NotificationService] ✅ Detected action from initial notification:', actionId);
+          
+          // During cold start, just save the action - don't call handleAction yet
+          // AppLifecycleService will handle it after services are initialized
+          if (actionId === 'CALL_ACCEPT' || actionId === 'accept') {
+            const data = initialNotification.notification?.data;
+            if (data?.callId) {
+              const callData = {
+                callId: String(data.callId),
+                callerId: String(data.callerId),
+                callerName: data.callerName ? String(data.callerName) : 'Unknown',
+                callType: data.callType === 'video' ? 'video' : 'audio',
+                timestamp: data.timestamp ? Number(data.timestamp) : Date.now(),
+                expiresAt: Date.now() + 60000,
+              };
+              await PersistenceService.savePendingAction('accept');
+              await PersistenceService.saveActiveCall(callData);
+              console.log('[NotificationService] ✅ ACCEPT action saved for cold start recovery');
+            }
+          } else if (actionId === 'CALL_REJECT' || actionId === 'reject') {
+            const data = initialNotification.notification?.data;
+            if (data?.callId) {
+              await PersistenceService.savePendingAction('reject');
+              console.log('[NotificationService] ✅ REJECT action saved for cold start recovery');
+            }
+          }
+        } else if (initialNotification.notification?.data?.type === 'incoming_call') {
+          // Notification body was tapped (not action button)
+          // Just ensure call data is saved
+          console.log('[NotificationService] ℹ️ Notification body tapped, saving call data');
+          const data = initialNotification.notification.data;
+          if (data.callId) {
+            const callData = {
+              callId: String(data.callId),
+              callerId: String(data.callerId),
+              callerName: data.callerName ? String(data.callerName) : 'Unknown',
+              callType: data.callType === 'video' ? 'video' : 'audio',
+              timestamp: data.timestamp ? Number(data.timestamp) : Date.now(),
+              expiresAt: Date.now() + 60000,
+            };
+            await PersistenceService.saveActiveCall(callData);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('[NotificationService] ⚠️ Error checking initial notification:', error);
+    }
   }
 
   registerBackgroundHandlers(): void {
@@ -102,6 +166,12 @@ class NotificationServiceClass {
   }
 
   async handleRemoteMessage(message: FirebaseMessagingTypes.RemoteMessage): Promise<void> {
+    console.log('[NotificationService] 📨 Remote message received:', {
+      type: message.data?.type,
+      callId: message.data?.callId,
+      hasData: !!message.data,
+    });
+
     const data = message.data || {};
     // Convert Firebase message data to the expected format
     const normalizedData: Record<string, string | number | undefined> = {};
@@ -114,12 +184,17 @@ class NotificationServiceClass {
     }
 
     if (normalizedData.type === 'incoming_call') {
+      console.log('[NotificationService] 📞 Incoming call notification');
       const payload = toIncomingCallPayload(normalizedData);
-      if (!payload) return;
+      if (!payload) {
+        console.warn('[NotificationService] Invalid call payload');
+        return;
+      }
       await this.handleIncomingCall(payload);
     }
 
     if (normalizedData.type === 'call_cancelled' || normalizedData.type === 'call_ended' || normalizedData.type === 'call_timeout') {
+      console.log('[NotificationService] Call termination notification:', normalizedData.type);
       const callId = normalizedData.callId ? String(normalizedData.callId) : null;
       if (callId) {
         await this.clearCallNotification(callId);
@@ -129,14 +204,30 @@ class NotificationServiceClass {
   }
 
   async handleIncomingCall(payload: IncomingCallPayload): Promise<void> {
+    console.log('[NotificationService] 💾 Persisting incoming call:', {
+      callId: payload.callId,
+      callerId: payload.callerId,
+      callType: payload.callType,
+    });
+
     const persisted = buildPersistedCall(payload);
     await PersistenceService.saveActiveCall(persisted);
+    console.log('[NotificationService] ✅ Call persisted to AsyncStorage');
+
     await this.showIncomingCallNotification(persisted);
+    console.log('[NotificationService] 🔔 Notification displayed');
+
     this.incomingHandler?.(payload, { skipNotification: true });
   }
 
   async handleAction(notification: Notification | undefined, actionId?: string): Promise<void> {
-    if (!notification?.data) return;
+    console.log('[NotificationService] 👆 Notification action pressed:', actionId);
+
+    if (!notification?.data) {
+      console.warn('[NotificationService] No notification data');
+      return;
+    }
+
     // Convert notification data to the expected format
     const data = notification.data as Record<string, any>;
     const normalizedData: Record<string, string | number | undefined> = {};
@@ -148,17 +239,38 @@ class NotificationServiceClass {
       }
     }
     const payload = toIncomingCallPayload(normalizedData);
-    if (!payload) return;
+    if (!payload) {
+      console.warn('[NotificationService] Invalid payload from notification');
+      return;
+    }
 
     const action: PendingCallAction | null =
       actionId === ACTION_ACCEPT ? 'accept' : actionId === ACTION_REJECT ? 'reject' : null;
-    if (!action) return;
+    if (!action) {
+      console.warn('[NotificationService] Unknown action:', actionId);
+      return;
+    }
+
+    console.log('[NotificationService] 💾 Persisting action:', action, 'for call:', payload.callId);
 
     await PersistenceService.savePendingAction(action);
     await PersistenceService.saveActiveCall(buildPersistedCall(payload));
     await this.clearCallNotification(payload.callId);
 
-    this.actionHandler?.(action, payload.callId);
+    console.log('[NotificationService] ✅ Action persisted');
+    
+    // Always save the action - AppLifecycleService will handle it during cold start
+    // For foreground cases (app already running), also call the handler immediately
+    // But add a small delay to ensure services are ready, especially on real devices
+    if (this.actionHandler) {
+      // Delay slightly to ensure CallManager is initialized (important for real devices)
+      setTimeout(() => {
+        console.log('[NotificationService] 🔔 Calling action handler for foreground case');
+        this.actionHandler?.(action, payload.callId);
+      }, 1000); // 1 second delay to ensure app is fully initialized
+    } else {
+      console.log('[NotificationService] ℹ️ No action handler registered yet, AppLifecycleService will handle it');
+    }
   }
 
   async showIncomingCallNotification(payload: IncomingCallPayload | ReturnType<typeof buildPersistedCall>): Promise<void> {
@@ -181,17 +293,30 @@ class NotificationServiceClass {
         channelId: CHANNEL_ID,
         category: AndroidCategory.CALL,
         importance: AndroidImportance.HIGH,
-        pressAction: { id: 'default' },
+        pressAction: { 
+          id: 'default',
+          launchActivity: 'default',  // Launch app when notification body is tapped
+        },
         actions: [
           {
             title: 'Accept',
-            pressAction: { id: ACTION_ACCEPT },
+            pressAction: { 
+              id: ACTION_ACCEPT,
+              launchActivity: 'default',  // ✅ Launch app when Accept is tapped
+            },
           },
           {
             title: 'Reject',
-            pressAction: { id: ACTION_REJECT },
+            pressAction: { 
+              id: ACTION_REJECT,
+              // Reject doesn't need to launch app - handle in background
+            },
           },
         ],
+        autoCancel: true,
+        ongoing: true,  // Prevent swipe-away (call notification)
+        showTimestamp: true,
+        timestamp: payload.timestamp,
       },
       ios: {
         sound: 'default',

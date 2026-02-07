@@ -20,25 +20,25 @@ export type CallDirection = 'outgoing' | 'incoming';
 interface CallSliceState {
   // Call state machine
   state: CallState;
-
+  
   // Call metadata
   callId: string | null;
   direction: CallDirection | null;
   callType: CallType | null;
   callerId: string | null;
   callerName: string | null;
-
+  
   // Timing
   startedAt: number | null;
   connectedAt: number | null;
   endedAt: number | null;
   duration: number; // seconds
-
+  
   // Media state
   isMuted: boolean;
   isSpeakerOn: boolean;
   isVideoOn: boolean;
-
+  
   // Error
   error: string | null;
 }

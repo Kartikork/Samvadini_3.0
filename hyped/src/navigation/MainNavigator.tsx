@@ -7,14 +7,16 @@
  * - Memoized components
  */
 
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useRef, useEffect } from 'react';
 import {
   NavigationContainer,
   DefaultTheme,
   DarkTheme,
+  NavigationContainerRef,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useColorScheme, View, ActivityIndicator, StyleSheet } from 'react-native';
+import { AppLifecycleService } from '../services/AppLifecycleService';
 
 // Critical screens - imported directly
 import SplashScreen from '../screens/SplashScreen';
@@ -71,9 +73,17 @@ const ScreenLoader = () => (
 export default function MainNavigator() {
   const isDarkMode = useColorScheme() === 'dark';
   const theme = isDarkMode ? DarkTheme : DefaultTheme;
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+
+  // Pass navigation ref to AppLifecycleService for cold start navigation
+  useEffect(() => {
+    if (navigationRef.current) {
+      AppLifecycleService.setNavigationRef(navigationRef.current);
+    }
+  }, []);
 
   return (
-    <NavigationContainer theme={theme}>
+    <NavigationContainer ref={navigationRef} theme={theme}>
       <Stack.Navigator
         initialRouteName="Splash"
         screenOptions={{
