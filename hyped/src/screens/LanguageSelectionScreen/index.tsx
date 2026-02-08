@@ -117,7 +117,7 @@ export function LanguageSelectionScreen() {
       } else if (token && uniqueId) {
         navigation.navigate('Dashboard' as never);
       } else {
-        navigation.navigate('Login' as never);
+        navigation.navigate('Dashboard' as never);
       }
     } catch (error) {
       console.error('Error selecting language:', error);

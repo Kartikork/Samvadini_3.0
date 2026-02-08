@@ -39,6 +39,10 @@ import { CategoryDetailsScreen } from '../screens/CategoryScreen/CategoryDetails
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
 import CallScreen from '../screens/CallScreen';
+import SnakeLaddersGame from '../screens/LanguageGameScreen/SnakeLaddersGame';
+const MemoryGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MemoryGame'));
+const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameIntroScreen'));
+const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameScreen'));
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
@@ -59,6 +63,10 @@ export type RootStackParamList = {
   ContactDesignScreen: undefined;
   CategoryScreen: undefined;
   CategoryDetailsScreen: undefined;
+  SnakeLaddersGame: undefined;
+  MemoryGame: undefined;
+  SnakeGameIntroScreen: undefined;
+  SnakeGame: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -112,6 +120,7 @@ export default function MainNavigator() {
           name="LanguageSelection"
           component={LanguageSelectionScreen}
         />
+        <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
         <Stack.Screen
           name="Login"
           component={LoginScreen}
@@ -203,6 +212,37 @@ export default function MainNavigator() {
         />
 
         {/* TODO: Add GroupChat screen when needed */}
+
+
+        <Stack.Screen
+          name="SnakeLaddersGame"
+          component={SnakeLaddersGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="MemoryGame"
+          component={MemoryGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="SnakeGameIntroScreen"
+          component={SnakeGameIntroScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="SnakeGame"
+          component={SnakeGameScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        {/* TODO: Add these screens
+        <Stack.Screen name="GroupChat" component={GroupChatScreen} />
+        <Stack.Screen name="Call" component={CallScreen} />
+        <Stack.Screen name="IncomingCall" component={IncomingCallScreen} />
+        */}
       </Stack.Navigator>
     </NavigationContainer>
   );
