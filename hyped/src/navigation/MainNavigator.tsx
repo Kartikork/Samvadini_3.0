@@ -116,10 +116,7 @@ export default function MainNavigator() {
           component={SplashScreen}
           options={{ animation: 'none' }}
         />
-        <Stack.Screen
-          name="LanguageSelection"
-          component={LanguageSelectionScreen}
-        />
+       
         <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
         <Stack.Screen
           name="Login"
