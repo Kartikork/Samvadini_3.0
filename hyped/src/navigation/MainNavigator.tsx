@@ -32,6 +32,10 @@ import CallHistoryScreen from '../screens/CallHistoryScreen';
 import StatusScreen from '../screens/StatusScreen';
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
+import SnakeLaddersGame from '../screens/LanguageGameScreen/SnakeLaddersGame';
+const MemoryGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MemoryGame'));
+const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameIntroScreen'));
+const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameScreen'));
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
@@ -48,6 +52,10 @@ export type RootStackParamList = {
   StatusScreen: undefined;
   LanguageGameScreen: undefined;
   ContactDesignScreen: undefined;
+  SnakeLaddersGame: undefined;
+  MemoryGame: undefined;
+  SnakeGameIntroScreen: undefined;
+  SnakeGame: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -82,69 +90,95 @@ export default function MainNavigator() {
           contentStyle: { backgroundColor: isDarkMode ? '#121212' : '#F5F7FA' },
         }}>
         {/* Auth Flow */}
-        <Stack.Screen 
-          name="Splash" 
+        <Stack.Screen
+          name="Splash"
           component={SplashScreen}
           options={{ animation: 'none' }}
         />
         <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
-        <Stack.Screen 
-          name="Login" 
+        <Stack.Screen
+          name="Login"
           component={LoginScreen}
           options={{ animation: 'slide_from_right' }}
         />
-        <Stack.Screen 
-          name="Signup" 
+        <Stack.Screen
+          name="Signup"
           component={SignupScreen}
           options={{ animation: 'slide_from_right' }}
         />
-        
+
         {/* Main App - with Header automatically */}
-        <Stack.Screen 
-          name="Home" 
+        <Stack.Screen
+          name="Home"
           component={wrapWithHeader(HomeScreen)}
           options={{ animation: 'fade' }}
         />
-        <Stack.Screen 
-          name="Dashboard" 
+        <Stack.Screen
+          name="Dashboard"
           component={wrapWithHeader(DashboardScreen)}
           options={{ animation: 'fade' }}
         />
-        
+
         {/* Chat Screens */}
-        <Stack.Screen 
-          name="ChatList" 
+        <Stack.Screen
+          name="ChatList"
           component={wrapWithHeader(ChatListScreen)}
           options={{ animation: 'fade' }}
         />
 
         {/* Bottom Nav Screens */}
-        <Stack.Screen 
-          name="CallHistory" 
+        <Stack.Screen
+          name="CallHistory"
           component={wrapWithHeader(CallHistoryScreen)}
           options={{ animation: 'fade' }}
         />
-        <Stack.Screen 
-          name="StatusScreen" 
+        <Stack.Screen
+          name="StatusScreen"
           component={wrapWithHeader(StatusScreen)}
           options={{ animation: 'fade' }}
         />
-        <Stack.Screen 
-          name="LanguageGameScreen" 
+        <Stack.Screen
+          name="LanguageGameScreen"
           component={wrapWithHeader(LanguageGameScreen)}
           options={{ animation: 'fade' }}
         />
 
-        <Stack.Screen 
-          name="Chat" 
+        <Stack.Screen
+          name="Chat"
           component={wrapWithHeader(ChatScreen)}
           options={{ animation: 'slide_from_right' }}
         />
 
-        <Stack.Screen 
-          name="ContactDesignScreen" 
+        <Stack.Screen
+          name="ContactDesignScreen"
           component={wrapWithHeader(ContactDesignScreen)}
           options={{ animation: 'slide_from_right' }}
+        />
+
+
+
+        <Stack.Screen
+          name="SnakeLaddersGame"
+          component={SnakeLaddersGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="MemoryGame"
+          component={MemoryGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="SnakeGameIntroScreen"
+          component={SnakeGameIntroScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="SnakeGame"
+          component={SnakeGameScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
         />
 
         {/* TODO: Add these screens
