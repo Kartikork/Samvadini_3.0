@@ -6,7 +6,7 @@ import { NotificationService } from '../NotificationService';
 import { isCallExpired } from '../../utils/call';
 
 type NavigationRef = {
-  navigate: (screen: string, params?: any) => void;
+  navigate: (name: string, params?: object) => void;
   isReady: () => boolean;
 } | null;
 
@@ -36,7 +36,7 @@ class AppLifecycleServiceClass {
     
     // Add delay to ensure AsyncStorage is fully ready and NotificationService has checked initial notification
     // NotificationService.checkInitialNotification() runs immediately on init, so we wait a bit for it to complete
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
     
     // Try reading pending action multiple times in case of timing issues
     let activeCall = await PersistenceService.getActiveCall();
@@ -46,7 +46,7 @@ class AppLifecycleServiceClass {
     // This handles race conditions where background handler hasn't finished writing
     if (!pendingAction && activeCall) {
       console.log('[AppLifecycleService] ⏳ Pending action not found, retrying...');
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 200));
       pendingAction = await PersistenceService.getPendingAction();
       // Re-read active call in case it was updated
       activeCall = await PersistenceService.getActiveCall();
@@ -121,7 +121,7 @@ class AppLifecycleServiceClass {
     if (pendingAction === 'accept') {
       console.log('[AppLifecycleService] ✅ Auto-accepting call from cold start...');
       // Wait a bit more to ensure WebRTC service is ready
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
       try {
         await CallManager.acceptCall(activeCall.callId);
         await PersistenceService.clearPendingAction();

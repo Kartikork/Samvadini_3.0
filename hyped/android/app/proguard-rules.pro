@@ -16,6 +16,14 @@
 -keepattributes Signature
 -keepattributes SourceFile,LineNumberTable
 -keep class com.google.firebase.** { *; }
+
+# Security module - keep for runtime checks
+-keep class com.friendsV.security.** { *; }
+-keepclassmembers class com.friendsV.security.** { *; }
+
+# Obfuscate security class names but keep functionality
+-keep,allowobfuscation class com.friendsV.security.SecurityManager { *; }
+-keep,allowobfuscation class com.friendsV.security.SecurityModule { *; }
 -keep class com.google.android.gms.** { *; }
 
 # Notifee

@@ -7,13 +7,13 @@
  * - Memoized components
  */
 
-import React, { lazy, Suspense, useRef, useEffect } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import {
   NavigationContainer,
   DefaultTheme,
   DarkTheme,
-  NavigationContainerRef,
 } from '@react-navigation/native';
+import { navigationRef } from './NavigationService';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useColorScheme, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { AppLifecycleService } from '../services/AppLifecycleService';
@@ -42,27 +42,9 @@ import CallScreen from '../screens/CallScreen';
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
+import type { RootStackParamList } from './types';
 
-export type RootStackParamList = {
-  Splash: undefined;
-  LanguageSelection: { currentScreen?: string } | undefined;
-  Login: undefined;
-  Signup: undefined;
-  Home: undefined;
-  Dashboard: undefined;
-  ChatList: undefined;
-  CallHistory: undefined;
-  StatusScreen: undefined;
-  JobScreen: undefined;
-  JobsDetailsScreen: undefined;
-  LanguageGameScreen: undefined;
-  ContactDesignScreen: undefined;
-  CategoryScreen: undefined;
-  CategoryDetailsScreen: undefined;
-  Chat: { chatId: string };
-  GroupChat: { chatId: string; groupName: string };
-  Call: { callId: string; peerId: string; isVideo: boolean };
-};
+export type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -83,12 +65,11 @@ const ScreenLoader = () => (
 export default function MainNavigator() {
   const isDarkMode = useColorScheme() === 'dark';
   const theme = isDarkMode ? DarkTheme : DefaultTheme;
-  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
 
   // Pass navigation ref to AppLifecycleService for cold start navigation
   useEffect(() => {
-    if (navigationRef.current) {
-      AppLifecycleService.setNavigationRef(navigationRef.current);
+    if (navigationRef.isReady()) {
+      AppLifecycleService.setNavigationRef(navigationRef);
     }
   }, []);
 

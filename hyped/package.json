@@ -35,6 +35,7 @@
     "react-native-sqlite-storage": "^6.0.1",
     "react-native-svg": "^15.2.0",
     "react-native-toast-message": "^2.3.3",
+    "@eabdullazyanov/react-native-sms-user-consent": "^1.3.0",
     "react-native-vector-icons": "^10.3.0",
     "react-native-webrtc": "^124.0.7",
     "react-redux": "^9.0.4",

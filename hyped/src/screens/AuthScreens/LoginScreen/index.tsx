@@ -34,6 +34,7 @@ import {
   Platform,
   Keyboard,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,13 +43,14 @@ import { useNavigation } from '@react-navigation/native';
 
 // Redux
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAppDispatch } from '../../../state/hooks';
+import { useAppDispatch, useAppSelector } from '../../../state/hooks';
 import { setAuthData } from '../../../state/authSlice';
 
 // Services
 import { AppBootstrap } from '../../../services/AppBootstrap';
+import DeviceBindingService from '../../../services/DeviceBindingService';
 
-// Components - all memoized
+// Components
 import {
   GradientButton,
   OtpInput,
@@ -57,10 +59,16 @@ import {
   Checkbox,
   type OtpInputRef,
 } from '../../../components/shared';
+import SimSelectionModal from '../../../components/SimSelectionModal';
+import SimBindingConsentModal from '../../../components/SimBindingConsentModal';
+import SimBindingProgress from '../../../components/SimBindingProgress';
+import type { SimInfo } from '../../../components/SimSelectionModal';
 import { useCountdown } from '../../../hooks';
 import { authAPI } from '../../../api';
 import type { Country, AuthStep } from '../../../types/auth';
+import { STORAGE_KEYS } from '../../../config/constants';
 import { hypedLogo } from '../../../assets';
+import NetInfo from '@react-native-community/netinfo';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DEFAULT_COUNTRY: Country = { name: 'India', code: 'IN', dialCode: '+91' };
@@ -83,6 +91,16 @@ function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [otpError, setOtpError] = useState(false);
   const [otpSuccess, setOtpSuccess] = useState(false);
+
+  // SIM Binding (Android only)
+  const [showSimSelection, setShowSimSelection] = useState(false);
+  const [selectedSim, setSelectedSim] = useState<SimInfo | null>(null);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [isAutoProcessing, setIsAutoProcessing] = useState(false);
+  const [autoProcessStep, setAutoProcessStep] = useState('');
+  const [phoneNumberLoading, setPhoneNumberLoading] = useState(false);
+
+  const lang = useAppSelector((s) => s.language?.lang ?? 'en');
 
   // ─────────────────────────────────────────────────────────────
   // REFS - For non-render data
@@ -113,6 +131,112 @@ function LoginScreen() {
   }, [agreeToTerms, phoneNumber, isIndian, email, emailError]);
 
   const canResendOtp = !timerRunning;
+
+  const isPhoneEditable = !selectedSim && !isAutoProcessing;
+
+  // ─────────────────────────────────────────────────────────────
+  // SIM Binding - Load phone from SIM on Android mount
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      const t = setTimeout(() => loadPhoneNumberFromSim(), 500);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  const loadPhoneNumberFromSim = useCallback(async () => {
+    if (Platform.OS !== 'android') return;
+    try {
+      setPhoneNumberLoading(true);
+      const sims = await DeviceBindingService.getAllSims();
+      if (sims.length === 0) {
+        Toast.show({ type: 'warning', text1: 'No SIM detected', text2: 'Please insert a SIM or enter phone manually.' });
+      } else {
+        setShowSimSelection(true);
+      }
+    } catch (err: any) {
+      Toast.show({
+        type: 'warning',
+        text1: 'SIM detection failed',
+        text2: err.message?.includes('permission') ? 'Please grant phone permission.' : 'Enter phone number manually.',
+      });
+    } finally {
+      setPhoneNumberLoading(false);
+    }
+  }, []);
+
+  const handleSimSelect = useCallback((sim: SimInfo) => {
+    setSelectedSim(sim);
+    setShowSimSelection(false);
+    setShowConsentModal(true);
+  }, []);
+
+  const handleConsentAccept = useCallback(async () => {
+    setShowConsentModal(false);
+    if (!selectedSim) return;
+    setIsAutoProcessing(true);
+    setPhoneNumberLoading(true);
+    try {
+      setAutoProcessStep('Filling phone number...');
+      let phone = (selectedSim.phoneNumber || '').replace(/^\+91|^91/, '').replace(/\s+/g, '').trim();
+      if (!phone) {
+        const sims = await DeviceBindingService.getAllSims();
+        const sim = sims.find((s) => s.slotIndex === selectedSim.slotIndex);
+        phone = (sim?.phoneNumber || '').replace(/^\+91|^91/, '').replace(/\s+/g, '').trim();
+      }
+      if (!phone) {
+        Toast.show({ type: 'warning', text1: 'Phone not found', text2: 'Enter phone number manually.' });
+        setIsAutoProcessing(false);
+        setPhoneNumberLoading(false);
+        setSelectedSim(null);
+        return;
+      }
+      setPhoneNumber(phone);
+
+      setAutoProcessStep('Checking device security...');
+      const securityInfo = await DeviceBindingService.getSecurityInfo();
+      if (securityInfo.isEmulator) {
+        Toast.show({ type: 'error', text1: 'Emulator detected', text2: 'Login is not allowed on emulators.' });
+        setIsAutoProcessing(false);
+        setPhoneNumberLoading(false);
+        return;
+      }
+
+      setAutoProcessStep('Sending verification code...');
+      const netState = await NetInfo.fetch();
+      if (!netState.isConnected) {
+        Toast.show({ type: 'error', text1: 'No internet', text2: 'Check your connection.' });
+        setIsAutoProcessing(false);
+        setPhoneNumberLoading(false);
+        return;
+      }
+
+      const otp = Math.floor(1000 + Math.random() * 9000);
+      await authAPI.sendOtp({
+        durasamparka_sankhya: phone,
+        dootapatra: email || undefined,
+        ekakrit_passanketa: otp,
+        dhwani: lang,
+        desha_suchaka_koda: selectedCountry.dialCode,
+        durasamparka_gopaniya: hidePhoneNumber,
+      });
+      setStep('otp');
+      startTimer(60);
+      setTimeout(() => otpInputRef.current?.focus(), 300);
+      Toast.show({ type: 'success', text1: 'OTP Sent', text2: `OTP sent to ${phone}` });
+    } catch (err: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: err?.message || 'Setup failed. Try again.' });
+    } finally {
+      setIsAutoProcessing(false);
+      setPhoneNumberLoading(false);
+    }
+  }, [selectedSim, selectedCountry.dialCode, email, hidePhoneNumber, lang, startTimer]);
+
+  const handleConsentCancel = useCallback(() => {
+    setShowConsentModal(false);
+    setSelectedSim(null);
+    setPhoneNumberLoading(false);
+  }, []);
 
   // ─────────────────────────────────────────────────────────────
   // HANDLERS - All memoized with useCallback
@@ -173,6 +297,7 @@ function LoginScreen() {
         durasamparka_sankhya: phoneNumber,
         dootapatra: email || undefined,
         ekakrit_passanketa: otp,
+        dhwani: lang,
         desha_suchaka_koda: selectedCountry.dialCode,
         durasamparka_gopaniya: hidePhoneNumber,
       });
@@ -204,7 +329,7 @@ function LoginScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [canSendOtp, phoneNumber, email, isIndian, selectedCountry.dialCode, hidePhoneNumber, startTimer]);
+  }, [canSendOtp, phoneNumber, email, isIndian, selectedCountry.dialCode, hidePhoneNumber, lang, startTimer]);
 
   const handleVerifyOtp = useCallback(async (otp: string) => {
     // Prevent duplicate submissions
@@ -237,10 +362,27 @@ function LoginScreen() {
 
       // Save auth data to Redux (Redux Persist auto-saves to AsyncStorage)
       dispatch(setAuthData({ token, uniqueId }));
+      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
 
-      // Save display name for other flows (optional - not critical)
+      // Save display name and userId for device binding
       const displayName = user?.praman_patrika ?? user?.upayogakarta_nama;
       if (displayName) await AsyncStorage.setItem('userName', displayName);
+      const userId = (user as any)?._id;
+      if (userId) await AsyncStorage.setItem('userId', userId);
+      await AsyncStorage.setItem('currUserPhn', phoneNumber);
+      await AsyncStorage.setItem('isPhnHidden', JSON.stringify(hidePhoneNumber));
+
+      // Register device with backend (SIM and device binding)
+      if (Platform.OS === 'android' && userId) {
+        DeviceBindingService.registerDevice(
+          phoneNumber,
+          selectedCountry.dialCode,
+          userId,
+          uniqueId
+        ).then(() => {
+          DeviceBindingService.generateAndSignChallenge().catch(() => {});
+        }).catch(() => {});
+      }
 
       setOtpSuccess(true);
       Keyboard.dismiss();
@@ -356,6 +498,8 @@ function LoginScreen() {
                 isIndian={isIndian}
                 isLoading={isLoading}
                 canSendOtp={canSendOtp}
+                phoneNumberLoading={phoneNumberLoading}
+                isPhoneEditable={isPhoneEditable}
                 onPhoneChange={handlePhoneChange}
                 onEmailChange={handleEmailChange}
                 onCountryPress={handleOpenCountryPicker}
@@ -387,6 +531,19 @@ function LoginScreen() {
           onSelect={handleCountrySelect}
           selectedCountry={selectedCountry}
         />
+
+        {/* SIM Binding Modals (Android) */}
+        <SimSelectionModal
+          visible={showSimSelection}
+          onSelectSim={handleSimSelect}
+          onClose={() => setShowSimSelection(false)}
+        />
+        <SimBindingConsentModal
+          visible={showConsentModal}
+          onAccept={handleConsentAccept}
+          onCancel={handleConsentCancel}
+        />
+        <SimBindingProgress visible={isAutoProcessing} message={autoProcessStep} />
       </SafeAreaView>
     </KeyboardAvoidingView>
   );
@@ -406,6 +563,8 @@ interface InputFormProps {
   isIndian: boolean;
   isLoading: boolean;
   canSendOtp: boolean;
+  phoneNumberLoading: boolean;
+  isPhoneEditable: boolean;
   onPhoneChange: (text: string) => void;
   onEmailChange: (text: string) => void;
   onCountryPress: () => void;
@@ -424,6 +583,8 @@ const InputForm = memo(function InputForm({
   isIndian,
   isLoading,
   canSendOtp,
+  phoneNumberLoading,
+  isPhoneEditable,
   onPhoneChange,
   onEmailChange,
   onCountryPress,
@@ -441,14 +602,22 @@ const InputForm = memo(function InputForm({
           <Text style={styles.countryCode}>{selectedCountry.dialCode}</Text>
         </TouchableOpacity>
         <View style={styles.phoneInput}>
-          <FormInput
-            placeholder="Phone Number"
-            value={phoneNumber}
-            onChangeText={onPhoneChange}
-            keyboardType="phone-pad"
-            maxLength={10}
-            containerStyle={styles.phoneInputContainer}
-          />
+          {phoneNumberLoading ? (
+            <View style={styles.phoneLoadingContainer}>
+              <ActivityIndicator size="small" color="#028BD3" />
+              <Text style={styles.phoneLoadingText}>Detecting phone number...</Text>
+            </View>
+          ) : (
+            <FormInput
+              placeholder="Phone Number"
+              value={phoneNumber}
+              onChangeText={onPhoneChange}
+              keyboardType="phone-pad"
+              maxLength={10}
+              containerStyle={styles.phoneInputContainer}
+              editable={isPhoneEditable}
+            />
+          )}
         </View>
       </View>
 
@@ -640,6 +809,16 @@ const styles = StyleSheet.create({
   },
   phoneInput: {
     flex: 1,
+  },
+  phoneLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    gap: 10,
+  },
+  phoneLoadingText: {
+    fontSize: 14,
+    color: '#666',
   },
   phoneInputContainer: {
     marginBottom: 16,
