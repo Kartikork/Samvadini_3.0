@@ -419,7 +419,7 @@ const DailyPlanner = () => {
                     </TouchableWithoutFeedback>
                 </Modal>
             </View>
-            <BottomNavigation activeScreen="DailyPlanner" />
+            <BottomNavigation />
         </>
     );
 };
