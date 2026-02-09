@@ -27,7 +27,6 @@ import { AppLifecycleService } from '../services/AppLifecycleService';
 import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/AuthScreens/LoginScreen';
 import SignupScreen from '../screens/AuthScreens/SignupScreen';
-
 // Non-critical screens - can be lazy loaded in production
 // For now, direct import for simplicity
 import HomeScreen from '../screens/HomeScreen';
@@ -52,6 +51,8 @@ import SharePlan from '../screens/DailyPlanner/SharePlan';
 import UpdateReminder from '../screens/DailyPlanner/UpdateReminder';
 import SharePlannerCount from '../screens/DailyPlanner/SharePlannerCount';
 import CallScreen from '../screens/CallScreen';
+import EventListScreen from '../screens/EventManagement/EventListScreen.js';
+import CreateEvents from '../screens/EventManagement/CreateEvents.js';
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
@@ -80,6 +81,8 @@ export type RootStackParamList = {
   SharePlan: undefined;
   UpdateReminder: undefined;
   SharePlannerCount: undefined;
+  EventListScreen: undefined;
+  CreateEvents: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -212,7 +215,7 @@ export default function MainNavigator() {
         />
         <Stack.Screen
           name="AddPlan"
-          component={AddPlan}
+          component={wrapWithHeader(AddPlan)}
           options={{ animation: 'fade' }}
         />
         <Stack.Screen
@@ -221,18 +224,28 @@ export default function MainNavigator() {
           options={{ animation: 'fade' }}
         />
         <Stack.Screen
+          name="EventListScreen"
+          component={wrapWithHeader(EventListScreen)}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="CreateEvents"
+          component={wrapWithHeader(CreateEvents)}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
           name="UpdatePlanner"
-          component={UpdatePlanner}
+          component={wrapWithHeader(UpdatePlanner)}
           options={{ animation: 'fade' }}
         />
         <Stack.Screen
           name="UpdateReminder"
-          component={UpdateReminder}
+          component={wrapWithHeader(UpdateReminder)}
           options={{ animation: 'fade' }}
         />
         <Stack.Screen
           name="AddReminder"
-          component={AddReminder}
+          component={wrapWithHeader(AddReminder)}
           options={{ animation: 'fade' }}
         />
         <Stack.Screen

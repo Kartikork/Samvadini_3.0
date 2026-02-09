@@ -36,7 +36,7 @@ export { default as noImage } from './images/no-image.png';
 export { default as priorityIcon } from './images/priority.png';
 export { default as userIcon } from './images/user-icon.png';
 export { default as groupIcons } from './images/groupIcons.png';
-// dashboard images end
+export { default as educationGroupIcons } from './images/event/education.jpg';
 
 // Icons
 // Example: export { default as homeIcon } from './icons/home.png';

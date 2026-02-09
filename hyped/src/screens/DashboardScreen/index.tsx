@@ -126,8 +126,8 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
     () => navigation.navigate('DailyPlanner'),
     [navigation],
   );
-  const navigateToHomeScreen = useCallback(
-    () => navigation.navigate('HomeScreen', {}),
+  const navigateToEventManagementScreen = useCallback(
+    () => navigation.navigate('EventListScreen', { navigation }),
     [navigation],
   );
   const navigateToJobsScreen = useCallback(
@@ -318,7 +318,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={navigateToHomeScreen}
+                  onPress={navigateToEventManagementScreen}
                   style={styles.eventButton}
                 >
                   <Icon name="calendar-outline" size={26} color="#fff" />

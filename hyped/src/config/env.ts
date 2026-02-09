@@ -42,6 +42,9 @@ const envConfigs: Record<Environment, EnvConfig> = {
   staging: {
     API_BASE_URL: 'https://qasamvadini.aicte-india.org/api',
     SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
+    Market_Place_API_URL: 'https://marketplace-prod.aicte-india.org/',
+    FCM_URL: 'https://samvadiniprod.aicte-india.org/',
+    LRN_URL: 'https://lrn.aicte-india.org',
     // Socket.IO call signaling server (HTTP is fine, Socket.IO handles protocol upgrade)
     // Make sure the server is accessible and port 8000 is open
     CALL_SOCKET_URL: 'http://74.225.150.128:8000',
@@ -54,6 +57,9 @@ const envConfigs: Record<Environment, EnvConfig> = {
   production: {
     API_BASE_URL: 'https://qasamvadini.aicte-india.org/api',
     SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
+    Market_Place_API_URL: 'https://marketplace-prod.aicte-india.org/',
+    FCM_URL: 'https://samvadiniprod.aicte-india.org/',
+    LRN_URL: 'https://lrn.aicte-india.org',
     // Socket.IO call signaling server (HTTP is fine, Socket.IO handles protocol upgrade)
     // Make sure the server is accessible and port 8000 is open
     CALL_SOCKET_URL: 'http://74.225.150.128:8000',

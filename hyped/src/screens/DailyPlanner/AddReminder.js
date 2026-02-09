@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   ScrollView,
   Modal,
   Alert,
-  BackHandler,
   ActivityIndicator,
   Image,
 } from 'react-native';
@@ -16,13 +15,14 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect, useNavigation, CommonActions } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import AddReminderCalendar from './ReminderCalendar';
 import BottomNavigation from '../../components/BottomNavigation';
 import { scheduleReminder } from './ReminderNotification';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { env } from '../../config';
 import { priorityIcon } from '../../assets';
+import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 
 const parseTimeToDate = (timeStr, dateObj) => {
   if (!timeStr || !dateObj) return dateObj;
@@ -69,6 +69,7 @@ const AddReminder = ({ route, footer: footerProp }) => {
   const [weekly, setWeekly] = useState(data.weekly || []);
   const [monthly, setMonthly] = useState(data.monthly || []);
   const { lang = 'en', translations = {} } = {};
+  useHardwareBackHandler('Dashboard');
 
   useEffect(() => {
     if (data && Object.keys(data).length > 0) {
@@ -237,38 +238,6 @@ const AddReminder = ({ route, footer: footerProp }) => {
       },
     });
   };
-
-  useFocusEffect(
-    React.useCallback(() => {
-      const onBackPress = () => {
-        const currentRoute = navigation.getState().routes[navigation.getState().index].name;
-        if (currentRoute === 'Dashboard') {
-          Alert.alert(
-            'Exit App',
-            'Are you sure you want to exit?',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'YES', onPress: () => BackHandler.exitApp() },
-            ]
-          );
-          return true;
-        }
-        if (navigation.canGoBack()) {
-          navigation.goBack();
-          return true;
-        }
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: 'Dashboard' }],
-          })
-        );
-        return true;
-      };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation])
-  );
 
   return (
     <>

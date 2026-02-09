@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, BackHandler, Text, FlatList, Modal, ActivityIndicator, TouchableWithoutFeedback, Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, TouchableOpacity, StyleSheet, Text, FlatList, Modal, ActivityIndicator, TouchableWithoutFeedback, Alert } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import BottomNavigation from '../../components/BottomNavigation';
-import { useFocusEffect, useNavigation, CommonActions } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import AddReminder from './AddReminder';
 import AddPlan from './AddPlan';
 import { env } from '../../config';
 import { useAppSelector } from '../../state/hooks';
+import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 
 const DailyPlanner = () => {
     const { uniqueId } = useAppSelector(state => state.auth);
@@ -24,6 +24,7 @@ const DailyPlanner = () => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const [datePickerVisible, setDatePickerVisible] = useState(false);
     const [selectedTab, setSelectedTab] = useState(1);
+    useHardwareBackHandler('Dashboard');
 
     const handleTab = () => {
         setSelectedTab(selectedTab === 1 ? 2 : 1);
@@ -38,49 +39,6 @@ const DailyPlanner = () => {
             )
         );
     };
-
-    useFocusEffect(
-        React.useCallback(() => {
-            const onBackPress = () => {
-                const currentRoute =
-                    navigation.getState().routes[navigation.getState().index].name;
-
-                if (currentRoute === 'Dashboard') {
-                    Alert.alert(
-                        'Exit App',
-                        'Are you sure you want to exit?',
-                        [
-                            { text: 'Cancel', style: 'cancel' },
-                            { text: 'YES', onPress: () => BackHandler.exitApp() },
-                        ]
-                    );
-                    return true;
-                }
-
-                if (navigation.canGoBack()) {
-                    navigation.goBack();
-                    return true;
-                }
-
-                navigation.dispatch(
-                    CommonActions.reset({
-                        index: 0,
-                        routes: [{ name: 'Dashboard' }],
-                    })
-                );
-
-                return true;
-            };
-
-            const subscription = BackHandler.addEventListener(
-                'hardwareBackPress',
-                onBackPress
-            );
-
-            return () => subscription.remove();
-        }, [navigation])
-    );
-
 
     const handleDelete = async (id, type) => {
         try {

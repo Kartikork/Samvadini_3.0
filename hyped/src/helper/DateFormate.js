@@ -54,3 +54,30 @@ export const generateUID = () => {
 
     return `${timestamp}${randomValue}${counter}`;
 };
+
+export function getEventTimeLeft(startAt, endAt) {
+    if (!startAt) return '';
+
+    const now = dayjs().tz('Asia/Kolkata');
+    const startDateTime = dayjs(startAt, 'DD/MM/YYYY hh:mm A').tz('Asia/Kolkata');
+    const endDateTime = endAt ? dayjs(endAt, 'DD/MM/YYYY hh:mm A').tz('Asia/Kolkata') : null;
+
+    if (endDateTime && now.isAfter(startDateTime) && now.isBefore(endDateTime)) {
+        return 'In Progress';
+    }
+
+    const diffInMinutes = startDateTime.diff(now, 'minute');
+    if (diffInMinutes <= -1) {
+        return 'Event passed';
+    }
+
+    const diffInDays = startDateTime.startOf('day').diff(now.startOf('day'), 'day');
+
+    if (diffInDays > 1) {
+        return `${diffInDays} days left`;
+    } else if (diffInDays === 1) {
+        return `1 day left`;
+    } else {
+        return `Today ${startDateTime.format('hh:mm A')}`;
+    }
+}
