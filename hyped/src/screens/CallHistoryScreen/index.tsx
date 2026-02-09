@@ -1,16 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import BottomNavigation from '../../components/BottomNavigation';
 
 export default function CallHistoryScreen() {
   return (
-    <>
-      <View style={styles.container}>
-        <Text style={styles.title}>Call History</Text>
-        <Text style={styles.subtitle}>Your call history will appear here</Text>
-      </View>
-      <BottomNavigation activeScreen="CallHistory" />
-    </>
+    <View style={styles.container}>
+      <Text style={styles.title}>Call History</Text>
+      <Text style={styles.subtitle}>Your call history will appear here</Text>
+    </View>
   );
 }
 

@@ -4,7 +4,6 @@ import LinearGradient from "react-native-linear-gradient";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { noImage } from '../../assets';
-import BottomNavigation from "../../components/BottomNavigation";
 import { useAppSelector } from "../../state/hooks";
 import { getAppTranslations } from "../../translations";
 
@@ -225,7 +224,6 @@ export function JobsDetailsScreen({ route }) {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
-            <BottomNavigation />
         </View>
     );
 }

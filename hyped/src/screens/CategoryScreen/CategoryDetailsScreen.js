@@ -6,7 +6,6 @@ import LinearGradient from "react-native-linear-gradient";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import axios from "axios";
 import { noImage } from "../../assets";
-import BottomNavigation from "../../components/BottomNavigation";
 import { formatChatDate } from "../../helper/DateFormate";
 import { env } from "../../config/env";
 import { useAppSelector } from "../../state/hooks";
@@ -169,7 +168,6 @@ export function CategoryDetailsScreen({ route }) {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
-            <BottomNavigation />
         </View>
     );
 }

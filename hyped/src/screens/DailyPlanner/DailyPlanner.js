@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text, FlatList, Modal, ActivityIndicator, TouchableWithoutFeedback, Alert } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import BottomNavigation from '../../components/BottomNavigation';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
@@ -419,7 +418,6 @@ const DailyPlanner = () => {
                     </TouchableWithoutFeedback>
                 </Modal>
             </View>
-            <BottomNavigation />
         </>
     );
 };

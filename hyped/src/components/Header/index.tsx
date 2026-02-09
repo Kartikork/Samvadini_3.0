@@ -271,14 +271,14 @@ export const Header = React.memo(() => {
     <SafeAreaView edges={['top']} style={headerStyles.safeAreaContainer}>
       <View style={headerStyles.header}>
         <View style={headerStyles.headerLeft}>
-          {routeName !== 'Dashboard' && (
+          {routeName !== 'MainTabs' && (
             <TouchableOpacity
               style={headerStyles.backButton}
               onPress={() => {
                 if (navigation.canGoBack()) {
                   navigation.goBack();
                 } else {
-                  navigation.navigate('Dashboard');
+                  navigation.navigate('MainTabs');
                 }
               }}
             >
@@ -288,9 +288,9 @@ export const Header = React.memo(() => {
           <TouchableOpacity
             style={[
               headerStyles.headerCenter,
-              routeName === 'Dashboard' ? { marginLeft: 10 } : null,
+              routeName === 'MainTabs' ? { marginLeft: 10 } : null,
             ]}
-            onPress={() => navigation.navigate('Dashboard' as never)}
+            onPress={() => navigation.navigate('MainTabs' as never)}
           >
             <Image source={hypedLogo} style={headerStyles.logo} />
           </TouchableOpacity>

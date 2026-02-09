@@ -1,16 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import BottomNavigation from '../../components/BottomNavigation';
 
 export default function StatusScreen() {
   return (
-    <>
-      <View style={styles.container}>
-        <Text style={styles.title}>Updates</Text>
-        <Text style={styles.subtitle}>Status updates will appear here</Text>
-      </View>
-      <BottomNavigation activeScreen="Status" />
-    </>
+    <View style={styles.container}>
+      <Text style={styles.title}>Updates</Text>
+      <Text style={styles.subtitle}>Status updates will appear here</Text>
+    </View>
   );
 }
 

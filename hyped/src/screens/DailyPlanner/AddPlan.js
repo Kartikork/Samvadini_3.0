@@ -14,7 +14,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
-import BottomNavigation from '../../components/BottomNavigation';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { env } from '../../config';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
@@ -684,7 +683,6 @@ const AddPlan = ({ route }) => {
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
-      <BottomNavigation />
     </>
   );
 };

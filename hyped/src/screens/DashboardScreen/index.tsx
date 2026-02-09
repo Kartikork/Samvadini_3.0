@@ -102,13 +102,14 @@ console.log(dashboardTexts)
     [dashboardTexts.welcome, userNames],
   );
 
+  const tabNav = navigation.getParent();
   const navigateToCallHistory = useCallback(
-    () => navigation.navigate('CallHistory'),
-    [navigation],
+    () => (tabNav as any)?.navigate('CallHistory'),
+    [tabNav],
   );
   const navigateToListing = useCallback(
-    () => navigation.navigate('ChatList'),
-    [navigation],
+    () => (tabNav as any)?.navigate('ChatList'),
+    [tabNav],
   );
   const navigateToNewContactForm = useCallback(
     () => navigation.navigate('NewContactForm'),
@@ -283,7 +284,7 @@ console.log(dashboardTexts)
                         styles.gameZoneButton,
                         { padding: 0, width: '100%' },
                       ]}
-                      onPress={() => navigation.navigate('LanguageGameScreen')}
+                      onPress={() => (tabNav as any)?.navigate('LanguageGameScreen')}
                     >
                       <Image source={gameIcon} />
                       <Image

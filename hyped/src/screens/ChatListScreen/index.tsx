@@ -72,7 +72,6 @@ import { SocketService } from '../../services/SocketService';
 // Message handler for saving incoming messages
 import { handleIncomingMessage } from '../../services/MessageHandler';
 import { GradientBackground } from '../../components/GradientBackground';
-import BottomNavigation from '../../components/BottomNavigation';
 
 // ============================================
 // LAZY LOADED COMPONENTS (Event-based)
@@ -678,7 +677,6 @@ export default function ChatListScreen() {
           </View>
         )}
       </View>
-      <BottomNavigation activeScreen="Listing" />
     </>
   );
 }

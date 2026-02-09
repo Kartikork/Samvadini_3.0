@@ -15,17 +15,39 @@ import { axiosConn } from '../../storage/helper/Config';
 import GlobalBottomNavigation from '../GlobalBottomNavigation/index';
 import { useUnreadChatsCount } from '../../hooks/useUnreadChatsCount';
 import { getAppTranslations } from '../../translations';
-import { useNavigation } from '@react-navigation/native';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 const ICON_SIZE = 26;
 
-const BottomNavigation = ({
-  activeScreen,
-}: {
-  navigation: any;
-  activeScreen: string;
-}) => {
-  const navigation = useNavigation();
+const ROUTE_TO_TAB: Record<string, string> = {
+  Dashboard: 'HomeTab',
+  LanguageGameScreen: 'GameZone',
+  StatusScreen: 'Status',
+  CallHistory: 'CallHistory',
+  ChatList: 'Listing',
+};
+
+/**
+ * Custom tab bar for @react-navigation/bottom-tabs.
+ * Used by MainTabs in BottomTabNavigator.
+ */
+export function CustomTabBar(props: BottomTabBarProps) {
+  const { state, navigation } = props;
+  const activeRouteName = state.routes[state.index]?.name ?? 'Dashboard';
+  const activeScreen = ROUTE_TO_TAB[activeRouteName] ?? 'HomeTab';
+
+  // Hide tab bar when we're on the Dashboard screen (root of Home stack)
+  const isOnDashboardScreen =
+    state.index === 0 &&
+    (() => {
+      const tabRoute = state.routes[0];
+      const nested = tabRoute?.state as { routes?: { name: string }[]; index?: number } | undefined;
+      if (!nested?.routes?.length) return true;
+      const idx = nested.index ?? 0;
+      return nested.routes[idx]?.name === 'Dashboard';
+    })();
+  if (isOnDashboardScreen) return null;
+
   const lang = useSelector(
     (state: { language?: { lang?: string } }) => state.language?.lang ?? 'en',
   );
@@ -36,83 +58,87 @@ const BottomNavigation = ({
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const unreadChatsCount = useUnreadChatsCount();
   const [isNewStatus, setIsNewStatus] = useState(false);
-
   const t = getAppTranslations(lang);
 
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
+    const show = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       () => setKeyboardVisible(true),
     );
-    const keyboardDidHideListener = Keyboard.addListener(
+    const hide = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       () => setKeyboardVisible(false),
     );
     return () => {
-      keyboardDidShowListener?.remove();
-      keyboardDidHideListener?.remove();
+      show?.remove();
+      hide?.remove();
     };
   }, []);
 
   useEffect(() => {
-    checkNewStatus();
-  }, []);
-
-  const checkNewStatus = async () => {
-    try {
-      const myId = await AsyncStorage.getItem('uniqueId');
-      const response = await axiosConn(
-        'get',
-        `status/check-status?my_id=${myId}`,
-      );
-      if (response.status === 200) {
-        setIsNewStatus(
-          (response?.data as { has_new_status?: boolean })?.has_new_status ??
-            false,
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const myId = await AsyncStorage.getItem('uniqueId');
+        const response = await axiosConn(
+          'get',
+          `status/check-status?my_id=${myId}`,
         );
+        if (!cancelled && response.status === 200) {
+          setIsNewStatus(
+            (response?.data as { has_new_status?: boolean })?.has_new_status ??
+              false,
+          );
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // Status check optional - fail silently
-    }
-  };
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!isIndia) {
     return (
       <GlobalBottomNavigation
-        navigation={navigation}
+        navigation={navigation as any}
         activeScreen={activeScreen}
       />
     );
   }
-  if (isKeyboardVisible) {
-    return null;
-  }
+  if (isKeyboardVisible) return null;
 
-  const handleNavigation = (screenName: string, params?: object) => {
-    if (screenName === 'Dashboard') {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Dashboard' }],
-      });
-    } else {
-      navigation.navigate(screenName, params);
+  const handlePress = (routeName: string, params?: object) => {
+    const event = navigation.emit({
+      type: 'tabPress',
+      target: state.routes.find(r => r.name === routeName)?.key ?? '',
+      canPreventDefault: true,
+    });
+    if (!event.defaultPrevented) {
+      if (routeName === 'Dashboard') {
+        navigation.navigate('Dashboard');
+      } else {
+        navigation.navigate(routeName as any, params);
+      }
     }
   };
 
-  const navigationItems = [
+  const items = [
     {
       name: 'GameZone',
       icon: 'game-controller-outline' as const,
       activeIcon: 'game-controller' as const,
       title: t.gameZone,
-      screen: 'LanguageGameScreen',
+      route: 'LanguageGameScreen',
     },
     {
       name: 'Status',
       icon: isNewStatus ? ('ellipse' as const) : ('ellipse-outline' as const),
       activeIcon: 'ellipse' as const,
       title: t.updates ?? 'Updates',
-      screen: 'StatusScreen',
+      route: 'StatusScreen',
       params: { id: 'Status', name: 'Status' },
     },
     {
@@ -120,37 +146,29 @@ const BottomNavigation = ({
       icon: 'home-outline' as const,
       activeIcon: 'home' as const,
       title: t.home,
-      screen: 'Dashboard',
+      route: 'Dashboard',
     },
     {
       name: 'CallHistory',
       icon: 'call-outline' as const,
       activeIcon: 'call' as const,
       title: t.calls,
-      screen: 'CallHistory',
+      route: 'CallHistory',
     },
   ];
 
   return (
-    <View
-      style={[
-        styles.bottomNavContainer,
-        {
-          transform: [{ translateY: isKeyboardVisible ? 1000 : 0 }],
-          opacity: isKeyboardVisible ? 0 : 1,
-        },
-      ]}
-    >
+    <View style={styles.bottomNavContainer}>
       <SafeAreaView edges={['bottom']} style={styles.safeArea}>
         <View style={styles.container}>
-          {navigationItems.map(item => (
+          {items.map(item => (
             <TouchableOpacity
               key={item.name}
               style={[
                 styles.navItem,
                 activeScreen === item.name && styles.activeNavItem,
               ]}
-              onPress={() => handleNavigation(item.screen, item.params)}
+              onPress={() => handlePress(item.route as any, item.params)}
             >
               <View style={styles.iconWrapper}>
                 <Icon
@@ -177,7 +195,7 @@ const BottomNavigation = ({
               styles.navItem,
               activeScreen === 'Listing' && styles.activeNavItem,
             ]}
-            onPress={() => handleNavigation('ChatList')}
+            onPress={() => handlePress('ChatList')}
           >
             <View style={styles.iconWrapper}>
               <Icon
@@ -211,15 +229,11 @@ const BottomNavigation = ({
       </SafeAreaView>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  bottomNavContainer: {
-    zIndex: 1000,
-  },
-  safeArea: {
-    backgroundColor: '#fff',
-  },
+  bottomNavContainer: { zIndex: 1000 },
+  safeArea: { backgroundColor: '#fff' },
   container: {
     flexDirection: 'row',
     height: 75,
@@ -242,9 +256,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 8,
   },
-  activeNavItem: {
-    backgroundColor: 'transparent',
-  },
+  activeNavItem: { backgroundColor: 'transparent' },
   iconWrapper: {
     width: 42,
     height: 42,
@@ -276,4 +288,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default BottomNavigation;
+export default CustomTabBar;

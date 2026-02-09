@@ -21,7 +21,6 @@ import axios from 'axios';
 import { env } from '../../config/env';
 import { useNavigation, useRoute } from '@react-navigation/native';
 // import Checking from './Checking';
-import BottomNavigation from '../../components/BottomNavigation';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 import { useAppSelector } from '../../state/hooks';
 import { getAppTranslations } from '../../translations';
@@ -651,7 +650,6 @@ export default function CreateEvents() {
           </View>
         )}
       </ScrollView>
-      <BottomNavigation />
     </View>
   );
 }

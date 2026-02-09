@@ -5,7 +5,6 @@ import MyEvents from './MyEvents';
 import LinearGradient from 'react-native-linear-gradient';
 import CompletedEvents from './CompletedEvents';
 import ExploreEvents from './ExploreEvents';
-import BottomNavigation from '../../components/BottomNavigation';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 import { useAppSelector } from '../../state/hooks';
 import { getAppTranslations } from '../../translations';
@@ -80,7 +79,6 @@ export default function EventListScreen({ navigation }) {
                     </TouchableOpacity>
                 </View>
             )}
-            <BottomNavigation />
         </>
     );
 }

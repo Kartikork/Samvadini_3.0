@@ -14,7 +14,6 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { noImage } from '../../assets';
-import BottomNavigation from '../../components/BottomNavigation';
 import { SearchBar } from '../ChatListScreen/components/SearchBar';
 import { env } from '../../config/env';
 import { useAppSelector } from '../../state/hooks';
@@ -346,7 +345,6 @@ export function JobScreen() {
         </View>
         <View style={styles.content}>{renderContent()}</View>
       </KeyboardAvoidingView>
-      <BottomNavigation />
     </View>
   );
 }

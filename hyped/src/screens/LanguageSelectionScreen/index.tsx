@@ -115,7 +115,7 @@ export function LanguageSelectionScreen() {
       if (currentScreen) {
         navigation.goBack();
       } else if (token && uniqueId) {
-        navigation.navigate('Dashboard' as never);
+        navigation.navigate('MainTabs' as never);
       } else {
         navigation.navigate('Login' as never);
       }

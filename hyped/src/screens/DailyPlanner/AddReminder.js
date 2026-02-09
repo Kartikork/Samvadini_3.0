@@ -16,7 +16,6 @@ import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import AddReminderCalendar from './ReminderCalendar';
-import BottomNavigation from '../../components/BottomNavigation';
 import { scheduleReminder } from './ReminderNotification';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { env } from '../../config';
@@ -512,7 +511,6 @@ const AddReminder = ({ route }) => {
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
-      <BottomNavigation />
     </>
   );
 };

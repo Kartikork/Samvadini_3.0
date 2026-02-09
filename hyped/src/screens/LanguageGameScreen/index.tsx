@@ -4,17 +4,13 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import BottomNavigation from '../../components/BottomNavigation';
 
 export default function LanguageGameScreen() {
   return (
-    <>
-      <View style={styles.container}>
-        <Text style={styles.title}>Game Zone</Text>
-        <Text style={styles.subtitle}>Language games will appear here</Text>
-      </View>
-      <BottomNavigation activeScreen="GameZone" />
-    </>
+    <View style={styles.container}>
+      <Text style={styles.title}>Game Zone</Text>
+      <Text style={styles.subtitle}>Language games will appear here</Text>
+    </View>
   );
 }
 

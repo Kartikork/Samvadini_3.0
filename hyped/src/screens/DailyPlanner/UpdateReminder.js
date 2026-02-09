@@ -7,7 +7,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
-import BottomNavigation from '../../components/BottomNavigation';
 import { env } from '../../config';
 import { useAppSelector } from '../../state/hooks';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
@@ -433,7 +432,6 @@ const UpdateReminder = ({ route }) => {
                     </LinearGradient>
                 </TouchableOpacity>
             </ScrollView>
-            <BottomNavigation />
         </>
     );
 };

@@ -18,7 +18,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useGetAndSyncCategoryData } from './useGetAndSyncCategoryData';
 const windowWidth = Dimensions.get('window').width;
 import { noImage } from '../../assets';
-import BottomNavigation from '../../components/BottomNavigation';
 import { SearchBar } from '../ChatListScreen/components/SearchBar';
 import { formatChatDate } from '../../helper/DateFormate';
 import { useAppSelector } from '../../state/hooks';
@@ -304,7 +303,6 @@ export function CategoryScreen({ route }) {
                     )}
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
-            <BottomNavigation />
         </View>
     );
 }
