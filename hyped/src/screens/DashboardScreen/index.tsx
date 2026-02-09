@@ -25,12 +25,11 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { getAppTranslations } from '../../translations';
 import { Footer } from '../../components/Footer';
 import TextToVoiceIconWrapper from '../../components/TextToVoiceIconWrapper';
 import GlobalDashboard from '../../components/GlobalDashboard';
 import { useAppSelector } from '../../state/hooks';
-import { getDashboardTexts } from './translations';
 import styles from './DashboardStyles';
 import {
   addContact,
@@ -96,7 +95,8 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
   const [userNames, setUserName] = useState<string | null>(null);
   const [isUserNameLoaded, setIsUserNameLoaded] = useState(false);
 
-  const dashboardTexts = useMemo(() => getDashboardTexts(lang), [lang]);
+  const dashboardTexts = getAppTranslations(lang)
+console.log(dashboardTexts)
   const welcomeText = useMemo(
     () => `${dashboardTexts.welcome}${userNames ? `, ${userNames}` : ''}`,
     [dashboardTexts.welcome, userNames],
@@ -200,9 +200,9 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                 <View style={styles.addContactIcon}>
                   <TextToVoiceIconWrapper
                     text={[
-                      dashboardTexts.addContact,
-                      dashboardTexts.addGroup,
-                      dashboardTexts.temporaryId,
+                      dashboardTexts.AddContact,
+                      dashboardTexts.AddGroup,
+                      dashboardTexts.TemporaryId,
                     ]}
                     lang={lang}
                     autoplay={false}
@@ -218,7 +218,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={addContact} />
                   </View>
                   <Text style={styles.qucikText} numberOfLines={1}>
-                    {dashboardTexts.addContact}
+                    {dashboardTexts.AddContact}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -229,7 +229,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={addGroup} />
                   </View>
                   <Text style={styles.qucikText} numberOfLines={1}>
-                    {dashboardTexts.addGroup}
+                    {dashboardTexts.AddGroup}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -240,7 +240,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={temporaryId} />
                   </View>
                   <Text style={styles.qucikText} numberOfLines={1}>
-                    {dashboardTexts.temporaryId}
+                    {dashboardTexts.TemporaryId}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -314,7 +314,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     style={[styles.cardText, { marginLeft: 10, flexShrink: 1 }]}
                     numberOfLines={1}
                   >
-                    {dashboardTexts.dailyPlanner}
+                    {dashboardTexts.DailyPlanner}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -326,7 +326,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     style={[styles.cardText, { marginLeft: 10, flexShrink: 1 }]}
                     numberOfLines={1}
                   >
-                    {dashboardTexts.evMang}
+                    {dashboardTexts.EvMang}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -335,9 +335,9 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                 <View style={styles.addPlanIcon}>
                   <TextToVoiceIconWrapper
                     text={[
-                      dashboardTexts.addPlan,
-                      dashboardTexts.addReminder,
-                      dashboardTexts.addEmergency,
+                      dashboardTexts.AddPlan,
+                      dashboardTexts.AddReminder,
+                      dashboardTexts.AddEmergency,
                     ]}
                     lang={lang}
                     autoplay={false}
@@ -353,7 +353,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={addPlanner} />
                   </View>
                   <Text style={styles.addPlanText} numberOfLines={1}>
-                    {dashboardTexts.addPlan}
+                    {dashboardTexts.AddPlan}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -364,7 +364,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={addReminder} />
                   </View>
                   <Text style={styles.addReminderText} numberOfLines={1}>
-                    {dashboardTexts.addReminder}
+                    {dashboardTexts.AddReminder}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -375,7 +375,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={addEmergency} />
                   </View>
                   <Text style={styles.emergencyText} numberOfLines={1}>
-                    {dashboardTexts.addEmergency}
+                    {dashboardTexts.AddEmergency}
                   </Text>
                 </TouchableOpacity>
               </View>

@@ -14,8 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { axiosConn } from '../../storage/helper/Config';
 import GlobalBottomNavigation from '../GlobalBottomNavigation/index';
 import { useUnreadChatsCount } from '../../hooks/useUnreadChatsCount';
-import { getDashboardTexts } from '../../screens/DashboardScreen/translations';
-import { getHeaderTexts } from '../Header/headerTranslations';
+import { getAppTranslations } from '../../translations';
 
 const ICON_SIZE = 26;
 
@@ -32,8 +31,7 @@ const BottomNavigation = ({
   const unreadChatsCount = useUnreadChatsCount();
   const [isNewStatus, setIsNewStatus] = useState(false);
 
-  const dashboardTexts = getDashboardTexts(lang);
-  const headerTexts = getHeaderTexts(lang);
+  const t = getAppTranslations(lang);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -89,14 +87,14 @@ const BottomNavigation = ({
       name: 'GameZone',
       icon: 'game-controller-outline' as const,
       activeIcon: 'game-controller' as const,
-      title: dashboardTexts.gameZone,
+      title: t.gameZone,
       screen: 'LanguageGameScreen',
     },
     {
       name: 'Status',
       icon: isNewStatus ? 'ellipse' as const : 'ellipse-outline' as const,
       activeIcon: 'ellipse' as const,
-      title: headerTexts.updates ?? 'Updates',
+      title: t.updates ?? 'Updates',
       screen: 'StatusScreen',
       params: { id: 'Status', name: 'Status' },
     },
@@ -104,14 +102,14 @@ const BottomNavigation = ({
       name: 'HomeTab',
       icon: 'home-outline' as const,
       activeIcon: 'home' as const,
-      title: 'Home',
+      title: t.home,
       screen: 'Dashboard',
     },
     {
       name: 'CallHistory',
       icon: 'call-outline' as const,
       activeIcon: 'call' as const,
-      title: dashboardTexts.calls,
+      title: t.calls,
       screen: 'CallHistory',
     },
   ];
@@ -177,7 +175,7 @@ const BottomNavigation = ({
                 { color: activeScreen === 'Listing' ? '#ED713C' : '#555' },
               ]}
             >
-              {dashboardTexts.chats}
+              {t.chats}
             </Text>
           </TouchableOpacity>
         </View>

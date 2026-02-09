@@ -19,7 +19,7 @@ import PickerModal from '../../../components/EmojiGifStickerPicker/PickerModal';
 
 interface ChatInputProps {
   chatId: string;
-  onMessageSent?: () => void; // Callback after message is sent successfully
+  onMessageSent?: () => void;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
