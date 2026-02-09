@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { TouchableOpacity, View, StyleSheet, FlatList, Image, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,12 +7,15 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { env } from '../../config/env';
 import { getEventTimeLeft } from '../../helper/DateFormate';
 import { educationGroupIcons } from '../../assets';
+import { useAppSelector } from '../../state/hooks';
+import { getAppTranslations } from '../../translations';
 
 export default function MyEvents({ searchQuery }) {
     const navigation = useNavigation();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(false);
-    const { lang = 'en', translations = {} } = {};
+    const lang = useAppSelector(state => state.language.lang);
+    const translations = useMemo(() => getAppTranslations(lang), [lang]);
 
     useEffect(() => {
         getEventList();

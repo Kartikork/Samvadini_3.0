@@ -74,7 +74,7 @@ export default function AgendaScreen() {
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
       />
-      <BottomNavigation navigation={navigation} />
+      <BottomNavigation />
     </View>
   );
 }

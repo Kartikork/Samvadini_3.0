@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal,
     Alert
@@ -10,6 +10,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import BottomNavigation from '../../components/BottomNavigation';
 import { env } from '../../config';
+import { useAppSelector } from '../../state/hooks';
+import { getAppTranslations } from '../../translations';
 
 // Parse 12-hour time (e.g., "9:50 PM") to Date object
 const parseTimeToDate = (timeStr, dateStr) => {
@@ -38,7 +40,8 @@ const parseTimeToDate = (timeStr, dateStr) => {
 const UpdatePlanner = ({ route }) => {
     const { _id, title, date, startTime, freq, weekly, monthly, plan, uniqueId } = route.params;
     const navigation = useNavigation();
-    const { lang = 'en', translations = {} } = {};
+    const lang = useAppSelector(state => state.language.lang);
+    const translations = useMemo(() => getAppTranslations(lang), [lang]);
 
     // Initialize state with received data
     const [planTitle, setPlanTitle] = useState(title || '');
@@ -643,7 +646,7 @@ const UpdatePlanner = ({ route }) => {
                     </LinearGradient>
                 </TouchableOpacity>
             </ScrollView>
-            <BottomNavigation navigation={navigation} />
+            <BottomNavigation />
         </>
     );
 };

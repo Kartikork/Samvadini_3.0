@@ -53,9 +53,7 @@ import SharePlannerCount from '../screens/DailyPlanner/SharePlannerCount';
 import CallScreen from '../screens/CallScreen';
 import EventListScreen from '../screens/EventManagement/EventListScreen.js';
 import CreateEvents from '../screens/EventManagement/CreateEvents.js';
-
-// Header wrapper
-import { withHeader } from '../components/withHeader';
+import Header from '../components/Header';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -89,13 +87,6 @@ export type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
-// Helper to wrap screens with Header (exclude auth screens)
-const wrapWithHeader = <P extends object>(
-  Component: React.ComponentType<P>,
-) => {
-  return withHeader(Component, true);
-};
 
 // Loading fallback for lazy screens
 const ScreenLoader = () => (
@@ -151,118 +142,202 @@ export default function MainNavigator() {
         {/* Main App - with Header automatically */}
         <Stack.Screen
           name="Home"
-          component={wrapWithHeader(HomeScreen)}
-          options={{ animation: 'fade' }}
+          component={HomeScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="Dashboard"
-          component={wrapWithHeader(DashboardScreen)}
-          options={{ animation: 'fade' }}
+          component={DashboardScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
 
         {/* Chat Screens */}
         <Stack.Screen
           name="ChatList"
-          component={wrapWithHeader(ChatListScreen)}
-          options={{ animation: 'fade' }}
+          component={ChatListScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
 
         {/* Bottom Nav Screens */}
         <Stack.Screen
           name="CallHistory"
-          component={wrapWithHeader(CallHistoryScreen)}
-          options={{ animation: 'fade' }}
+          component={CallHistoryScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="StatusScreen"
-          component={wrapWithHeader(StatusScreen)}
-          options={{ animation: 'fade' }}
+          component={StatusScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="JobScreen"
-          component={wrapWithHeader(JobScreen)}
-          options={{ animation: 'fade' }}
+          component={JobScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="JobsDetailsScreen"
-          component={wrapWithHeader(JobsDetailsScreen)}
-          options={{ animation: 'fade' }}
+          component={JobsDetailsScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="CategoryScreen"
-          component={wrapWithHeader(CategoryScreen)}
-          options={{ animation: 'fade' }}
+          component={CategoryScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="CategoryDetailsScreen"
-          component={wrapWithHeader(CategoryDetailsScreen)}
-          options={{ animation: 'fade' }}
+          component={CategoryDetailsScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="LRNScreen"
           component={LRNScreen}
-          options={{ animation: 'fade' }}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="DailyPlanner"
           component={DailyPlanner}
-          options={{ animation: 'fade' }}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="SharePlan"
           component={SharePlan}
-          options={{ animation: 'fade' }}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="AddPlan"
-          component={wrapWithHeader(AddPlan)}
-          options={{ animation: 'fade' }}
+          component={AddPlan}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="SharePlannerCount"
           component={SharePlannerCount}
-          options={{ animation: 'fade' }}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="EventListScreen"
-          component={wrapWithHeader(EventListScreen)}
-          options={{ animation: 'fade' }}
+          component={EventListScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="CreateEvents"
-          component={wrapWithHeader(CreateEvents)}
-          options={{ animation: 'fade' }}
+          component={CreateEvents}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="UpdatePlanner"
-          component={wrapWithHeader(UpdatePlanner)}
-          options={{ animation: 'fade' }}
+          component={UpdatePlanner}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="UpdateReminder"
-          component={wrapWithHeader(UpdateReminder)}
-          options={{ animation: 'fade' }}
+          component={UpdateReminder}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="AddReminder"
-          component={wrapWithHeader(AddReminder)}
-          options={{ animation: 'fade' }}
+          component={AddReminder}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="LanguageGameScreen"
-          component={wrapWithHeader(LanguageGameScreen)}
-          options={{ animation: 'fade' }}
+          component={LanguageGameScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
 
         <Stack.Screen
           name="Chat"
-          component={wrapWithHeader(ChatScreen)}
-          options={{ animation: 'slide_from_right' }}
+          component={ChatScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
 
         <Stack.Screen
           name="ContactDesignScreen"
-          component={wrapWithHeader(ContactDesignScreen)}
+          component={ContactDesignScreen}
           options={{ animation: 'slide_from_right' }}
         />
 

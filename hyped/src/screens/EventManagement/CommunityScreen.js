@@ -113,7 +113,7 @@ export default function CommunityScreen() {
           <CustomText style={styles.fabText}>Add topic or social group</CustomText>
         </LinearGradient>
       </TouchableOpacity>
-      <BottomNavigation navigation={navigation} />
+      <BottomNavigation />
     </View>
   );
 }

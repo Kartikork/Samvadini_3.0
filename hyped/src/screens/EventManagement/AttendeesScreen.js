@@ -163,7 +163,7 @@ export default function AttendeesScreen({ eventId, creatorId, chatId }) {
           contentContainerStyle={styles.flatListContent}
         />
       )}
-      <BottomNavigation navigation={navigation} />
+      <BottomNavigation />
     </View>
   );
 }

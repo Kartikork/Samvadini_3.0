@@ -156,7 +156,7 @@ export default function DetailsScreen({ route, navigation }) {
           {tab === 3 && <CommunityScreen />}
         </View>
       </View>
-      <BottomNavigation navigation={navigation} />
+      <BottomNavigation />
       <JoinEventModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}

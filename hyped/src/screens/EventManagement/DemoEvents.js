@@ -62,7 +62,7 @@ export default function DemoEvents() {
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
       />
-      <BottomNavigation navigation={navigation} />
+      <BottomNavigation />
     </View>
   );
 }

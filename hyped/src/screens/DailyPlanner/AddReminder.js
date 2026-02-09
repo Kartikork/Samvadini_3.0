@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { env } from '../../config';
 import { priorityIcon } from '../../assets';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
+import { getAppTranslations } from '../../translations';
+import { useAppSelector } from '../../state/hooks';
 
 const parseTimeToDate = (timeStr, dateObj) => {
   if (!timeStr || !dateObj) return dateObj;
@@ -36,15 +38,10 @@ const parseTimeToDate = (timeStr, dateObj) => {
   return new Date(dateObj.setHours(h, minutes, 0, 0));
 };
 
-const AddReminder = ({ route, footer: footerProp }) => {
+const AddReminder = ({ route }) => {
   const { data = {}, update = false } = route?.params || {};
-  const footer =
-    footerProp !== undefined
-      ? footerProp
-      : route?.params?.footer !== undefined
-        ? route.params.footer
-        : true;
-
+  const lang = useAppSelector(state => state.language.lang);
+  const translations = useMemo(() => getAppTranslations(lang), [lang]);
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const currentTime = new Date();
@@ -68,7 +65,6 @@ const AddReminder = ({ route, footer: footerProp }) => {
   const [selectionType, setSelectionType] = useState('');
   const [weekly, setWeekly] = useState(data.weekly || []);
   const [monthly, setMonthly] = useState(data.monthly || []);
-  const { lang = 'en', translations = {} } = {};
   useHardwareBackHandler('Dashboard');
 
   useEffect(() => {
@@ -517,7 +513,7 @@ const AddReminder = ({ route, footer: footerProp }) => {
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
-      {footer && <BottomNavigation navigation={navigation} />}
+      <BottomNavigation />
     </>
   );
 };

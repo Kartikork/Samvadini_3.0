@@ -1,18 +1,21 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import axios from 'axios';
 import { env } from '../../config';
+import { useAppSelector } from '../../state/hooks';
+import { getAppTranslations } from '../../translations';
 
 const SharePlannerCount = ({ route }) => {
-    const { data, curUserUid } = route.params;
+    const { data } = route.params;
     const [shareRemindersPending, setShareRemindersPending] = useState([]);
     const [shareRemindersAccepted, setShareRemindersAccepted] = useState([]);
     const [shareRemindersAll, setShareRemindersAll] = useState([]);
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState('all');
     const [expandedId, setExpandedId] = useState(null);
-    const { lang = 'en', translations = {} } = {};
+    const lang = useAppSelector(state => state.language.lang);
+    const translations = useMemo(() => getAppTranslations(lang), [lang]);
 
     useEffect(() => {
         fetchData();

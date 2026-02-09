@@ -58,7 +58,7 @@ export default function CategoryScreen({ navigation, route }) {
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
       />
-      <BottomNavigation navigation={navigation} />
+      <BottomNavigation />
     </View>
   );
 }

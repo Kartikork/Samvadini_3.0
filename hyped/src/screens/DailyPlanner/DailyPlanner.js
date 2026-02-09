@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text, FlatList, Modal, ActivityIndicator, TouchableWithoutFeedback, Alert } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import BottomNavigation from '../../components/BottomNavigation';
@@ -11,16 +11,18 @@ import AddPlan from './AddPlan';
 import { env } from '../../config';
 import { useAppSelector } from '../../state/hooks';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
+import { getAppTranslations } from '../../translations';
 
 const DailyPlanner = () => {
-    const { uniqueId } = useAppSelector(state => state.auth);
     const navigation = useNavigation();
+    const { uniqueId } = useAppSelector(state => state.auth);
+    const lang = useAppSelector(state => state.language.lang);
+    const translations = useMemo(() => getAppTranslations(lang), [lang]);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [reminders, setReminders] = useState([]);
     const [activeTab, setActiveTab] = useState('All');
     const [loading, setLoading] = useState(false);
-    const translations = {};
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const [datePickerVisible, setDatePickerVisible] = useState(false);
     const [selectedTab, setSelectedTab] = useState(1);
@@ -417,7 +419,7 @@ const DailyPlanner = () => {
                     </TouchableWithoutFeedback>
                 </Modal>
             </View>
-            <BottomNavigation navigation={navigation} activeScreen="DailyPlanner" />
+            <BottomNavigation activeScreen="DailyPlanner" />
         </>
     );
 };

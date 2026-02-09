@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   TextInput,
@@ -24,13 +24,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // import Checking from './Checking';
 import BottomNavigation from '../../components/BottomNavigation';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
+import { useAppSelector } from '../../state/hooks';
+import { getAppTranslations } from '../../translations';
 
 export default function CreateEvents() {
   const navigation = useNavigation();
   const route = useRoute();
   const { item } = route.params || {};
   const isEditing = !!item;
-  const translations = {};
+  const lang = useAppSelector(state => state.language.lang);
+  const translations = useMemo(() => getAppTranslations(lang), [lang]);
   useHardwareBackHandler('Dashboard');
 
   const parseDate = (dateStr) => {
@@ -650,7 +653,7 @@ export default function CreateEvents() {
           </View>
         )}
       </ScrollView>
-      <BottomNavigation navigation={navigation} />
+      <BottomNavigation />
     </View>
   );
 }

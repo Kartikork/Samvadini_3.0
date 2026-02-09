@@ -433,7 +433,7 @@ const UpdateReminder = ({ route }) => {
                     </LinearGradient>
                 </TouchableOpacity>
             </ScrollView>
-            <BottomNavigation navigation={navigation} />
+            <BottomNavigation />
         </>
     );
 };

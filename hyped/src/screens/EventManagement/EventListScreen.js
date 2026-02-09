@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text, ScrollView } from 'react-native';
 import { SearchBar } from '../ChatListScreen/components/SearchBar';
 import MyEvents from './MyEvents';
@@ -7,11 +7,14 @@ import CompletedEvents from './CompletedEvents';
 import ExploreEvents from './ExploreEvents';
 import BottomNavigation from '../../components/BottomNavigation';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
+import { useAppSelector } from '../../state/hooks';
+import { getAppTranslations } from '../../translations';
 
 export default function EventListScreen({ navigation }) {
     const [selectedTab, setSelectedTab] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
-    const translations = {};
+    const lang = useAppSelector(state => state.language.lang);
+    const translations = useMemo(() => getAppTranslations(lang), [lang]);
     const tabs = [translations.myEvents || "My Events", translations.exploreEvents || "Explore Events", translations.completedEvents || "Completed Events"];
     useHardwareBackHandler('Dashboard');
 
@@ -77,7 +80,7 @@ export default function EventListScreen({ navigation }) {
                     </TouchableOpacity>
                 </View>
             )}
-            <BottomNavigation navigation={navigation} />
+            <BottomNavigation />
         </>
     );
 }
