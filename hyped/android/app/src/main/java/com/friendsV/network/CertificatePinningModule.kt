@@ -52,26 +52,6 @@ class CertificatePinningModule(reactContext: ReactApplicationContext) : ReactCon
         }
     }
 
-    /**
-     * Simulate a certificate pinning failure for testing.
-     * Only available in DEBUG builds. After calling this, run a security check
-     * (e.g. SecurityService.performSecurityCheck()) to show the warning modal.
-     */
-    @ReactMethod
-    fun simulatePinningFailure(promise: Promise) {
-        try {
-            if (!BuildConfig.DEBUG) {
-                promise.reject("NOT_AVAILABLE", "simulatePinningFailure is only available in debug builds")
-                return
-            }
-            CertificatePinningFailureHolder.recordFailure()
-            android.util.Log.d("CertificatePinning", "Simulated pinning failure for testing")
-            promise.resolve(null)
-        } catch (e: Exception) {
-            promise.reject("SIMULATE_ERROR", "Failed to simulate: ${e.message}", e)
-        }
-    }
-
     companion object {
         /**
          * Create CertificatePinner with pins for your domains

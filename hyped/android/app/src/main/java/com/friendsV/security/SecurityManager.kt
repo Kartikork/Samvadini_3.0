@@ -151,22 +151,22 @@ class SecurityManager(private val context: Context) {
         }
 
         // Check for developer options enabled
-        /*if (isDeveloperOptionsEnabled()) {
+        if (isDeveloperOptionsEnabled()) {
             threats.add(SecurityEvent.DEVELOPER_OPTIONS_ENABLED)
             riskScore += 20
             details["developerOptions"] = true
             android.util.Log.w("SecurityManager", "⚠️ Developer options enabled")
-        }*/
+        }
 
         // Check for app spoofing
         val spoofingResult = checkAppSpoofing()
-        /*if (spoofingResult.isSpoofed) {
+        if (spoofingResult.isSpoofed) {
             threats.add(SecurityEvent.APP_SPOOFING_DETECTED)
             riskScore += 90
             details["appSpoofing"] = true
             details["spoofingDetails"] = spoofingResult.details
             android.util.Log.w("SecurityManager", "⚠️ App spoofing detected: ${spoofingResult.details}")
-        }*/
+        }
 
         // Check for time manipulation
         val timeManipulationResult = detectTimeManipulation()

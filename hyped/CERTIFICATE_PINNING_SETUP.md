@@ -62,18 +62,6 @@ When the server certificate **does not match** the pinned SHA-256 hashes (e.g. M
 
 So users get a clear warning in addition to the failed request.
 
-## Testing the warning in a build
-
-1. **Use a debug build** (pinning is disabled by default in DEBUG, but the modal and test API still work).
-2. **Option A – Dev button (recommended)**  
-   In `__DEV__`, a **"Test cert pin warning"** button appears at the bottom-right of the app. Tap it to simulate a pin failure and run a security check; the modal should appear immediately.
-3. **Option B – From code**  
-   Call `SecurityService.testCertificatePinningWarning()` from any screen (e.g. a temporary button in Settings). This calls `CertificatePinningModule.simulatePinningFailure()` (debug-only) then `performSecurityCheck()`.
-4. **Option C – Real pin failure**  
-   Build a **release** APK (or enable pinning in debug for this test), then use a proxy (Charles/Fiddler) with its own certificate to hit your API. The request will fail and the next security check (e.g. on resume or after 3 s) will show the same modal.
-
-**Note:** `simulatePinningFailure()` is only available in debug builds; in release it rejects.
-
 ## Debug mode
 
 Pinning is **automatically disabled** when `BuildConfig.DEBUG` is true (see `CertificatePinningModule.createCertificatePinner()`), so you can use Charles, Fiddler, or similar tools. Release builds always use pinning.

@@ -17,8 +17,6 @@ import {
   AppState,
   AppStateStatus,
   Platform,
-  TouchableOpacity,
-  Text,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -109,14 +107,6 @@ function App() {
           <MainNavigator />
           <CallOverlay />
           <SecurityModal visible={!!securityThreatData?.threats?.length} threatData={securityThreatData} />
-          {__DEV__ && (
-            <TouchableOpacity
-              style={styles.devTestPinning}
-              onPress={() => SecurityService.testCertificatePinningWarning()}
-            >
-              <Text style={styles.devTestPinningText}>Test cert pin warning</Text>
-            </TouchableOpacity>
-          )}
           <Toast />
         </SafeAreaProvider>
       </PersistGate>
@@ -130,19 +120,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F5F7FA',
-  },
-  devTestPinning: {
-    position: 'absolute',
-    bottom: 100,
-    right: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 8,
-  },
-  devTestPinningText: {
-    color: '#fff',
-    fontSize: 12,
   },
 });
 

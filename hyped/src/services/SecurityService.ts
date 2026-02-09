@@ -2,7 +2,7 @@ import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../api/axios.instance';
 
-const { SecurityModule, CertificatePinningModule } = NativeModules;
+const { SecurityModule } = NativeModules;
 
 interface SecurityResult {
   riskLevel: string;
@@ -77,24 +77,6 @@ class SecurityServiceClass {
 
   setModalCallback(onShowModal: (payload: ThreatPayload | null) => void): void {
     this.onShowModal = onShowModal;
-  }
-
-  /**
-   * Test the certificate pinning warning modal (debug builds only).
-   * Simulates a pin failure and runs a security check so the modal appears.
-   * Use from a dev button or console: SecurityService.testCertificatePinningWarning()
-   */
-  async testCertificatePinningWarning(): Promise<void> {
-    if (!CertificatePinningModule?.simulatePinningFailure) {
-      console.warn('[Security] CertificatePinningModule not available');
-      return;
-    }
-    try {
-      await CertificatePinningModule.simulatePinningFailure();
-      await this.performSecurityCheck();
-    } catch (e) {
-      console.warn('[Security] testCertificatePinningWarning failed:', e);
-    }
   }
 
   startSecurityMonitoring(
