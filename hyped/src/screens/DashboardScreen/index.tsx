@@ -126,8 +126,8 @@ console.log(dashboardTexts)
     () => navigation.navigate('DailyPlanner'),
     [navigation],
   );
-  const navigateToHomeScreen = useCallback(
-    () => navigation.navigate('HomeScreen', {}),
+  const navigateToEventManagementScreen = useCallback(
+    () => navigation.navigate('EventListScreen', { navigation }),
     [navigation],
   );
   const navigateToJobsScreen = useCallback(
@@ -262,7 +262,7 @@ console.log(dashboardTexts)
                   >
                     <TouchableOpacity
                       style={styles.gameZoneButton}
-                      onPress={() => navigation.navigate('lingoweb')}
+                      onPress={() => navigation.navigate('LRNScreen')}
                     >
                       <Image source={learnIcon} />
                       <Image
@@ -318,7 +318,7 @@ console.log(dashboardTexts)
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={navigateToHomeScreen}
+                  onPress={navigateToEventManagementScreen}
                   style={styles.eventButton}
                 >
                   <Icon name="calendar-outline" size={26} color="#fff" />
