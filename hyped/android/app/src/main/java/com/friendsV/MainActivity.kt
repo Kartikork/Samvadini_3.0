@@ -1,4 +1,4 @@
-package com.hyped
+package com.friendsV
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

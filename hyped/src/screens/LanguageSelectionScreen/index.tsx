@@ -222,6 +222,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     letterSpacing: 4,
   },
+  hypedLogo: {
+    width: width * 0.5,
+    height: width * 0.3,
+    resizeMode: 'contain',
+  },
   languageContainer: {
     width: '90%',
     flex: 1,
