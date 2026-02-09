@@ -16,6 +16,7 @@ import { SocketService } from '../../../services/SocketService';
 import { OutgoingMessageManager } from '../../../services/OutgoingMessageManager';
 import { useAppSelector } from '../../../state/hooks';
 import PickerModal from '../../../components/EmojiGifStickerPicker/PickerModal';
+import ActionButtons from './ActionButtons';
 
 interface ChatInputProps {
   chatId: string;
@@ -32,6 +33,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerHeight, setPickerHeight] = useState(0);
+  const [showActions, setShowActions] = useState(false);
 
   /**
    * Handle text change
@@ -108,8 +110,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
    * Handle media attachment
    */
   const handleAttachment = () => {
-    // TODO: Implement media picker
-    console.log('[ChatInput] Attachment button pressed');
+    // Toggle attachment action sheet
+    Keyboard.dismiss();
+    setShowActions(prev => !prev);
   };
 
   /**
@@ -179,6 +182,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
   const hasText = text.trim().length > 0;
 
   return (
+   <>
    <View style={styles.container}>
   <View style={styles.inputWrapper}>
     {/* Emoji */}
@@ -231,6 +235,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
     )}
   </TouchableOpacity>
 </View>
+
+  {showActions && (
+    <ActionButtons
+      onClose={() => setShowActions(false)}
+    />
+  )}
+  </>
   );
 };
 
