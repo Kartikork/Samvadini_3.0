@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, FlatList, TouchableOpacity, Image, StyleSheet, Alert, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomNavigation from '../../components/BottomNavigation';
+import { env } from '../../config/env';
 
 export default function AttendeesScreen({ eventId, creatorId, chatId }) {
   const navigation = useNavigation();
@@ -69,7 +70,7 @@ export default function AttendeesScreen({ eventId, creatorId, chatId }) {
                   "participantId": participantId, newStatus,
                   timeStamp: new Date().toISOString(),
                 }
-                const groupRes = await axios.post('https://qasamvadini.aicte-india.org/api/chat/add-event-participant', groupPayload, {
+                const groupRes = await axios.post(`${env.API_BASE_URL}/chat/add-event-participant`, groupPayload, {
                   headers: { 'Content-Type': 'application/json' },
                 });
               }
