@@ -28,7 +28,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAppSelector, useAppDispatch } from '../../state/hooks';
 import { clearAuth } from '../../state/authSlice';
-import { getHeaderTexts } from './headerTranslations';
+import { getAppTranslations } from '../../translations';
 import { headerStyles } from './HeaderStyles';
 import { bossBabyIndianFigure, hypedLogo, languageIcon, sos } from '../../assets';
 
@@ -54,7 +54,7 @@ export const Header = React.memo(() => {
   const isHoldingRef = useRef(false);
   const pressStartTime = useRef<number | null>(null);
 
-  const t = getHeaderTexts(lang);
+  const t = getAppTranslations(lang);
 
   useEffect(() => {
     fetchUserProfile();

@@ -6,6 +6,8 @@ import {
   StyleSheet,
   Platform,
   ActivityIndicator,
+  Keyboard,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -13,10 +15,11 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { SocketService } from '../../../services/SocketService';
 import { OutgoingMessageManager } from '../../../services/OutgoingMessageManager';
 import { useAppSelector } from '../../../state/hooks';
+import PickerModal from '../../../components/EmojiGifStickerPicker/PickerModal';
 
 interface ChatInputProps {
   chatId: string;
-  onMessageSent?: () => void; // Callback after message is sent successfully
+  onMessageSent?: () => void;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
@@ -27,6 +30,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
   const inputRef = useRef<TextInput>(null);
   const isTypingRef = useRef(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerHeight, setPickerHeight] = useState(0);
 
   /**
    * Handle text change
@@ -111,8 +116,41 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
    * Handle emoji picker
    */
   const handleEmojiPicker = () => {
-    // TODO: Implement emoji picker
-    console.log('[ChatInput] Emoji picker pressed');
+    // Dismiss keyboard and open picker sized like keyboard
+    Keyboard.dismiss();
+    const defaultPickerHeight = Math.min(Math.floor(Dimensions.get('window').height * 0.45), 360);
+    setPickerHeight(defaultPickerHeight);
+    setPickerVisible(true);
+  };
+
+  const handleEmojiSelected = (emoji: string) => {
+    // Append emoji to input and focus input
+    setText((t) => `${t}${emoji}`);
+    // Close picker then focus input so user can continue typing
+    setPickerVisible(false);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 50);
+  };
+
+  const handleGifSelected = async (gif: any) => {
+    // gif is an object { id, url, thumb }
+    try {
+      await OutgoingMessageManager.sendMediaMessage(chatId, gif.url, 'gif');
+      // notify parent to refresh
+      setTimeout(() => onMessageSent?.(), 10);
+    } catch (e) {
+      console.error('[ChatInput] send gif error', e);
+    }
+  };
+
+  const handleStickerSelected = async (sticker: any) => {
+    try {
+      await OutgoingMessageManager.sendMediaMessage(chatId, sticker.url, 'sticker');
+      setTimeout(() => onMessageSent?.(), 10);
+    } catch (e) {
+      console.error('[ChatInput] send sticker error', e);
+    }
   };
 
   /**
