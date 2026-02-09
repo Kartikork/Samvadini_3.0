@@ -1,19 +1,15 @@
-import { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import { View, StyleSheet, Image, ScrollView, Text, Linking, TouchableOpacity, Alert, BackHandler } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { noImage } from '../../assets';
 import BottomNavigation from "../../components/BottomNavigation";
-import { useAppSelector } from "../../state/hooks";
-import { getAppTranslations } from "../../translations";
 
 export function JobsDetailsScreen({ route }) {
     const { item } = route?.params || {};
     const [jobDetails] = useState(item);
     const navigation = useNavigation();
-    const lang = useAppSelector(state => state.language.lang);
-    const translations = useMemo(() => getAppTranslations(lang), [lang]);
 
     useFocusEffect(
         useCallback(() => {
@@ -220,7 +216,7 @@ export function JobsDetailsScreen({ route }) {
                             end={{ x: 1, y: 0 }}
                             style={styles.applyButton}
                         >
-                            <Text style={styles.applyButtonText}>{translations['applyNow'] || "Apply Now"}</Text>
+                            <Text style={styles.applyButtonText}>Apply Now</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>

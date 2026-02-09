@@ -1,44 +1,3 @@
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.extend(customParseFormat);
-
-export function getEventTimeLeft(startAt, endAt) {
-    if (!startAt) return '';
-
-    const now = dayjs().tz('Asia/Kolkata');
-
-    const startDateTime = dayjs(startAt, 'DD/MM/YYYY hh:mm A')
-        .tz('Asia/Kolkata');
-
-    const endDateTime = endAt
-        ? dayjs(endAt, 'DD/MM/YYYY hh:mm A').tz('Asia/Kolkata')
-        : null;
-
-    if (endDateTime && now.isAfter(startDateTime) && now.isBefore(endDateTime)) {
-        return 'In Progress';
-    }
-
-    const diffInMinutes = startDateTime.diff(now, 'minute');
-    if (diffInMinutes <= -1) {
-        return 'Event passed';
-    }
-
-    const diffInDays = startDateTime.startOf('day').diff(now.startOf('day'), 'day');
-
-    if (diffInDays > 1) {
-        return `${diffInDays} days left`;
-    } else if (diffInDays === 1) {
-        return `1 day left`;
-    } else {
-        return `Today ${startDateTime.format('hh:mm A')}`;
-    }
-}
-
 export const formatChatDate = (dateString) => {
     if (!dateString) return '';
 
@@ -80,18 +39,4 @@ export const formatChatDate = (dateString) => {
     const year = inputDate.getFullYear();
 
     return `${day}/${month}/${year}`;
-};
-
-export const generateUID = () => {
-    const timestamp = Math.floor(Date.now() / 1000).toString(16);
-    const randomValue = Array.from({ length: 5 }, () =>
-        Math.floor(Math.random() * 256)
-            .toString(16)
-            .padStart(2, "0")
-    ).join("");
-    const counter = Math.floor(Math.random() * 0xffffff)
-        .toString(16)
-        .padStart(6, "0");
-
-    return `${timestamp}${randomValue}${counter}`;
 };

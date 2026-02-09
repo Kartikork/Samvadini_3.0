@@ -1,6 +1,6 @@
 /**
  * ChatListScreen (Performance-Optimized)
- *
+ * 
  * ARCHITECTURE:
  * - DB is source of truth (SQLite)
  * - Redux holds IDs only (lightweight)
@@ -8,7 +8,7 @@
  * - Memoized selectors prevent re-computation
  * - Debounced socket updates
  * - Skeleton loaders (no spinners)
- *
+ * 
  * PERFORMANCE OPTIMIZATIONS:
  * - Lazy loaded search modal
  * - ID-based rendering (O(1) lookup)
@@ -17,14 +17,7 @@
  * - No inline functions in render
  */
 
-import React, {
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
-  Suspense,
-  lazy,
-} from 'react';
+import React, { useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import {
   View,
   StyleSheet,
@@ -72,7 +65,6 @@ import { SocketService } from '../../services/SocketService';
 // Message handler for saving incoming messages
 import { handleIncomingMessage } from '../../services/MessageHandler';
 import { GradientBackground } from '../../components/GradientBackground';
-import BottomNavigation from '../../components/BottomNavigation';
 
 // ============================================
 // LAZY LOADED COMPONENTS (Event-based)
@@ -97,16 +89,10 @@ const TABS: { key: ChatTab; label: string }[] = [
   { key: 'archived', label: 'Archived' },
 ];
 
-type ChatListScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'ChatList'
->;
+type ChatListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ChatList'>;
 
 // Enable LayoutAnimation on Android
-if (
-  Platform.OS === 'android' &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -148,13 +134,7 @@ export default function ChatListScreen() {
   const { archivedChats } = useArchivedChats();
 
   // Search functionality
-  const {
-    searchQuery,
-    results,
-    isLoading: isSearching,
-    handleSearch,
-    clearSearch,
-  } = useChatSearch();
+  const { searchQuery, results, isLoading: isSearching, handleSearch, clearSearch } = useChatSearch();
 
   // Multi-select functionality
   const {
@@ -258,10 +238,7 @@ export default function ChatListScreen() {
       return;
     }
 
-    console.log(
-      '[ChatListScreen] 🔌 Setting up socket listeners for user:',
-      uniqueId,
-    );
+    console.log('[ChatListScreen] 🔌 Setting up socket listeners for user:', uniqueId);
 
     const handleNewMessage = async (payload: any) => {
       const socketReceiveTime = Date.now();
@@ -285,27 +262,20 @@ export default function ChatListScreen() {
 
         // Calculate time to show on chat list (approximate)
         const timeToShow = Date.now() - socketReceiveTime;
-        console.log(
-          '[ChatListScreen] ⏱️ Total time from socket to chat list refresh:',
-          {
-            totalTime: `${timeToShow}ms`,
-            messageProcessing: result.timing
-              ? `${result.timing.totalTime}ms`
-              : 'N/A',
-            chatListRefresh: `${Date.now() - chatListRefreshStartTime}ms`,
-            breakdown: result.timing
-              ? {
-                  decryption: `${result.timing.decryptionTime}ms`,
-                  dbInsert: `${result.timing.dbInsertTime}ms`,
-                  deduplication: `${result.timing.deduplicationTime}ms`,
-                }
-              : null,
-          },
-        );
+        console.log('[ChatListScreen] ⏱️ Total time from socket to chat list refresh:', {
+          totalTime: `${timeToShow}ms`,
+          messageProcessing: result.timing
+            ? `${result.timing.totalTime}ms`
+            : 'N/A',
+          chatListRefresh: `${Date.now() - chatListRefreshStartTime}ms`,
+          breakdown: result.timing ? {
+            decryption: `${result.timing.decryptionTime}ms`,
+            dbInsert: `${result.timing.dbInsertTime}ms`,
+            deduplication: `${result.timing.deduplicationTime}ms`,
+          } : null,
+        });
       } else {
-        console.log(
-          '[ChatListScreen] ⚠️ Message not saved (may be duplicate), refreshing anyway',
-        );
+        console.log('[ChatListScreen] ⚠️ Message not saved (may be duplicate), refreshing anyway');
         // Still refresh in case it was a duplicate
         debouncedRefresh();
       }
@@ -360,99 +330,86 @@ export default function ChatListScreen() {
   /**
    * Tab change handler with smooth animation
    */
-  const handleTabChange = useCallback(
-    (tab: ChatTab) => {
-      // Prevent duplicate tab changes
-      if (tab === activeTab) return;
+  const handleTabChange = useCallback((tab: ChatTab) => {
+    // Prevent duplicate tab changes
+    if (tab === activeTab) return;
 
-      // Configure smooth layout animation for all components
-      LayoutAnimation.configureNext({
-        duration: 250,
-        create: {
-          type: LayoutAnimation.Types.easeInEaseOut,
-          property: LayoutAnimation.Properties.opacity,
-          springDamping: 0.7,
-        },
-        update: {
-          type: LayoutAnimation.Types.easeInEaseOut,
-          property: LayoutAnimation.Properties.opacity,
-          springDamping: 0.7,
-        },
-      });
+    // Configure smooth layout animation for all components
+    LayoutAnimation.configureNext({
+      duration: 250,
+      create: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+        springDamping: 0.7,
+      },
+      update: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+        springDamping: 0.7,
+      },
+    });
 
-      // Smooth fade transition
-      Animated.sequence([
-        Animated.timing(listOpacity, {
-          toValue: 0.2,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(listOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    // Smooth fade transition
+    Animated.sequence([
+      Animated.timing(listOpacity, {
+        toValue: 0.2,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(listOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-      dispatch(chatListActions.setActiveTab(tab));
-    },
-    [dispatch, listOpacity, activeTab],
-  );
+    dispatch(chatListActions.setActiveTab(tab));
+  }, [dispatch, listOpacity, activeTab]);
 
   /**
    * Chat press handler (stable)
    */
-  const handleChatPress = useCallback(
-    (chatId: string) => {
-      if (isSelectionMode) {
-        toggleChatSelection(chatId);
-      } else {
-        const chat = chats.find(c => c.samvada_chinha === chatId);
-        if (chat) {
-          if (chat.prakara === 'Group') {
-            dispatch(
-              activeChatActions.setActiveChat({
-                chatId: chat.samvada_chinha,
-                username: chat.samvada_nama,
-                avatar: chat.samuha_chitram ?? null,
-                isGroup: true,
-              }),
-            );
-            navigation.navigate('GroupChat', {
-              chatId: chat.samvada_chinha,
-              groupName: chat.samvada_nama,
-            });
-          } else {
-            dispatch(
-              activeChatActions.setActiveChat({
-                chatId: chat.samvada_chinha,
-                username: chat.contact_name,
-                avatar: chat.contact_photo ?? null,
-                isGroup: false,
-              }),
-            );
-            navigation.navigate('Chat', {
-              chatId: chat.samvada_chinha,
-            });
-          }
+  const handleChatPress = useCallback((chatId: string) => {
+    if (isSelectionMode) {
+      toggleChatSelection(chatId);
+    } else {
+      const chat = chats.find(c => c.samvada_chinha === chatId);
+      if (chat) {
+        if (chat.prakara === 'Group') {
+          dispatch(activeChatActions.setActiveChat({
+            chatId: chat.samvada_chinha,
+            username: chat.samvada_nama,
+            avatar: chat.samuha_chitram ?? null,
+            isGroup: true,
+          }));
+          navigation.navigate('GroupChat', {
+            chatId: chat.samvada_chinha,
+            groupName: chat.samvada_nama,
+          });
+        } else {
+          dispatch(activeChatActions.setActiveChat({
+            chatId: chat.samvada_chinha,
+            username: chat.contact_name,
+            avatar: chat.contact_photo ?? null,
+            isGroup: false,
+          }));
+          navigation.navigate('Chat', {
+            chatId: chat.samvada_chinha,
+          });
         }
       }
-    },
-    [isSelectionMode, toggleChatSelection, chats, navigation, dispatch],
-  );
+    }
+  }, [isSelectionMode, toggleChatSelection, chats, navigation, dispatch]);
 
   /**
    * Long press handler (stable)
    */
-  const handleLongPress = useCallback(
-    (chatId: string) => {
-      if (!isSelectionMode) {
-        toggleSelectionMode();
-      }
-      toggleChatSelection(chatId);
-    },
-    [isSelectionMode, toggleSelectionMode, toggleChatSelection],
-  );
+  const handleLongPress = useCallback((chatId: string) => {
+    if (!isSelectionMode) {
+      toggleSelectionMode();
+    }
+    toggleChatSelection(chatId);
+  }, [isSelectionMode, toggleSelectionMode, toggleChatSelection]);
 
   /**
    * Bulk action handlers
@@ -480,9 +437,7 @@ export default function ChatListScreen() {
 
   const handleBulkPin = useCallback(async () => {
     // Check if any selected chats are already pinned (handle undefined)
-    const selectedChats = chats.filter(c =>
-      selectedChatIds.includes(c.samvada_chinha),
-    );
+    const selectedChats = chats.filter(c => selectedChatIds.includes(c.samvada_chinha));
     const hasPinned = selectedChats.some(c => (c.is_pinned ?? 0) === 1);
 
     if (hasPinned) {
@@ -516,22 +471,19 @@ export default function ChatListScreen() {
   /**
    * Render list item (memoized)
    */
-  const renderItem = useCallback(
-    ({ item }: { item: any }) => {
-      const isSelected = isChatSelected(item.samvada_chinha);
+  const renderItem = useCallback(({ item }: { item: any }) => {
+    const isSelected = isChatSelected(item.samvada_chinha);
 
-      return (
-        <ChatListItem
-          chat={item}
-          isSelected={isSelected}
-          onPress={handleChatPress}
-          onLongPress={handleLongPress}
-          isSelectionMode={isSelectionMode}
-        />
-      );
-    },
-    [isChatSelected, handleChatPress, handleLongPress, isSelectionMode],
-  );
+    return (
+      <ChatListItem
+        chat={item}
+        isSelected={isSelected}
+        onPress={handleChatPress}
+        onLongPress={handleLongPress}
+        isSelectionMode={isSelectionMode}
+      />
+    );
+  }, [isChatSelected, handleChatPress, handleLongPress, isSelectionMode]);
 
   /**
    * Key extractor (stable)
@@ -541,16 +493,13 @@ export default function ChatListScreen() {
   /**
    * Empty list component
    */
-  const renderEmptyComponent = useMemo(
-    () => (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>
-          {searchQuery ? 'No results found' : `No ${activeTab} chats`}
-        </Text>
-      </View>
-    ),
-    [searchQuery, activeTab],
-  );
+  const renderEmptyComponent = useMemo(() => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>
+        {searchQuery ? 'No results found' : `No ${activeTab} chats`}
+      </Text>
+    </View>
+  ), [searchQuery, activeTab]);
 
   /**
    * Render archived section header (only in "All" tab)
@@ -580,106 +529,92 @@ export default function ChatListScreen() {
   // ============================================
 
   return (
-    <>
-      <View style={styles.container}>
-        {/* Header: Search or Selection */}
-        {isSelectionMode ? (
-          <SelectionHeader
-            selectedCount={selectedCount}
-            onCancel={clearSelection}
-            onArchive={
-              activeTab === 'archived' ? handleBulkUnarchive : handleBulkArchive
-            }
-            onPin={handleBulkPin}
-            onDelete={handleBulkDelete}
-            isArchivedTab={activeTab === 'archived'}
-            hasPinnedChats={chats.some(
-              c =>
-                selectedChatIds.includes(c.samvada_chinha) &&
-                (c.is_pinned ?? 0) === 1,
-            )}
+    <View style={styles.container}>
+      {/* Header: Search or Selection */}
+      {isSelectionMode ? (
+        <SelectionHeader
+          selectedCount={selectedCount}
+          onCancel={clearSelection}
+          onArchive={activeTab === 'archived' ? handleBulkUnarchive : handleBulkArchive}
+          onPin={handleBulkPin}
+          onDelete={handleBulkDelete}
+          isArchivedTab={activeTab === 'archived'}
+          hasPinnedChats={chats.some(c =>
+            selectedChatIds.includes(c.samvada_chinha) && (c.is_pinned ?? 0) === 1
+          )}
+        />
+      ) : (
+        <>
+          <Carousel />
+          <SearchBar
+            value={searchQuery}
+            onChangeText={handleSearch}
+            onClear={clearSearch}
           />
-        ) : (
-          <>
-            <Carousel />
-            <SearchBar
-              value={searchQuery}
-              onChangeText={handleSearch}
-              onClear={clearSearch}
-            />
-            <TabBar
-              tabs={TABS}
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              requestBadge={
-                typeof requestBadge === 'string'
-                  ? parseInt(requestBadge) || 0
-                  : requestBadge
-              }
-            />
-          </>
-        )}
+          <TabBar
+            tabs={TABS}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            requestBadge={typeof requestBadge === 'string' ? parseInt(requestBadge) || 0 : requestBadge}
+          />
+        </>
+      )}
 
-        {/* List: Skeleton or FlashList with animation */}
-        {showSkeleton ? (
-          <Animated.View style={{ opacity: fadeAnim }}>
-            <ChatListSkeletonList count={8} />
-          </Animated.View>
-        ) : (
-          <Animated.View
-            style={[styles.listContainer, { opacity: listOpacity }]}
-          >
-            <FlashList
-              key={activeTab} // Force re-render on tab change for smooth animation
-              data={chats}
-              renderItem={renderItem}
-              keyExtractor={keyExtractor}
-              // @ts-ignore - estimatedItemSize is required for FlashList performance
-              estimatedItemSize={72}
-              refreshControl={
-                <RefreshControl
-                  refreshing={isRefreshing}
-                  onRefresh={handleRefresh}
-                  tintColor="#028BD3"
-                />
-              }
-              ListHeaderComponent={
-                activeTab === 'all' ? renderArchivedHeader() : null
-              }
-              ListEmptyComponent={renderEmptyComponent}
-              contentContainerStyle={styles.listContent}
-            />
-          </Animated.View>
-        )}
+      {/* List: Skeleton or FlashList with animation */}
+      {showSkeleton ? (
+        <Animated.View style={{ opacity: fadeAnim }}>
+          <ChatListSkeletonList count={8} />
+        </Animated.View>
+      ) : (
+        <Animated.View style={[styles.listContainer, { opacity: listOpacity }]}>
+          <FlashList
+            key={activeTab} // Force re-render on tab change for smooth animation
+            data={chats}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            // @ts-ignore - estimatedItemSize is required for FlashList performance
+            estimatedItemSize={72}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor="#028BD3"
+              />
+            }
+            ListHeaderComponent={activeTab === 'all' ? renderArchivedHeader() : null}
+            ListEmptyComponent={renderEmptyComponent}
+            contentContainerStyle={styles.listContent}
+          />
+        </Animated.View>
+      )}
 
-        {/* Floating Action Button - Only show when not in selection mode */}
-        {!isSelectionMode && (
-          <View
-            style={{
-              position: 'absolute',
-              right: 20,
-              bottom: 20 + insets.bottom + 15,
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              overflow: 'hidden',
-              zIndex: 1000,
-            }}
-          >
-            <GradientBackground colors={['#0989D2', '#6564AA']}>
-              <TouchableOpacity
-                style={styles.fab}
-                onPress={handleContactPress}
-                activeOpacity={0.8}
-              >
-                <MaterialIcons name="add" size={24} color="#fff" />
-              </TouchableOpacity>
-            </GradientBackground>
-          </View>
-        )}
-      </View>
-      <BottomNavigation activeScreen="Listing" />
-    </>
+      {/* Floating Action Button - Only show when not in selection mode */}
+      {!isSelectionMode && (
+        <View
+          style={{
+            position: 'absolute',
+            right: 20,
+            bottom: 20 + insets.bottom + 15,
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            overflow: 'hidden', 
+            zIndex: 1000,
+          }}
+        >
+          <GradientBackground colors={['#0989D2', '#6564AA']}>
+            <TouchableOpacity
+              style={styles.fab}
+              onPress={handleContactPress}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="add" size={24} color="#fff"/>
+            </TouchableOpacity>
+          </GradientBackground>
+        </View>
+      )}
+
+    </View>
   );
 }
 
@@ -723,10 +658,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   fab: {
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
+  width: 48,
+  height: 48,
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 1000,
+},
 });
+

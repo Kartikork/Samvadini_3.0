@@ -15,24 +15,18 @@ import { axiosConn } from '../../storage/helper/Config';
 import GlobalBottomNavigation from '../GlobalBottomNavigation/index';
 import { useUnreadChatsCount } from '../../hooks/useUnreadChatsCount';
 import { getAppTranslations } from '../../translations';
-import { useNavigation } from '@react-navigation/native';
 
 const ICON_SIZE = 26;
 
 const BottomNavigation = ({
+  navigation,
   activeScreen,
 }: {
   navigation: any;
   activeScreen: string;
 }) => {
-  const navigation = useNavigation();
-  const lang = useSelector(
-    (state: { language?: { lang?: string } }) => state.language?.lang ?? 'en',
-  );
-  const isIndia = useSelector(
-    (state: { country?: { isIndia?: boolean } }) =>
-      state.country?.isIndia ?? true,
-  );
+  const lang = useSelector((state: { language?: { lang?: string } }) => state.language?.lang ?? 'en');
+  const isIndia = useSelector((state: { country?: { isIndia?: boolean } }) => state.country?.isIndia ?? true);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const unreadChatsCount = useUnreadChatsCount();
   const [isNewStatus, setIsNewStatus] = useState(false);
@@ -42,11 +36,11 @@ const BottomNavigation = ({
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => setKeyboardVisible(true),
+      () => setKeyboardVisible(true)
     );
     const keyboardDidHideListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardVisible(false),
+      () => setKeyboardVisible(false)
     );
     return () => {
       keyboardDidShowListener?.remove();
@@ -61,15 +55,9 @@ const BottomNavigation = ({
   const checkNewStatus = async () => {
     try {
       const myId = await AsyncStorage.getItem('uniqueId');
-      const response = await axiosConn(
-        'get',
-        `status/check-status?my_id=${myId}`,
-      );
+      const response = await axiosConn('get', `status/check-status?my_id=${myId}`);
       if (response.status === 200) {
-        setIsNewStatus(
-          (response?.data as { has_new_status?: boolean })?.has_new_status ??
-            false,
-        );
+        setIsNewStatus((response?.data as { has_new_status?: boolean })?.has_new_status ?? false);
       }
     } catch {
       // Status check optional - fail silently
@@ -77,12 +65,7 @@ const BottomNavigation = ({
   };
 
   if (!isIndia) {
-    return (
-      <GlobalBottomNavigation
-        navigation={navigation}
-        activeScreen={activeScreen}
-      />
-    );
+    return <GlobalBottomNavigation navigation={navigation} activeScreen={activeScreen} />;
   }
   if (isKeyboardVisible) {
     return null;
@@ -109,7 +92,7 @@ const BottomNavigation = ({
     },
     {
       name: 'Status',
-      icon: isNewStatus ? ('ellipse' as const) : ('ellipse-outline' as const),
+      icon: isNewStatus ? 'ellipse' as const : 'ellipse-outline' as const,
       activeIcon: 'ellipse' as const,
       title: t.updates ?? 'Updates',
       screen: 'StatusScreen',
@@ -146,17 +129,12 @@ const BottomNavigation = ({
           {navigationItems.map(item => (
             <TouchableOpacity
               key={item.name}
-              style={[
-                styles.navItem,
-                activeScreen === item.name && styles.activeNavItem,
-              ]}
+              style={[styles.navItem, activeScreen === item.name && styles.activeNavItem]}
               onPress={() => handleNavigation(item.screen, item.params)}
             >
               <View style={styles.iconWrapper}>
                 <Icon
-                  name={
-                    activeScreen === item.name ? item.activeIcon : item.icon
-                  }
+                  name={activeScreen === item.name ? item.activeIcon : item.icon}
                   size={ICON_SIZE}
                   color={activeScreen === item.name ? '#F8732B' : '#484C52'}
                 />
@@ -173,19 +151,12 @@ const BottomNavigation = ({
             </TouchableOpacity>
           ))}
           <TouchableOpacity
-            style={[
-              styles.navItem,
-              activeScreen === 'Listing' && styles.activeNavItem,
-            ]}
+            style={[styles.navItem, activeScreen === 'Listing' && styles.activeNavItem]}
             onPress={() => handleNavigation('ChatList')}
           >
             <View style={styles.iconWrapper}>
               <Icon
-                name={
-                  activeScreen === 'Listing'
-                    ? 'chatbubbles'
-                    : 'chatbubbles-outline'
-                }
+                name={activeScreen === 'Listing' ? 'chatbubbles' : 'chatbubbles-outline'}
                 size={ICON_SIZE}
                 color={activeScreen === 'Listing' ? '#ED713C' : '#555'}
               />

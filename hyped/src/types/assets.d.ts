@@ -1,6 +1,6 @@
 /**
  * Asset Type Declarations
- *
+ * 
  * Allows TypeScript to recognize image imports
  */
 

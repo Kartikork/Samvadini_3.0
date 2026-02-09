@@ -21,13 +21,10 @@ import { noImage } from '../../assets';
 import BottomNavigation from '../../components/BottomNavigation';
 import { SearchBar } from '../ChatListScreen/components/SearchBar';
 import { formatChatDate } from '../../helper/DateFormate';
-import { useAppSelector } from '../../state/hooks';
-import { getAppTranslations } from '../../translations';
 
 export function CategoryScreen({ route }) {
     const { id, name } = route.params;
-    const lang = useAppSelector(state => state.language.lang);
-    const translations = useMemo(() => getAppTranslations(lang), [lang]);
+    const lang = 'en';
     const navigation = useNavigation();
     const categoryId = name === 'hotTrends' ? 'hotTrends' : id;
     const { categoryData, loading, error, loadMoreCategoryData, searchCategoryData, searchResults } = useGetAndSyncCategoryData({ categoryId });
@@ -272,7 +269,7 @@ export function CategoryScreen({ route }) {
                 <KeyboardAvoidingView style={styles.container}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 15, marginTop: 15, marginBottom: 0 }}>
                         <Text style={styles.title}>
-                            {translations[name] || name}
+                            {name}
                         </Text>
                         {/* <TextToVoiceIconWrapper
                             ref={textToVoiceRef}
@@ -284,7 +281,7 @@ export function CategoryScreen({ route }) {
                         value={searchQuery}
                         onChangeText={handleSearch}
                         onClear={() => setSearchQuery('')}
-                        placeholder={translations['search'] || "Search here..."}
+                        placeholder="Search here..."
                     />
                     {categoryId === 'Central Govt. Schemes, Policies' && renderPIBFilterBar()}
                     {loading && (!categoryData?.data || categoryData?.data?.length === 0) ? (

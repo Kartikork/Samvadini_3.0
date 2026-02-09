@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { saveSQLLiteCategoryData, savePIBData, getCategoryDataSQLlite } from '../../storage/sqllite/categoryData/CategoryDataSchema';
 import NetInfo from '@react-native-community/netinfo';
 import axios from 'axios';
-import { env } from '../../config/env';
 
 export const useGetAndSyncCategoryData = ({ categoryId }) => {
     const [categoryData, setCategoryData] = useState();
@@ -14,6 +13,7 @@ export const useGetAndSyncCategoryData = ({ categoryId }) => {
     const { lang } = 'en';
 
     const fetchCategoryData = async (categoryId, fetchPage = page) => {
+        // Check for internet connectivity using NetInfo
         const netInfoState = await NetInfo.fetch();
         if (!netInfoState.isConnected) {
             await getLocalCategoryData(categoryId);
@@ -27,7 +27,7 @@ export const useGetAndSyncCategoryData = ({ categoryId }) => {
                 page: fetchPage,
                 ...(categoryId !== 'hotTrends' && { category: categoryId }),
             };
-            const response = await axios.post(`${env.API_BASE_URL}/category/get-category-data`, postData);
+            const response = await axios.post(`https://qasamvadini.aicte-india.org/api/category/get-category-data`, postData);
             if (response.status === 200 && response.data.data.data) {
                 const newData = response.data.data.data;
                 const hasMore = response.data.data.has_more;
@@ -114,7 +114,8 @@ export const useGetAndSyncCategoryData = ({ categoryId }) => {
                     ...(categoryId !== 'hotTrends' && { category: categoryId }),
                 };
 
-                const response = await axios.post(`${env.API_BASE_URL}/category/search-category-data`, postData);
+                // const response = await axiosConn('post', 'api/category/search-category-data', postData);
+                const response = await axios.post(`https://qasamvadini.aicte-india.org/api/category/search-category-data`, postData);
 
                 if (response.status === 200 && response.data.data) {
                     setSearchResults(response.data.data);
