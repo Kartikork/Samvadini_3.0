@@ -77,7 +77,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
   }, [avatarUrl]);
 
   const avatarIcon = useMemo(() => {
-    return isGroup ? 'account-group' : 'account-circle';
+    return isGroup ? 'account-group' : 'account';
   }, [isGroup]);
 
   const handleBack = () => {
@@ -85,7 +85,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         {/* Left: Back + Avatar + Title */}
         <View style={styles.leftSection}>
@@ -120,7 +120,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
               onPress={onCallPress}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Icon name="phone" size={24} color="#000000" />
+              <Icon name="phone-outline" size={24} color="#000000" />
             </TouchableOpacity>
           )}
           {showVideoButton && (
@@ -129,7 +129,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
               onPress={onVideoPress}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Icon name="video" size={24} color="#000000" />
+              <Icon name="video-outline" size={24} color="#000000" />
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -160,8 +160,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    height: 56,
+    height: 40,
   },
   leftSection: {
     flexDirection: 'row',
