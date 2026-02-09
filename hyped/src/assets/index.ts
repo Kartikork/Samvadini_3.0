@@ -33,6 +33,7 @@ export { default as farmerIcon } from './images/Dashboard/farmerIcn.png';
 export { default as langBg } from './images/Dashboard/languages-bg.png';
 export { default as gameBg } from './images/Dashboard/gamebg.png';
 export { default as noImage } from './images/no-image.png';
+export { default as callBackgroung } from './images/calls/call-bg.png';
 // dashboard images end
 
 // Icons
