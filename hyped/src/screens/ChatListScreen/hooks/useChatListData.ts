@@ -21,6 +21,7 @@ export interface ChatListItem {
   prakara: 'Chat' | 'Group' | 'Broadcast' | 'SelfChat';
   contact_name: string;
   contact_photo?: string;
+  contact_uniqueId?: string; // Other user's ID in 1-to-1 chats (from SQL: tcb_other.ekatma_chinha)
   lastMessage?: string;
   lastMessageUrl?: string;
   lastMessageType?: string;

@@ -17,6 +17,8 @@ import { loadLanguage } from './src/state/languageSlice';
 import { loadFontSize } from './src/state/fontSizeSlice';
 import Toast from 'react-native-toast-message';
 import MainNavigator from './src/navigation/MainNavigator';
+import { NotificationService } from './src/services/NotificationService';
+import CallOverlay from './src/components/CallOverlay';
 
 // Loading component shown while rehydrating
 const LoadingView = () => (
@@ -32,6 +34,9 @@ function App() {
   useEffect(() => {
     store.dispatch(loadLanguage());
     store.dispatch(loadFontSize());
+    NotificationService.initialize().catch(err => {
+      console.warn('[App] Notification init error:', err);
+    });
   }, []);
 
   return (
@@ -43,6 +48,7 @@ function App() {
             translucent={false}
           />
           <MainNavigator />
+          <CallOverlay />
           <Toast />
         </SafeAreaProvider>
       </PersistGate>

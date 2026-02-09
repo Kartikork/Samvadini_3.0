@@ -1,4 +1,4 @@
-package com.hyped
+package com.friendsV
 
 import android.app.Application
 import com.facebook.react.PackageList

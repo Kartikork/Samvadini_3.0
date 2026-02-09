@@ -41,8 +41,8 @@ import type { RootStackParamList } from '../../navigation/MainNavigator';
 import { useAppSelector, useAppDispatch } from '../../state/hooks';
 import { chatListActions, ChatTab } from '../../state/chatListSlice';
 import { activeChatActions } from '../../state/activeChatSlice';
-import { 
-  selectChatIdsForActiveTab, 
+import {
+  selectChatIdsForActiveTab,
   selectLoadingState,
   selectRequestBadge,
 } from '../../state/selectors/chatListSelectors';
@@ -64,6 +64,7 @@ import Carousel from './components/Carousel';
 import { SocketService } from '../../services/SocketService';
 // Message handler for saving incoming messages
 import { handleIncomingMessage } from '../../services/MessageHandler';
+import { GradientBackground } from '../../components/GradientBackground';
 
 // ============================================
 // LAZY LOADED COMPONENTS (Event-based)
@@ -116,7 +117,7 @@ export default function ChatListScreen() {
   const activeTab = useAppSelector(state => state.chatList.activeTab);
   const isRefreshing = useAppSelector(state => state.chatList.isRefreshing);
   const showArchived = useAppSelector(state => state.chatList.showArchived);
-  
+
   // Memoized selectors
   const chatIds = useAppSelector(selectChatIdsForActiveTab);
   const { showSkeleton } = useAppSelector(selectLoadingState);
@@ -128,13 +129,13 @@ export default function ChatListScreen() {
 
   // Fetch data from DB (source of truth)
   const { chats, loading } = useChatListData(chatIds, activeTab);
-  
+
   // Fetch archived chats separately
   const { archivedChats } = useArchivedChats();
-  
+
   // Search functionality
   const { searchQuery, results, isLoading: isSearching, handleSearch, clearSearch } = useChatSearch();
-  
+
   // Multi-select functionality
   const {
     isSelectionMode,
@@ -172,10 +173,10 @@ export default function ChatListScreen() {
 
     console.log('[ChatListScreen] 📥 Loading chats from DB...');
     dispatch(chatListActions.setLoading(true));
-    
+
     // Data loading happens in useChatListData hook
     // This just sets loading state for UI feedback
-    
+
     setTimeout(() => {
       dispatch(chatListActions.setLoading(false));
       console.log('[ChatListScreen] ✅ Chats loaded');
@@ -187,12 +188,12 @@ export default function ChatListScreen() {
    */
   const debouncedRefresh = useCallback(() => {
     console.log('[ChatListScreen] 🔄 Debounced refresh triggered');
-    
+
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       console.log('[ChatListScreen] ⏱️ Clearing previous debounce timer');
     }
-    
+
     debounceTimerRef.current = setTimeout(() => {
       console.log('[ChatListScreen] ✅ Executing debounced refresh');
       dispatch(chatListActions.setLastUpdateTime(Date.now()));
@@ -241,30 +242,30 @@ export default function ChatListScreen() {
 
     const handleNewMessage = async (payload: any) => {
       const socketReceiveTime = Date.now();
-      
+
       console.log('[ChatListScreen] 📨 new_message event received:', {
         chatId: payload?.samvada_chinha,
         sender: payload?.pathakah_chinha,
         messageType: payload?.sandesha_prakara,
         timestamp: new Date().toISOString(),
       });
-      
+
       // Save message to database first (with decryption)
       const result = await handleIncomingMessage(payload, socketReceiveTime);
-      
+
       if (result.success) {
         const chatListRefreshStartTime = Date.now();
         console.log('[ChatListScreen] ✅ Message saved, refreshing chat list');
-        
+
         // Refresh after message is saved
         debouncedRefresh();
-        
+
         // Calculate time to show on chat list (approximate)
         const timeToShow = Date.now() - socketReceiveTime;
         console.log('[ChatListScreen] ⏱️ Total time from socket to chat list refresh:', {
           totalTime: `${timeToShow}ms`,
-          messageProcessing: result.timing 
-            ? `${result.timing.totalTime}ms` 
+          messageProcessing: result.timing
+            ? `${result.timing.totalTime}ms`
             : 'N/A',
           chatListRefresh: `${Date.now() - chatListRefreshStartTime}ms`,
           breakdown: result.timing ? {
@@ -316,10 +317,10 @@ export default function ChatListScreen() {
    */
   const handleRefresh = useCallback(() => {
     dispatch(chatListActions.setRefreshing(true));
-    
+
     // Trigger data reload
     loadChats();
-    
+
     // Simulate network delay (remove in production if sync is instant)
     setTimeout(() => {
       dispatch(chatListActions.setRefreshing(false));
@@ -438,7 +439,7 @@ export default function ChatListScreen() {
     // Check if any selected chats are already pinned (handle undefined)
     const selectedChats = chats.filter(c => selectedChatIds.includes(c.samvada_chinha));
     const hasPinned = selectedChats.some(c => (c.is_pinned ?? 0) === 1);
-    
+
     if (hasPinned) {
       // Unpin if any are pinned
       const success = await bulkUnpin();
@@ -472,7 +473,7 @@ export default function ChatListScreen() {
    */
   const renderItem = useCallback(({ item }: { item: any }) => {
     const isSelected = isChatSelected(item.samvada_chinha);
-    
+
     return (
       <ChatListItem
         chat={item}
@@ -538,7 +539,7 @@ export default function ChatListScreen() {
           onPin={handleBulkPin}
           onDelete={handleBulkDelete}
           isArchivedTab={activeTab === 'archived'}
-          hasPinnedChats={chats.some(c => 
+          hasPinnedChats={chats.some(c =>
             selectedChatIds.includes(c.samvada_chinha) && (c.is_pinned ?? 0) === 1
           )}
         />
@@ -589,17 +590,30 @@ export default function ChatListScreen() {
 
       {/* Floating Action Button - Only show when not in selection mode */}
       {!isSelectionMode && (
-        <TouchableOpacity
-          style={[styles.fab, {
-              bottom: 20 + insets.bottom + 15,
-            },
-          ]}
-          onPress={handleContactPress}
-          activeOpacity={0.8}
+        <View
+          style={{
+            position: 'absolute',
+            right: 20,
+            bottom: 20 + insets.bottom + 15,
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            overflow: 'hidden', 
+            zIndex: 1000,
+          }}
         >
-          <MaterialIcons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
+          <GradientBackground colors={['#0989D2', '#6564AA']}>
+            <TouchableOpacity
+              style={styles.fab}
+              onPress={handleContactPress}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="add" size={24} color="#fff"/>
+            </TouchableOpacity>
+          </GradientBackground>
+        </View>
       )}
+
     </View>
   );
 }
@@ -644,28 +658,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   fab: {
-    position: 'absolute',
-    right: 20,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#25D366',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    zIndex: 1000,
-    ...Platform.select({
-      ios: {
-        shadowOpacity: 0.3,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
-  },
+  width: 48,
+  height: 48,
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 1000,
+},
 });
 
