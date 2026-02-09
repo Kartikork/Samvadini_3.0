@@ -3,7 +3,6 @@ import { View, FlatList, TouchableOpacity, Image, StyleSheet, Alert, Text } from
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomNavigation from '../../components/BottomNavigation';
 import { env } from '../../config/env';
 
@@ -11,22 +10,7 @@ export default function AttendeesScreen({ eventId, creatorId, chatId }) {
   const navigation = useNavigation();
   const [attendees, setAttendees] = useState();
   const [loading, setLoading] = useState(false);
-  const [myId, setMyId] = useState(null);
-
-  useEffect(() => {
-    const fetchMyId = async () => {
-      try {
-        const id = await AsyncStorage.getItem("uniqueId");
-        if (id) {
-          setMyId(id);
-        }
-      } catch (error) {
-        console.error("Failed to load ID:", error);
-      }
-    };
-
-    fetchMyId();
-  }, []);
+  const { uniqueId } = useAppSelector(state => state.auth);
 
 
   useEffect(() => {
@@ -128,7 +112,7 @@ export default function AttendeesScreen({ eventId, creatorId, chatId }) {
         >
           Status: {item.status}
         </Text>
-        {item.status === 'Pending' && myId === creatorId && (
+        {item.status === 'Pending' && uniqueId === creatorId && (
           <View style={styles.actionButtons}>
             <TouchableOpacity
               onPress={() => handleUpdateStatus(item._id, 'Accepted', item.participantId)}

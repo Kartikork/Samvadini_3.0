@@ -6,7 +6,6 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import BottomNavigation from '../../components/BottomNavigation';
 import { env } from '../../config';
@@ -38,8 +37,9 @@ const parseTimeToDate = (timeStr, dateStr) => {
 };
 
 const UpdatePlanner = ({ route }) => {
-    const { _id, title, date, startTime, freq, weekly, monthly, plan, uniqueId } = route.params;
+    const { _id, title, date, startTime, freq, weekly, monthly, plan } = route.params;
     const navigation = useNavigation();
+    const { uniqueId } = useAppSelector(state => state.auth);
     const lang = useAppSelector(state => state.language.lang);
     const translations = useMemo(() => getAppTranslations(lang), [lang]);
 
@@ -271,13 +271,12 @@ const UpdatePlanner = ({ route }) => {
         }
 
         try {
-            const userId = await AsyncStorage.getItem('uniqueId');
-            if (!userId) {
+            if (!uniqueId) {
                 throw new Error('User ID not found');
             }
 
             const payload = {
-                uniqueId: userId,
+                uniqueId,
                 planTitle,
                 type: 'Planner',
                 date: formatDateToYYYYMMDD(selectedDate),

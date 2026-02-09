@@ -13,7 +13,6 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import BottomNavigation from '../../components/BottomNavigation';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -37,6 +36,7 @@ const parseTimeToDate = (timeStr, dateObj) => {
 const AddPlan = ({ route }) => {
   const { data = {}, update = false } = route?.params || {};
   const navigation = useNavigation();
+  const { uniqueId } = useAppSelector(state => state.auth);
   const lang = useAppSelector(state => state.language.lang);
   const translations = useMemo(() => getAppTranslations(lang), [lang]);
   const [loading, setLoading] = useState(false);
@@ -273,7 +273,6 @@ const AddPlan = ({ route }) => {
     setLoading(true);
 
     try {
-      const uniqueId = await AsyncStorage.getItem('uniqueId');
       if (!uniqueId) {
         throw new Error('User ID not found');
       }

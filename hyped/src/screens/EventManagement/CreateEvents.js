@@ -20,7 +20,6 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import axios from 'axios';
 import { env } from '../../config/env';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 // import Checking from './Checking';
 import BottomNavigation from '../../components/BottomNavigation';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
@@ -32,6 +31,7 @@ export default function CreateEvents() {
   const route = useRoute();
   const { item } = route.params || {};
   const isEditing = !!item;
+  const { uniqueId } = useAppSelector(state => state.auth);
   const lang = useAppSelector(state => state.language.lang);
   const translations = useMemo(() => getAppTranslations(lang), [lang]);
   useHardwareBackHandler('Dashboard');
@@ -290,8 +290,6 @@ export default function CreateEvents() {
     ]).start();
 
     try {
-      const uniqueId = await AsyncStorage.getItem("uniqueId");
-
       const payload = {
         ...formData,
         startAt: formData.startAt ? formatDateTime(formData.startAt) : null,

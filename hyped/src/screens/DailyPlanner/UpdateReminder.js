@@ -6,7 +6,6 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import BottomNavigation from '../../components/BottomNavigation';
 import { env } from '../../config';
@@ -36,9 +35,10 @@ const parseTimeToDate = (timeStr, dateStr) => {
 };
 
 const UpdateReminder = ({ route }) => {
-    const { _id, title, description, date, startTime, earlyReminder, priority, repeat, weekly, monthly, uniqueId } = route.params || {};
+    const { _id, title, description, date, startTime, earlyReminder, priority, repeat, weekly, monthly } = route.params || {};
     const navigation = useNavigation();
     const { translations } = {};
+    const { uniqueId } = useAppSelector(state => state.auth);
     const [reminderTitle, setReminderTitle] = useState(title || '');
     const [reminderDescription, setReminderDescription] = useState(description || '');
     const [selectedDate, setSelectedDate] = useState(date ? new Date(date) : new Date());
@@ -148,13 +148,12 @@ const UpdateReminder = ({ route }) => {
         }
 
         try {
-            const userId = await AsyncStorage.getItem('uniqueId');
-            if (!userId) {
+            if (!uniqueId) {
                 throw new Error('User ID not found');
             }
 
             const payload = {
-                uniqueId: userId,
+                uniqueId,
                 title: reminderTitle,
                 description: reminderDescription,
                 date: formatDateToYYYYMMDD(selectedDate),

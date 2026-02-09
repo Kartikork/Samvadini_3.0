@@ -14,7 +14,6 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import AddReminderCalendar from './ReminderCalendar';
 import BottomNavigation from '../../components/BottomNavigation';
@@ -40,6 +39,7 @@ const parseTimeToDate = (timeStr, dateObj) => {
 
 const AddReminder = ({ route }) => {
   const { data = {}, update = false } = route?.params || {};
+  const { uniqueId } = useAppSelector(state => state.auth);
   const lang = useAppSelector(state => state.language.lang);
   const translations = useMemo(() => getAppTranslations(lang), [lang]);
   const navigation = useNavigation();
@@ -159,7 +159,6 @@ const AddReminder = ({ route }) => {
       Alert.alert('Please enter a title for the reminder.');
       return;
     }
-    const uniqueId = await AsyncStorage.getItem('uniqueId');
     if (!uniqueId) {
       Alert.alert('User ID not found. Please log in again.');
       return;

@@ -7,31 +7,15 @@ import AttendeesScreen from './AttendeesScreen';
 import AgendaScreen from './AgendaScreen';
 import JoinEventModal from './JoinEventModal';
 import { getEventTimeLeft } from '../../helper/DateFormate';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomNavigation from '../../components/BottomNavigation';
 
 export default function DetailsScreen({ route, navigation }) {
   const { item } = route.params;
   const [tab, setTab] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [myId, setMyId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { uniqueId } = useAppSelector(state => state.auth);
   const [applicationStatus, setApplicationStatus] = useState(item.applicationStatus || 'Not Applied');
-
-  useEffect(() => {
-    const fetchMyId = async () => {
-      try {
-        const id = await AsyncStorage.getItem('uniqueId');
-        setMyId(id);
-      } catch (error) {
-        console.error('Failed to load ID:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMyId();
-  }, []);
 
   useEffect(() => {
     const validStatuses = ['Not Applied', 'Pending', 'Accepted', 'Rejected'];
@@ -65,7 +49,7 @@ export default function DetailsScreen({ route, navigation }) {
     Alert.alert('Success', message, [{ text: 'OK', onPress: () => navigation.goBack() }]);
   };
 
-  const shouldHideButton = myId === item.creatorId || eventTimeLeft === 'Event passed';
+  const shouldHideButton = uniqueId === item.creatorId || eventTimeLeft === 'Event passed';
 
   return (
     <>
@@ -122,7 +106,7 @@ export default function DetailsScreen({ route, navigation }) {
                 ) : shouldHideButton ? (
                   <View style={styles.placeholderContainer}>
                     <Text style={styles.placeholderText}>
-                      {myId === item.creatorId ? 'You created this event' : 'Event has passed'}
+                      {uniqueId === item.creatorId ? 'You created this event' : 'Event has passed'}
                     </Text>
                   </View>
                 ) : (

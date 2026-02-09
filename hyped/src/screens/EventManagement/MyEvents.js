@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { TouchableOpacity, View, StyleSheet, FlatList, Image, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { env } from '../../config/env';
@@ -14,6 +13,7 @@ export default function MyEvents({ searchQuery }) {
     const navigation = useNavigation();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(false);
+    const { uniqueId } = useAppSelector(state => state.auth);
     const lang = useAppSelector(state => state.language.lang);
     const translations = useMemo(() => getAppTranslations(lang), [lang]);
 
@@ -24,7 +24,6 @@ export default function MyEvents({ searchQuery }) {
     const getEventList = async () => {
         setLoading(true);
         try {
-            const uniqueId = await AsyncStorage.getItem('uniqueId');
             let payload = {
                 page: 1,
                 limit: 10,

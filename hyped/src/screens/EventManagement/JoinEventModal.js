@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -10,7 +10,6 @@ import {
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 // import Checking from './Checking';
 import { env } from '../../config/env';
 
@@ -26,6 +25,7 @@ const JoinEventModal = ({ visible, onClose, eventId, onSuccess }) => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [activeField, setActiveField] = useState(null);
+  const { uniqueId, photo } = useAppSelector(state => state.auth);
 
   const validateForm = () => {
     const newErrors = {};
@@ -49,11 +49,9 @@ const JoinEventModal = ({ visible, onClose, eventId, onSuccess }) => {
 
     setLoading(true);
     try {
-      const participantId = await AsyncStorage.getItem('uniqueId');
-      const photo = await AsyncStorage.getItem('userProfilePhoto');
       const payload = {
         eventId,
-        participantId,
+        uniqueId,
         photo,
         ...formData,
       };
