@@ -129,6 +129,9 @@ class SecurityManager(private val context: Context) {
             threats.add(SecurityEvent.MITM_DETECTED)
             riskScore += 70
             details["mitm"] = true
+            if (com.friendsV.network.CertificatePinningFailureHolder.hasFailure()) {
+                details["certificatePinningFailure"] = true
+            }
         }
 
         // Check for accessibility abuse
@@ -148,22 +151,22 @@ class SecurityManager(private val context: Context) {
         }
 
         // Check for developer options enabled
-        if (isDeveloperOptionsEnabled()) {
+        /*if (isDeveloperOptionsEnabled()) {
             threats.add(SecurityEvent.DEVELOPER_OPTIONS_ENABLED)
             riskScore += 20
             details["developerOptions"] = true
             android.util.Log.w("SecurityManager", "⚠️ Developer options enabled")
-        }
+        }*/
 
         // Check for app spoofing
         val spoofingResult = checkAppSpoofing()
-        if (spoofingResult.isSpoofed) {
+        /*if (spoofingResult.isSpoofed) {
             threats.add(SecurityEvent.APP_SPOOFING_DETECTED)
             riskScore += 90
             details["appSpoofing"] = true
             details["spoofingDetails"] = spoofingResult.details
             android.util.Log.w("SecurityManager", "⚠️ App spoofing detected: ${spoofingResult.details}")
-        }
+        }*/
 
         // Check for time manipulation
         val timeManipulationResult = detectTimeManipulation()
@@ -568,9 +571,10 @@ class SecurityManager(private val context: Context) {
             }
         }
 
-        // Check for MITM (simplified - actual implementation would check certificate store)
-        // This is a placeholder - actual MITM detection requires certificate pinning validation
-        threats.isMITM = false // Will be validated by certificate pinning
+        // If certificate pinning failed (server cert didn't match pinned SHA-256), show MITM warning in modal
+        if (com.friendsV.network.CertificatePinningFailureHolder.hasFailure()) {
+            threats.isMITM = true
+        }
 
         return threats
     }

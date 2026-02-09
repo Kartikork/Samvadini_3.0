@@ -2,13 +2,14 @@ import React from 'react';
 import {
   View,
   Modal,
-  TouchableOpacity,
   StyleSheet,
   Dimensions,
   ScrollView,
   Text,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { hypedLogo } from '../assets';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -62,7 +63,13 @@ const THREAT_MESSAGES: Record<
   },
   MITM_DETECTED: {
     title: 'Man-in-the-Middle Attack Detected',
-    message: 'A potential man-in-the-middle attack has been detected. Your connection may be compromised.',
+    message:
+      'A potential man-in-the-middle attack has been detected. Your connection may be compromised.',
+  },
+  CERTIFICATE_PINNING_FAILURE: {
+    title: 'Server Certificate Mismatch',
+    message:
+      "The server's certificate did not match the app's security pins. Your connection may be intercepted. Do not enter sensitive data and use a trusted network.",
   },
   ACCESSIBILITY_ABUSE: {
     title: 'Suspicious Accessibility Service',
@@ -110,11 +117,20 @@ export default function SecurityModal({ visible, threatData }: SecurityModalProp
     'To keep your account and chats safe, we detected one or more security issues on this device. ' +
     'Please remove these risks. Some features may be limited until your device is secure.';
 
-  const getThreatInfo = (threatType: string) =>
-    THREAT_MESSAGES[threatType] || {
-      title: 'Security Threat Detected',
-      message: 'A security threat has been detected on your device.',
-    };
+  const getThreatInfo = (threatType: string) => {
+    if (
+      threatType === 'MITM_DETECTED' &&
+      threatData?.details?.certificatePinningFailure
+    ) {
+      return THREAT_MESSAGES.CERTIFICATE_PINNING_FAILURE;
+    }
+    return (
+      THREAT_MESSAGES[threatType] || {
+        title: 'Security Threat Detected',
+        message: 'A security threat has been detected on your device.',
+      }
+    );
+  };
 
   return (
     <Modal
@@ -127,6 +143,11 @@ export default function SecurityModal({ visible, threatData }: SecurityModalProp
         <SafeAreaView style={styles.container}>
           <View style={styles.modalContent}>
             <View style={styles.header}>
+              <Image
+                source={hypedLogo}
+                style={styles.logo}
+                resizeMode="contain"
+              />
               <View style={styles.iconContainer}>
                 <Text style={styles.iconText}>⚠</Text>
               </View>
@@ -203,10 +224,15 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   header: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+  },
+  logo: {
+    width: 120,
+    height: 48,
+    marginBottom: 12,
   },
   iconContainer: {
     width: 64,

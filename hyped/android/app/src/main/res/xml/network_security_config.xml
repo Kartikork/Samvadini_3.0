@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network Security Config: prevents cleartext (HTTP) traffic in production.
+  Certificate pinning (OkHttp) separately prevents MITM on HTTPS.
+  Localhost cleartext is allowed for React Native dev server / Metro.
+-->
+<network-security-config>
+    <!-- Default: disallow cleartext to reduce MITM surface -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+    <!-- Allow cleartext only to localhost / emulator for development -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">10.0.3.2</domain>
+        <domain includeSubdomains="true">::1</domain>
+    </domain-config>
+</network-security-config>

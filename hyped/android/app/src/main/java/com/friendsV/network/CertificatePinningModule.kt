@@ -1,5 +1,6 @@
 package com.friendsV.network
 
+import com.friendsV.BuildConfig
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
@@ -7,13 +8,7 @@ import com.facebook.react.bridge.Promise
 import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import java.security.MessageDigest
-import java.security.cert.Certificate
-import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
-import java.security.SecureRandom
 
 /**
  * Certificate Pinning Module for React Native
@@ -57,6 +52,26 @@ class CertificatePinningModule(reactContext: ReactApplicationContext) : ReactCon
         }
     }
 
+    /**
+     * Simulate a certificate pinning failure for testing.
+     * Only available in DEBUG builds. After calling this, run a security check
+     * (e.g. SecurityService.performSecurityCheck()) to show the warning modal.
+     */
+    @ReactMethod
+    fun simulatePinningFailure(promise: Promise) {
+        try {
+            if (!BuildConfig.DEBUG) {
+                promise.reject("NOT_AVAILABLE", "simulatePinningFailure is only available in debug builds")
+                return
+            }
+            CertificatePinningFailureHolder.recordFailure()
+            android.util.Log.d("CertificatePinning", "Simulated pinning failure for testing")
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("SIMULATE_ERROR", "Failed to simulate: ${e.message}", e)
+        }
+    }
+
     companion object {
         /**
          * Create CertificatePinner with pins for your domains
@@ -70,6 +85,12 @@ class CertificatePinningModule(reactContext: ReactApplicationContext) : ReactCon
          * openssl enc -base64
          */
         fun createCertificatePinner(): CertificatePinner {
+            // Disable pinning in debug so developers can use proxy tools (Charles, Fiddler, etc.)
+            if (BuildConfig.DEBUG) {
+                android.util.Log.d("CertificatePinning", "Debug build: certificate pinning disabled")
+                return CertificatePinner.Builder().build()
+            }
+
             val builder = CertificatePinner.Builder()
             
             // Certificate pin for samvadiniprod.aicte-india.org
