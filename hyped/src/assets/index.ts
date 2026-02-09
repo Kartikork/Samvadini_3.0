@@ -33,6 +33,9 @@ export { default as farmerIcon } from './images/Dashboard/farmerIcn.png';
 export { default as langBg } from './images/Dashboard/languages-bg.png';
 export { default as gameBg } from './images/Dashboard/gamebg.png';
 export { default as noImage } from './images/no-image.png';
+export { default as priorityIcon } from './images/priority.png';
+export { default as userIcon } from './images/user-icon.png';
+export { default as groupIcons } from './images/groupIcons.png';
 // dashboard images end
 
 // Icons

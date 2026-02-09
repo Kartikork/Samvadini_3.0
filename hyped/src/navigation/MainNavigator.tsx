@@ -41,7 +41,14 @@ import { CategoryScreen } from '../screens/CategoryScreen/CategoryScreen.js';
 import { CategoryDetailsScreen } from '../screens/CategoryScreen/CategoryDetailsScreen.js';
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
-
+import LRNScreen from '../screens/LRNModule/LRNScreen';
+import DailyPlanner from '../screens/DailyPlanner/DailyPlanner';
+import AddPlan from '../screens/DailyPlanner/AddPlan';
+import AddReminder from '../screens/DailyPlanner/AddReminder';
+import UpdatePlanner from '../screens/DailyPlanner/UpdatePlanner';
+import SharePlan from '../screens/DailyPlanner/SharePlan';
+import UpdateReminder from '../screens/DailyPlanner/UpdateReminder';
+import SharePlannerCount from '../screens/DailyPlanner/SharePlannerCount';
 // Header wrapper
 import { withHeader } from '../components/withHeader';
 
@@ -61,6 +68,14 @@ export type RootStackParamList = {
   ContactDesignScreen: undefined;
   CategoryScreen: undefined;
   CategoryDetailsScreen: undefined;
+  LRNScreen: undefined;
+  DailyPlanner: undefined;
+  AddPlan: undefined;
+  AddReminder: undefined;
+  UpdatePlanner: undefined;
+  SharePlan: undefined;
+  UpdateReminder: undefined;
+  SharePlannerCount: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -166,6 +181,46 @@ export default function MainNavigator() {
         <Stack.Screen
           name="CategoryDetailsScreen"
           component={wrapWithHeader(CategoryDetailsScreen)}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="LRNScreen"
+          component={LRNScreen}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="DailyPlanner"
+          component={DailyPlanner}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="SharePlan"
+          component={SharePlan}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="AddPlan"
+          component={AddPlan}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="SharePlannerCount"
+          component={SharePlannerCount}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="UpdatePlanner"
+          component={UpdatePlanner}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="UpdateReminder"
+          component={UpdateReminder}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="AddReminder"
+          component={AddReminder}
           options={{ animation: 'fade' }}
         />
         <Stack.Screen

@@ -262,7 +262,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                   >
                     <TouchableOpacity
                       style={styles.gameZoneButton}
-                      onPress={() => navigation.navigate('lingoweb')}
+                      onPress={() => navigation.navigate('LRNScreen')}
                     >
                       <Image source={learnIcon} />
                       <Image
