@@ -159,11 +159,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
   }, [receiverId, isGroup, title, navigation]);
 
   return (
-<<<<<<< HEAD
-    <SafeAreaView style={styles.safeArea}>
-=======
     <View style={styles.safeArea}>
->>>>>>> 756c39a0d05954485dc5c9416d6c15ce17400723
       <View style={styles.header}>
         {/* Left: Back + Avatar + Title */}
         <View style={styles.leftSection}>
