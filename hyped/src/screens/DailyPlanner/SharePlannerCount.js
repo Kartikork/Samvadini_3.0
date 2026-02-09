@@ -1,10 +1,11 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import axios from 'axios';
 import { env } from '../../config';
 import { useAppSelector } from '../../state/hooks';
 import { getAppTranslations } from '../../translations';
+import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 
 const SharePlannerCount = ({ route }) => {
     const { data } = route.params;
@@ -16,6 +17,7 @@ const SharePlannerCount = ({ route }) => {
     const [expandedId, setExpandedId] = useState(null);
     const lang = useAppSelector(state => state.language.lang);
     const translations = useMemo(() => getAppTranslations(lang), [lang]);
+    useHardwareBackHandler("DailyPlanner")
 
     useEffect(() => {
         fetchData();

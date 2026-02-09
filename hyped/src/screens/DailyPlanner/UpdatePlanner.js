@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal,
     Alert
@@ -11,6 +11,7 @@ import BottomNavigation from '../../components/BottomNavigation';
 import { env } from '../../config';
 import { useAppSelector } from '../../state/hooks';
 import { getAppTranslations } from '../../translations';
+import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 
 // Parse 12-hour time (e.g., "9:50 PM") to Date object
 const parseTimeToDate = (timeStr, dateStr) => {
@@ -42,7 +43,7 @@ const UpdatePlanner = ({ route }) => {
     const { uniqueId } = useAppSelector(state => state.auth);
     const lang = useAppSelector(state => state.language.lang);
     const translations = useMemo(() => getAppTranslations(lang), [lang]);
-
+    useHardwareBackHandler("DailyPlanner");
     // Initialize state with received data
     const [planTitle, setPlanTitle] = useState(title || '');
     const [selectedDate, setSelectedDate] = useState(date ? new Date(date) : new Date());
@@ -79,8 +80,10 @@ const UpdatePlanner = ({ route }) => {
     // Format Date for display
     const formatDateForDisplay = (date) => {
         try {
-            const options = { day: '2-digit', month: 'short', year: 'numeric' };
-            return date.toLocaleDateString('en-GB', options);
+            const formatTime24 = (date) =>
+                `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+            return formatTime24;
         } catch (error) {
             console.error('Error formatting date:', error.message);
             return 'Invalid Date';
@@ -299,11 +302,7 @@ const UpdatePlanner = ({ route }) => {
                 { headers: { 'Content-Type': 'application/json' } }
             );
 
-            Alert.alert('Planner updated successfully.', {
-                type: 'success',
-                placement: 'top',
-                duration: 3000,
-            });
+            Alert.alert('Planner updated successfully.');
             navigation.navigate('DailyPlanner');
         } catch (error) {
             console.error('Error updating planner:', error.response?.data || error.message);

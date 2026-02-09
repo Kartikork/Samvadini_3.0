@@ -9,6 +9,8 @@ import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import BottomNavigation from '../../components/BottomNavigation';
 import { env } from '../../config';
+import { useAppSelector } from '../../state/hooks';
+import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 
 // Parse 12-hour time (e.g., "9:49 PM") to Date object
 const parseTimeToDate = (timeStr, dateStr) => {
@@ -36,6 +38,7 @@ const parseTimeToDate = (timeStr, dateStr) => {
 
 const UpdateReminder = ({ route }) => {
     const { _id, title, description, date, startTime, earlyReminder, priority, repeat, weekly, monthly } = route.params || {};
+    useHardwareBackHandler("DailyPlanner");
     const navigation = useNavigation();
     const { translations } = {};
     const { uniqueId } = useAppSelector(state => state.auth);
@@ -74,8 +77,10 @@ const UpdateReminder = ({ route }) => {
 
     const formatTimeForDisplay = (date) => {
         try {
-            const options = { hour: 'numeric', minute: '2-digit', hour12: true };
-            return date.toLocaleTimeString('en-US', options).replace(' ', '\u202f');
+            const formatTime24 = (date) =>
+                `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+            return formatTime24;
         } catch (error) {
             console.error('Error formatting time:', error.message);
             return 'Invalid Time';
@@ -172,11 +177,7 @@ const UpdateReminder = ({ route }) => {
                 { headers: { 'Content-Type': 'application/json' } }
             );
 
-            Alert.alert('Reminder updated successfully.', {
-                type: 'success',
-                placement: 'top',
-                duration: 300,
-            });
+            Alert.alert('Reminder updated successfully.')
             navigation.navigate('DailyPlanner');
         } catch (error) {
             console.error('Error updating reminder:', error.response?.data || error.message);
@@ -208,28 +209,28 @@ const UpdateReminder = ({ route }) => {
     return (
         <>
             <ScrollView style={styles.container}>
-                <Text style={styles.sectionTitle}>{translations.updateReminder || 'Update Reminder'}</Text>
+                <Text style={styles.sectionTitle}>{translations?.updateReminder || 'Update Reminder'}</Text>
 
-                <Text style={styles.label}>{translations.title || 'Title'}</Text>
+                <Text style={styles.label}>{translations?.title || 'Title'}</Text>
                 <TextInput
                     style={styles.input}
                     value={reminderTitle}
                     onChangeText={setReminderTitle}
-                    placeholder={translations.enterReminderTitle || 'Enter Reminder Title'}
+                    placeholder={translations?.enterReminderTitle || 'Enter Reminder Title'}
                 />
 
-                <Text style={styles.label}>{translations.description || 'Description'}</Text>
+                <Text style={styles.label}>{translations?.description || 'Description'}</Text>
                 <TextInput
                     style={[styles.input, styles.textArea]}
                     value={reminderDescription}
                     onChangeText={setReminderDescription}
-                    placeholder={translations.enterDescription || 'Enter Description'}
+                    placeholder={translations?.enterDescription || 'Enter Description'}
                     multiline
                     numberOfLines={4}
                 />
 
                 <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>{translations.date || 'Date'}</Text>
+                    <Text style={styles.detailLabel}>{translations?.date || 'Date'}</Text>
                     <TouchableOpacity onPress={() => setShowDatePicker(true)}>
                         <Text style={styles.detailValue}>{formatDateForDisplay(selectedDate)} ⬇</Text>
                     </TouchableOpacity>
@@ -244,7 +245,7 @@ const UpdateReminder = ({ route }) => {
                 )}
 
                 <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>{translations.time || 'Time'}</Text>
+                    <Text style={styles.detailLabel}>{translations?.time || 'Time'}</Text>
                     <TouchableOpacity onPress={() => setShowTimePicker(true)}>
                         <Text style={styles.detailValue}>{formatTimeForDisplay(selectedTime)} ⬇</Text>
                     </TouchableOpacity>
@@ -259,7 +260,7 @@ const UpdateReminder = ({ route }) => {
                 )}
 
                 <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>{translations.priority || 'Priority'}</Text>
+                    <Text style={styles.detailLabel}>{translations?.priority || 'Priority'}</Text>
                     <TouchableOpacity onPress={() => setShowPriorityModal(true)}>
                         <Text style={styles.detailValue}>{selectedPriority} ⬇</Text>
                     </TouchableOpacity>
@@ -288,14 +289,14 @@ const UpdateReminder = ({ route }) => {
                                 style={styles.modalCancelButton}
                                 onPress={() => setShowPriorityModal(false)}
                             >
-                                <Text style={styles.modalCancelText}>{translations.cancel || 'Cancel'}</Text>
+                                <Text style={styles.modalCancelText}>{translations?.cancel || 'Cancel'}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </Modal>
 
                 <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>{translations.earlyReminder || 'Early Reminder'}</Text>
+                    <Text style={styles.detailLabel}>{translations?.earlyReminder || 'Early Reminder'}</Text>
                     <TouchableOpacity onPress={() => setShowEarlyReminderModal(true)}>
                         <Text style={styles.detailValue}>{selectedEarlyReminder} ⬇</Text>
                     </TouchableOpacity>
@@ -324,14 +325,14 @@ const UpdateReminder = ({ route }) => {
                                 style={styles.modalCancelButton}
                                 onPress={() => setShowEarlyReminderModal(false)}
                             >
-                                <Text style={styles.modalCancelText}>{translations.cancel || 'Cancel'}</Text>
+                                <Text style={styles.modalCancelText}>{translations?.cancel || 'Cancel'}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </Modal>
 
                 <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>{translations.repeat || 'Repeat'}</Text>
+                    <Text style={styles.detailLabel}>{translations?.repeat || 'Repeat'}</Text>
                     <TouchableOpacity onPress={() => setShowRepeatModal(true)}>
                         <Text style={styles.detailValue}>{selectedRepeat} ⬇</Text>
                     </TouchableOpacity>
@@ -357,7 +358,7 @@ const UpdateReminder = ({ route }) => {
                                 style={styles.modalCancelButton}
                                 onPress={() => setShowRepeatModal(false)}
                             >
-                                <Text style={styles.modalCancelText}>{translations.cancel || 'Cancel'}</Text>
+                                <Text style={styles.modalCancelText}>{translations?.cancel || 'Cancel'}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -403,7 +404,7 @@ const UpdateReminder = ({ route }) => {
                                     <TouchableOpacity
                                         style={styles.closeButton}
                                         onPress={() => closeModal(setShowSelectionModal, 0)}>
-                                        <Text style={styles.closeButtonText}>{translations.close || 'Close'}</Text>
+                                        <Text style={styles.closeButtonText}>{translations?.close || 'Close'}</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={() => setShowSelectionModal(false)}>
                                         <LinearGradient
@@ -412,7 +413,7 @@ const UpdateReminder = ({ route }) => {
                                             end={{ x: 1, y: 0 }}
                                             style={styles.closeButton}
                                         >
-                                            <Text style={styles.closeButtonText}>{translations.done || 'Done'}</Text>
+                                            <Text style={styles.closeButtonText}>{translations?.done || 'Done'}</Text>
                                         </LinearGradient>
                                     </TouchableOpacity>
                                 </View>
@@ -428,7 +429,7 @@ const UpdateReminder = ({ route }) => {
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                     >
-                        <Text style={styles.saveText}>{translations.updateReminder || 'Update Reminder'}</Text>
+                        <Text style={styles.saveText}>{translations?.updateReminder || 'Update Reminder'}</Text>
                     </LinearGradient>
                 </TouchableOpacity>
             </ScrollView>

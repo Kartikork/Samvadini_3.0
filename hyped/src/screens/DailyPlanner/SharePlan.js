@@ -17,12 +17,12 @@ import Icon from "react-native-vector-icons/MaterialIcons"
 import { getAllChatLists } from '../../sqllite/chat/ChatListSchema';
 import { insertChatMessage } from '../../sqllite/chat/ChatMessageSchema';
 import { socketService } from '../../services/socketService';
-import { useDispatch, useSelector } from 'react-redux';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 import { env } from '../../config';
 import { generateUID } from '../../helper/DateFormate';
 import { groupIcons, userIcon } from '../../assets';
+import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 
 export default function SharePlan({ route }) {
     const { selectedMessages, curUserUid } = route.params;
@@ -30,12 +30,11 @@ export default function SharePlan({ route }) {
     const [contacts, setContacts] = useState([]);
     const [selectedContacts, setSelectedContacts] = useState([]);
     const [loading, setLoading] = useState(false);
-    const dispatch = useDispatch();
-    const storedMessages = useSelector(state => state.chatMessages.messages);
     const SLIDER_WIDTH = Dimensions.get('window').width - 40;
     const THUMB_SIZE = 48;
     const [thumbX] = useState(new Animated.Value(0));
     const [swiped, setSwiped] = useState(false);
+    useHardwareBackHandler("DailyPlanner");
 
     useEffect(() => {
         if (!loading) {

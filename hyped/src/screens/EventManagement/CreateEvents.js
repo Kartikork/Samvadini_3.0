@@ -310,7 +310,7 @@ export default function CreateEvents() {
           timeStamp: new Date().toISOString(),
         };
 
-        const groupRes = await axios.post(`${env.API_BASE_URL}api/chat/create-event-chat`, groupPayload, {
+        const groupRes = await axios.post(`${env.API_BASE_URL}/chat/create-event-chat`, groupPayload, {
           headers: { 'Content-Type': 'application/json' },
         });
 
@@ -347,7 +347,7 @@ export default function CreateEvents() {
           isVirtual: false,
         });
         setAttachments([]);
-        navigation.navigate('HomeScreen');
+        navigation.navigate("EventListScreen");
       }
     } catch (error) {
       Alert.alert(translations.error, isEditing ? translations.updateEventError.replace('{error}', error.message) : translations.createEventError.replace('{error}', error.message));
