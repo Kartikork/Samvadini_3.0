@@ -291,3 +291,4 @@ debugSocket();
 - Make sure you're cleaning up old handlers with `SocketService.off()`
 - Check if multiple components are registering the same handler
 
+

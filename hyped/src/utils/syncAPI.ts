@@ -131,16 +131,16 @@ class SyncAPI {
           console.log(`[SyncAPI] Data size (approx): ${JSON.stringify(chatListData).length} bytes`);
           
           // Log first item structure (keys and types)
-          if (chatListData[0]) {
-            console.log("[SyncAPI] First item keys:", Object.keys(chatListData[0]));
-            console.log("[SyncAPI] First item sample:", JSON.stringify(chatListData[0], null, 2));
-          }
+          // if (chatListData[0]) {
+          //   console.log("[SyncAPI] First item keys:", Object.keys(chatListData[0]));
+          //   console.log("[SyncAPI] First item sample:", JSON.stringify(chatListData[0], null, 2));
+          // }
           
           // Log last item for comparison
-          if (chatListData.length > 1) {
-            console.log("[SyncAPI] Last item sample:", JSON.stringify(chatListData[chatListData.length - 1], null, 2));
-          }
-          console.log("================================================");
+          // if (chatListData.length > 1) {
+          //   console.log("[SyncAPI] Last item sample:", JSON.stringify(chatListData[chatListData.length - 1], null, 2));
+          // }
+          // console.log("================================================");
           
           // ⏱️ Start timing DB insert
           const dbStartTime = Date.now();

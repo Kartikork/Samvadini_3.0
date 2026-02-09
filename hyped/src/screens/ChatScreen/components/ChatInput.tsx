@@ -179,68 +179,58 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
   const hasText = text.trim().length > 0;
 
   return (
-    <View style={[styles.container, { paddingBottom: 8 + insets.bottom + (pickerVisible ? pickerHeight : 0) }]}>
-      {/* Emoji picker button (left side) */}
-      <TouchableOpacity
-        style={styles.iconButton}
-        onPress={handleEmojiPicker}
-        disabled={isSending}
-      >
-        <Icon name="smile-o" size={24} color="#666666" />
-      </TouchableOpacity>
+   <View style={styles.container}>
+  <View style={styles.inputWrapper}>
+    {/* Emoji */}
+    <TouchableOpacity
+      style={styles.innerIcon}
+      onPress={handleEmojiPicker}
+      disabled={isSending}
+    >
+      <Icon name="smile-o" size={22} color="#666" />
+    </TouchableOpacity>
 
-      <PickerModal
-        visible={pickerVisible}
-        height={pickerHeight}
-        onClose={() => { setPickerVisible(false); setPickerHeight(0); }}
-        onSelectEmoji={handleEmojiSelected}
-        onSelectGif={handleGifSelected}
-        onSelectSticker={handleStickerSelected}
-        inputText={text}
-      />
+    {/* Text Input */}
+    <TextInput
+      ref={inputRef}
+      style={styles.input}
+      placeholder="Type a message..."
+      placeholderTextColor="#999"
+      value={text}
+      onChangeText={handleTextChange}
+      multiline
+      maxLength={4096}
+      editable={!isSending}
+    />
 
-      {/* Text input */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          ref={inputRef}
-          style={styles.input}
-          placeholder="Type a message..."
-          placeholderTextColor="#999999"
-          value={text}
-          onChangeText={handleTextChange}
-          multiline
-          maxLength={4096}
-          editable={!isSending}
-        />
-      </View>
+    {/* Plus */}
+    <TouchableOpacity
+      style={styles.innerIcon}
+      onPress={handleAttachment}
+      disabled={isSending}
+    >
+      <MaterialIcons name="add" size={22} color="#666" />
+    </TouchableOpacity>
+  </View>
 
-      {/* Attachment button (+ icon) */}
-      <TouchableOpacity
-        style={styles.iconButton}
-        onPress={handleAttachment}
-        disabled={isSending}
-      >
-        <MaterialIcons name="add" size={24} color="#666666" />
-      </TouchableOpacity>
-
-      {/* Conditional button: Send (when text) or Mic (when no text) */}
-      <TouchableOpacity
-        style={[
-          styles.actionButton,
-          hasText && styles.actionButtonActive,
-        ]}
-        onPress={hasText ? handleSend : handleVoiceRecord}
-        disabled={hasText ? !canSend : isSending}
-      >
-        {isSending ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : hasText ? (
-          <MaterialIcons name="send" size={20} color="#FFFFFF" />
-        ) : (
-          <MaterialIcons name="mic" size={20} color="#666666" />
-        )}
-      </TouchableOpacity>
-    </View>
+  {/* Send / Mic Button */}
+  <TouchableOpacity
+    style={[
+      styles.actionButton,
+      hasText && styles.actionButtonActive,
+    ]}
+    onPress={hasText ? handleSend : handleVoiceRecord}
+    disabled={hasText ? !canSend : isSending}
+  >
+    {isSending ? (
+      <ActivityIndicator size="small" color="#FFFFFF" />
+    ) : hasText ? (
+      <MaterialIcons name="send" size={20} color="#FFFFFF" />
+    ) : (
+      <MaterialIcons name="mic" size={20} color="#666666" />
+    )}
+  </TouchableOpacity>
+</View>
   );
 };
 
@@ -254,6 +244,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E5E5',
   },
+  inputWrapper: {
+ flex: 1,
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#F0F0F0',
+  borderRadius: 24,
+  paddingHorizontal: 8,
+  paddingVertical: 6,
+  marginRight: 8,
+  },
+  innerIcon: {
+  padding: 6,
+},
   iconButton: {
     width: 40,
     height: 40,
@@ -270,18 +273,20 @@ const styles = StyleSheet.create({
     maxHeight: 120,
   },
   input: {
-    fontSize: 16,
-    color: '#000000',
-    maxHeight: 100,
+    flex: 1,
+  fontSize: 15,
+  maxHeight: 120,
+  paddingHorizontal: 6,
+  paddingVertical: 6,
+  color: '#000',
   },
   actionButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 4,
+  width: 44,
+  height: 44,
+  borderRadius: 22,
+  backgroundColor: '#E0E0E0',
+  justifyContent: 'center',
+  alignItems: 'center',
   },
   actionButtonActive: {
     backgroundColor: '#007AFF',

@@ -328,13 +328,7 @@ const ChatScreen: React.FC = () => {
   /**
    * When user scrolls to TOP, load older messages from DB
    */
-  const handleCallPress = useCallback(() => {
-    // TODO: Navigate to audio call
-  }, []);
-
-  const handleVideoPress = useCallback(() => {
-    // TODO: Navigate to video call
-  }, []);
+ 
 
   const handleMenuPress = useCallback(() => {
     // TODO: Open chat options (view contact, mute, etc.)
@@ -413,8 +407,6 @@ const ChatScreen: React.FC = () => {
         chatId={chatId}
         showCallButton
         showVideoButton
-        onCallPress={handleCallPress}
-        onVideoPress={handleVideoPress}
         onMenuPress={handleMenuPress}
       />
 
