@@ -229,7 +229,7 @@ function LoginScreen() {
       // Call verify-otp API
       const response = await authAPI.verifyOtp(verifyData);
       
-      console.log('[LoginScreen] Verify OTP Response:', response);
+      console.log('[LoginScreen] Verify OTP Response:', JSON.stringify(response));
 
       // Store auth data
       const { token, user, user_setting, isRegister } = response;

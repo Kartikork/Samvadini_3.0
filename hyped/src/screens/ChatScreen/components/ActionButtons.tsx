@@ -1,10 +1,15 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import { pick, types, errorCodes, isErrorWithCode } from '@react-native-documents/picker';
 import Geolocation from 'react-native-geolocation-service';
+import { useMediaPermission } from '../../../hooks';
+import { useAppSelector } from '../../../state/hooks';
+import { getAppTranslations } from '../../../translations';
+import { showPermissionDeniedWithSettings } from '../../../utils/permissions';
 
 
 interface ActionButtonsProps {
@@ -13,6 +18,9 @@ interface ActionButtonsProps {
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
   const navigation = useNavigation<any>();
+  const lang = useAppSelector(state => state.language.lang);
+  const t = getAppTranslations(lang);
+  const { ensureCameraAccess, ensurePhotoLibraryAccess, ensureDocumentAccess } = useMediaPermission();
 
   const handleSimpleAction = (label: string) => {
     // Placeholder for future media/location/contact handling
@@ -44,6 +52,11 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
   };
   
   const handleCamera = async () => {
+    const granted = await ensureCameraAccess();
+    if (!granted) {
+      showPermissionDeniedWithSettings(t.PermissionDenied, t.CameraPermissionRequired, t.Settings);
+      return;
+    }
     const result = await launchCamera({
       mediaType: 'photo',
       cameraType: 'back',
@@ -60,12 +73,22 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
   };
 
   const handleGallery = async () => {
+    const granted = await ensurePhotoLibraryAccess();
+    if (!granted) {
+      showPermissionDeniedWithSettings(
+        t.PermissionDenied,
+        t.PhotoLibraryPermissionRequired,
+        t.Settings
+      );
+      return;
+    }
     const result = await launchImageLibrary({
-      mediaType: 'photo',
-      selectionLimit: 1,
+      mediaType: 'mixed',
+      selectionLimit: 5,
     });
 
     if (result.didCancel) return;
+
     if (result.errorCode) {
       console.warn(result.errorMessage);
       return;
@@ -73,6 +96,38 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
 
     console.log('Gallery asset:', result.assets);
     onClose();
+  };
+
+  const handleDocuments = async () => {
+    const granted = await ensureDocumentAccess();
+    if (!granted) {
+      showPermissionDeniedWithSettings(
+        t.PermissionDenied,
+        t.DocumentPermissionRequired,
+        t.Settings
+      );
+      return;
+    }
+    try {
+      const pickType =
+        Platform.OS === 'android'
+          ? [types.allFiles, 'application/vnd.android.package-archive']
+          : [types.allFiles];
+      const result = await pick({
+        type: pickType,
+        allowMultiSelection: true,
+        allowVirtualFiles: true,
+      });
+      if (result && result.length > 0) {
+        console.log('Document(s) picked:', result);
+        onClose();
+      }
+    } catch (err) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
+        return;
+      }
+      console.warn('[ActionButtons] Document picker error:', err);
+    }
   };
 
   return (
