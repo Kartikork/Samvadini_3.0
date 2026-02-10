@@ -212,7 +212,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.02,
   },
   logoContainer: {
-    marginTop: 40,
+    marginTop: 60,
+    marginBottom: 20,
     alignItems: 'center',
   },
   logoText: {
@@ -233,9 +234,9 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: width * 0.06,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 10,
     textAlign: 'center',
-    color: '#000000',
+    color: '#fff',
   },
   gridScrollView: {
     flex: 1,
