@@ -34,6 +34,7 @@ import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
+import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
 import CallHistoryScreen from '../screens/CallHistoryScreen';
 import StatusScreen from '../screens/StatusScreen';
 import { JobScreen } from '../screens/CategoryScreen/JobScreen.js';
@@ -86,6 +87,7 @@ export type RootStackParamList = {
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
+  SelectedFiles: { assets: any[] } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -342,6 +344,15 @@ export default function MainNavigator() {
           options={{
             headerShown: true,
             header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+
+        <Stack.Screen
+          name="SelectedFiles"
+          component={SelectedFilesScreen}
+          options={{
+            headerShown: false,
             animation: 'slide_from_right',
           }}
         />
