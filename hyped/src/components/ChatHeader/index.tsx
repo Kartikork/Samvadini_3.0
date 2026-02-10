@@ -89,7 +89,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
   }, [avatarUrl]);
 
   const avatarIcon = useMemo(() => {
-    return isGroup ? 'account-group' : 'account-circle';
+    return isGroup ? 'account-group' : 'account';
   }, [isGroup]);
 
   // const handleBack = () => {
@@ -194,7 +194,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
               onPress={handleCallPress}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Icon name="phone" size={24} color="#000000" />
+              <Icon name="phone-outline" size={24} color="#000000" />
             </TouchableOpacity>
           )}
           {showVideoButton && !isGroup && receiverId && (
@@ -203,7 +203,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
               onPress={handleVideoPress}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Icon name="video" size={24} color="#000000" />
+              <Icon name="video-outline" size={24} color="#000000" />
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -234,8 +234,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    height: 56,
+    height: 40,
   },
   leftSection: {
     flexDirection: 'row',

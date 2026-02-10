@@ -1,6 +1,6 @@
 /**
  * Header Component
- * 
+ *
  * App header shown on all screens with navigation, SOS, and menu
  */
 
@@ -28,18 +28,25 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAppSelector, useAppDispatch } from '../../state/hooks';
 import { clearAuth } from '../../state/authSlice';
-import { getHeaderTexts } from './headerTranslations';
+import { getAppTranslations } from '../../translations';
 import { headerStyles } from './HeaderStyles';
-import { bossBabyIndianFigure, hypedLogo, languageIcon, sos } from '../../assets';
+import {
+  bossBabyIndianFigure,
+  hypedLogo,
+  languageIcon,
+  sos,
+} from '../../assets';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export const Header = React.memo(() => {
   const navigation = useNavigation();
-  const routeName = useNavigationState((state) => state?.routes[state?.index]?.name || '');
+  const routeName = useNavigationState(
+    state => state?.routes[state?.index]?.name || '',
+  );
   const dispatch = useAppDispatch();
-  const lang = useAppSelector((state) => state.language.lang);
-  const uniqueId = useAppSelector((state) => state.auth.uniqueId);
+  const lang = useAppSelector(state => state.language.lang);
+  const uniqueId = useAppSelector(state => state.auth.uniqueId);
   const [selfProfile, setSelfProfile] = useState({ photo: '', name: '' });
   const [modalVisible, setModalVisible] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -54,7 +61,7 @@ export const Header = React.memo(() => {
   const isHoldingRef = useRef(false);
   const pressStartTime = useRef<number | null>(null);
 
-  const t = getHeaderTexts(lang);
+  const t = getAppTranslations(lang);
 
   useEffect(() => {
     fetchUserProfile();
@@ -69,7 +76,7 @@ export const Header = React.memo(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
     if (showSosTimer && sosTimerValue > 0) {
       interval = setInterval(() => {
-        setSosTimerValue((prev) => prev - 1);
+        setSosTimerValue(prev => prev - 1);
       }, 1000);
     } else if (showSosTimer && sosTimerValue === 0) {
       setTimeout(() => {
@@ -119,39 +126,35 @@ export const Header = React.memo(() => {
   }, [navigation, selfProfile]);
 
   const handleLogOut = useCallback(async () => {
-    Alert.alert(
-      t.logout,
-      'Are you sure you want to logout?',
-      [
-        { text: t.cancel, style: 'cancel' },
-        {
-          text: t.logout,
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const keysToRemove = [
-                'userToken',
-                'userProfilePhoto',
-                'uniqueId',
-                'currUserPhn',
-                'userLang',
-                'userName',
-                'fcmToken',
-                'isRegister',
-              ];
-              await AsyncStorage.multiRemove(keysToRemove);
-              dispatch(clearAuth());
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Splash' }],
-              });
-            } catch (error) {
-              console.error('Error during logout:', error);
-            }
-          },
+    Alert.alert(t.logout, 'Are you sure you want to logout?', [
+      { text: t.cancel, style: 'cancel' },
+      {
+        text: t.logout,
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const keysToRemove = [
+              'userToken',
+              'userProfilePhoto',
+              'uniqueId',
+              'currUserPhn',
+              'userLang',
+              'userName',
+              'fcmToken',
+              'isRegister',
+            ];
+            await AsyncStorage.multiRemove(keysToRemove);
+            dispatch(clearAuth());
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Splash' }],
+            });
+          } catch (error) {
+            console.error('Error during logout:', error);
+          }
         },
-      ]
-    );
+      },
+    ]);
   }, [dispatch, navigation, t]);
 
   const getLocationIfPermitted = useCallback(async () => {
@@ -159,7 +162,7 @@ export const Header = React.memo(() => {
     try {
       if (Platform.OS === 'android') {
         const hasPermission = await PermissionsAndroid.check(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         );
         if (!hasPermission) {
           return fallbackLocation;
@@ -185,7 +188,8 @@ export const Header = React.memo(() => {
 
       // Check if emergency contacts exist (simplified - can be enhanced)
       const emergencyContacts = await AsyncStorage.getItem('emergencyContacts');
-      const hasContacts = emergencyContacts && JSON.parse(emergencyContacts).length > 0;
+      const hasContacts =
+        emergencyContacts && JSON.parse(emergencyContacts).length > 0;
 
       if (!hasContacts) {
         setSosModalMessage(t.NoEmAdded);
@@ -270,29 +274,33 @@ export const Header = React.memo(() => {
           {routeName !== 'Dashboard' && (
             <TouchableOpacity
               style={headerStyles.backButton}
-              onPress={() => navigation.goBack()}>
+              onPress={() => {
+                if (navigation.canGoBack()) {
+                  navigation.goBack();
+                } else {
+                  navigation.navigate('Dashboard');
+                }
+              }}
+            >
               <Icon name="arrow-left" size={24} color="#000000" />
             </TouchableOpacity>
           )}
-
           <TouchableOpacity
             style={[
               headerStyles.headerCenter,
               routeName === 'Dashboard' ? { marginLeft: 10 } : null,
             ]}
-            onPress={() => navigation.navigate('Dashboard' as never)}>
-            <Image
-              source={hypedLogo}
-              style={headerStyles.logo}
-            />
+            onPress={() => navigation.navigate('Dashboard' as never)}
+          >
+            <Image source={hypedLogo} style={headerStyles.logo} />
           </TouchableOpacity>
-          
         </View>
 
-            <View>
+        <View>
           <TouchableOpacity
             onPress={() => navigation.navigate('talkingtom')}
-            style={headerStyles.babyBossIcon}>
+            style={headerStyles.babyBossIcon}
+          >
             <Image
               source={bossBabyIndianFigure}
               resizeMode="contain"
@@ -300,18 +308,20 @@ export const Header = React.memo(() => {
             />
           </TouchableOpacity>
         </View>
-        
-        <View style={headerStyles.headerRight}>
 
+        <View style={headerStyles.headerRight}>
           {/* SOS Button */}
           <TouchableOpacity
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
-            disabled={isSending}>
+            disabled={isSending}
+          >
             <View style={headerStyles.sosButton}>
-              <Image resizeMode="contain"
+              <Image
+                resizeMode="contain"
                 style={headerStyles.sosText}
-                source={sos} />
+                source={sos}
+              />
             </View>
             {showSosTooltip && (
               <View style={headerStyles.sosTooltip}>
@@ -327,17 +337,16 @@ export const Header = React.memo(() => {
               navigation.navigate('LanguageSelection' as never, {
                 currentScreen: routeName,
               })
-            }>
-            <Image
-              source={languageIcon}
-              style={headerStyles.languageIcon}
-            />
+            }
+          >
+            <Image source={languageIcon} style={headerStyles.languageIcon} />
           </TouchableOpacity>
 
           {/* Menu */}
           <TouchableOpacity
             style={headerStyles.dotsContainer}
-            onPress={() => setModalVisible(true)}>
+            onPress={() => setModalVisible(true)}
+          >
             <Icon name="dots-vertical" size={26} color="#000000" />
           </TouchableOpacity>
         </View>
@@ -350,19 +359,15 @@ export const Header = React.memo(() => {
         transparent
         visible={showSosTimer}
         animationType="none"
-        onRequestClose={() => { }}>
+        onRequestClose={() => {}}
+      >
         <TouchableWithoutFeedback>
           <View style={headerStyles.sosTimerOverlay} pointerEvents="none">
             <View style={headerStyles.sosTimerContent}>
               <Text style={headerStyles.sosTimerHeading}>{t.hdstill}</Text>
-              <SosCircularTimer
-                progress={sosTimerAnim}
-                value={sosTimerValue}
-              />
+              <SosCircularTimer progress={sosTimerAnim} value={sosTimerValue} />
               <Text style={headerStyles.sosTimerText}>
-                {sosTimerValue > 0
-                  ? `${t.soscount}${sosTimerValue}`
-                  : t.sent}
+                {sosTimerValue > 0 ? `${t.soscount}${sosTimerValue}` : t.sent}
               </Text>
             </View>
           </View>
@@ -377,12 +382,15 @@ export const Header = React.memo(() => {
         onRequestClose={() => {
           setSosModalVisible(false);
           setShowNoEmergencyModal(false);
-        }}>
+        }}
+      >
         <View style={headerStyles.sosModalOverlay}>
           <View style={headerStyles.sosModalContent}>
             {showNoEmergencyModal ? (
               <>
-                <Text style={headerStyles.sosModalErrorTitle}>{t.sosModalMessage}</Text>
+                <Text style={headerStyles.sosModalErrorTitle}>
+                  {t.sosModalMessage}
+                </Text>
                 <Text style={headerStyles.sosModalText}>{sosModalMessage}</Text>
                 <TouchableOpacity
                   onPress={() => {
@@ -390,7 +398,8 @@ export const Header = React.memo(() => {
                     setShowNoEmergencyModal(false);
                     navigation.navigate('EmergencyContactScreen' as never);
                   }}
-                  style={headerStyles.sosModalButton}>
+                  style={headerStyles.sosModalButton}
+                >
                   <Text style={headerStyles.sosModalButtonText}>{t.AddEM}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -398,8 +407,11 @@ export const Header = React.memo(() => {
                     setSosModalVisible(false);
                     setShowNoEmergencyModal(false);
                   }}
-                  style={headerStyles.sosModalButtonLast}>
-                  <Text style={headerStyles.sosModalButtonText}>{t.cancel}</Text>
+                  style={headerStyles.sosModalButtonLast}
+                >
+                  <Text style={headerStyles.sosModalButtonText}>
+                    {t.cancel}
+                  </Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -408,7 +420,8 @@ export const Header = React.memo(() => {
                 <Text style={headerStyles.sosModalText}>{sosModalMessage}</Text>
                 <TouchableOpacity
                   onPress={() => setSosModalVisible(false)}
-                  style={headerStyles.sosModalButtonLast}>
+                  style={headerStyles.sosModalButtonLast}
+                >
                   <Text style={headerStyles.sosModalButtonText}>{t.ok}</Text>
                 </TouchableOpacity>
               </>
@@ -422,18 +435,21 @@ export const Header = React.memo(() => {
         animationType="fade"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}>
+        onRequestClose={() => setModalVisible(false)}
+      >
         <TouchableOpacity
           style={headerStyles.modalOverlay}
           activeOpacity={1}
-          onPressOut={() => setModalVisible(false)}>
+          onPressOut={() => setModalVisible(false)}
+        >
           <View style={headerStyles.modalContent}>
             <TouchableOpacity
               onPress={() => {
                 setModalVisible(false);
                 Linking.openURL('https://anuvadini.aicte-india.org');
               }}
-              style={headerStyles.modalOptionContainer}>
+              style={headerStyles.modalOptionContainer}
+            >
               <Image
                 source={require('../../assets/images/Dashboard/anuvadini-logo.png')}
                 style={headerStyles.anuvadini}
@@ -446,8 +462,14 @@ export const Header = React.memo(() => {
                 setModalVisible(false);
                 navigation.navigate('StarredMessage' as never);
               }}
-              style={headerStyles.modalOptionContainer}>
-              <MaterialIcons name="star" size={22} color="#FFD700" style={headerStyles.modalIcon} />
+              style={headerStyles.modalOptionContainer}
+            >
+              <MaterialIcons
+                name="star"
+                size={22}
+                color="#FFD700"
+                style={headerStyles.modalIcon}
+              />
               <Text style={headerStyles.modalOption}>{t.starredMessage}</Text>
             </TouchableOpacity>
 
@@ -456,7 +478,8 @@ export const Header = React.memo(() => {
                 setModalVisible(false);
                 navigation.navigate('BroadcastScreen' as never);
               }}
-              style={headerStyles.modalOptionContainer}>
+              style={headerStyles.modalOptionContainer}
+            >
               <Ionicons
                 name="megaphone-outline"
                 size={22}
@@ -471,7 +494,8 @@ export const Header = React.memo(() => {
                 setModalVisible(false);
                 handleSetting();
               }}
-              style={headerStyles.modalOptionContainer}>
+              style={headerStyles.modalOptionContainer}
+            >
               <Ionicons
                 name="settings-outline"
                 size={22}
@@ -489,8 +513,14 @@ export const Header = React.memo(() => {
                   userName: selfProfile.name,
                 });
               }}
-              style={headerStyles.modalOptionContainer}>
-              <Icon name="chart-bar" size={22} color="#555" style={headerStyles.modalIcon} />
+              style={headerStyles.modalOptionContainer}
+            >
+              <Icon
+                name="chart-bar"
+                size={22}
+                color="#555"
+                style={headerStyles.modalIcon}
+              />
               <Text style={headerStyles.modalOption}>{t.analysisReport}</Text>
             </TouchableOpacity>
 
@@ -499,7 +529,8 @@ export const Header = React.memo(() => {
                 setModalVisible(false);
                 navigation.navigate('ImportChat' as never);
               }}
-              style={headerStyles.modalOptionContainer}>
+              style={headerStyles.modalOptionContainer}
+            >
               <Ionicons
                 name="download-outline"
                 size={22}
@@ -514,7 +545,8 @@ export const Header = React.memo(() => {
                 setModalVisible(false);
                 handleLogOut();
               }}
-              style={headerStyles.modalOptionContainer}>
+              style={headerStyles.modalOptionContainer}
+            >
               <MaterialIcons
                 name="logout"
                 size={22}
@@ -556,7 +588,8 @@ const SosCircularTimer = React.memo<{
             width: size,
             height: size,
           },
-        ]}>
+        ]}
+      >
         <Text style={headerStyles.timerText}>{value > 0 ? value : '✓'}</Text>
       </View>
       <Animated.View style={{ transform: [{ rotate: '-90deg' }] }}>
