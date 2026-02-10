@@ -1,4 +1,7 @@
 export const en = {
+  "PhotoLibraryPermissionRequired": "Permission to access photos is required!",
+  "DocumentPermissionRequired": "Permission to access documents and files is required!",
+  "AudioPermissionRequired": "Permission to access audio files is required!",
   "UsernameRequired": "Please enter a valid username (at least 3 characters)",
   "UniqueUsername": "Unique Username (e.g., hemant_123)",
   "UsernameAvailable": "Username is available!",
