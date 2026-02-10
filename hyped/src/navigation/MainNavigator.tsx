@@ -57,6 +57,7 @@ import CreateEvents from '../screens/EventManagement/CreateEvents.js';
 import DetailsScreen from '../screens/EventManagement/DetailsScreen.js';
 import Header from '../components/Header';
 
+
 export type RootStackParamList = {
   Splash: undefined;
   LanguageSelection: { currentScreen?: string } | undefined;
@@ -162,7 +163,6 @@ export default function MainNavigator() {
             animation: 'slide_from_right',
           }}
         />
-
         {/* Chat Screens */}
         <Stack.Screen
           name="ChatList"
@@ -360,7 +360,11 @@ export default function MainNavigator() {
         <Stack.Screen
           name="ContactDesignScreen"
           component={ContactDesignScreen}
-          options={{ animation: 'slide_from_right' }}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
 
         {/* Call Screen - No header, full screen */}

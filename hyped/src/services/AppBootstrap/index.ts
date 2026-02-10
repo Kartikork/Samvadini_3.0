@@ -47,6 +47,7 @@ import { messageCreateTable } from '../../storage/sqllite/chat/ChatMessageSchema
 import { GroupmessageCreateTable } from '../../storage/sqllite/chat/GroupMessageSchema';
 import { CreateStatusTable, CreateStatusVisibilityTable } from '../../storage/sqllite/chat/StatusSchema';
 import { testAddColumn } from '../../storage/sqllite/alterTable';
+import { syncContacts, upsertContactsAfterLogin } from '../../utils/contacts';
 
 export type BootstrapPhase = 
   | 'idle'
@@ -168,6 +169,15 @@ class AppBootstrapClass {
         console.warn('[AppBootstrap] AppLifecycle init error:', err);
       }
 
+      // Fire-and-forget contact sync on app launch (logged-in user)
+      try {
+        syncContacts().catch(err => {
+          console.warn('[AppBootstrap] Contact sync (launch) error:', err);
+        });
+      } catch (err) {
+        console.warn('[AppBootstrap] Failed to start contact sync on launch:', err);
+      }
+
       // Step 4: UI Ready!
       this.setPhase('ready');
       console.log('[AppBootstrap] Step 4: ✅ UI Ready!');
@@ -251,6 +261,15 @@ class AppBootstrapClass {
         await AppLifecycleService.initialize();
       } catch (err) {
         console.warn('[AppBootstrap] AppLifecycle init error:', err);
+      }
+
+      // Fire-and-forget contact upsert after signup/login
+      try {
+        upsertContactsAfterLogin().catch(err => {
+          console.warn('[AppBootstrap] upsertContactsAfterLogin error:', err);
+        });
+      } catch (err) {
+        console.warn('[AppBootstrap] Failed to start upsertContactsAfterLogin after signup/login:', err);
       }
 
       // Phase 4: Connect Socket
