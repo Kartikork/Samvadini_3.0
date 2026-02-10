@@ -11,7 +11,7 @@ import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUnreadChatsCount } from '../../hooks/useUnreadChatsCount';
-import { getDashboardTexts } from '../../screens/DashboardScreen/translations';
+import { getAppTranslations } from '../../translations';
 
 const ICON_SIZE = 26;
 
@@ -26,7 +26,7 @@ const GlobalBottomNavigation = ({
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const unreadChatsCount = useUnreadChatsCount();
 
-  const dashboardTexts = getDashboardTexts(lang);
+  const dashboardTexts = getAppTranslations(lang);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(

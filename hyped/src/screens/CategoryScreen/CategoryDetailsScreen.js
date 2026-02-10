@@ -1,21 +1,23 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, StyleSheet, Image, ScrollView, Linking, TouchableOpacity, BackHandler, Text, Alert } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import { getCategoryDataSQLlitebyID } from "../../storage/sqllite/categoryData/CategoryDataSchema";
 import LinearGradient from "react-native-linear-gradient";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-// import TextToVoiceIconWrapper from "../../components/TextToVoiceIconWrapper";
-// import BottomNavigation from "../../components/BottomNavigation";
 import axios from "axios";
 import { noImage } from "../../assets";
 import BottomNavigation from "../../components/BottomNavigation";
 import { formatChatDate } from "../../helper/DateFormate";
+import { env } from "../../config/env";
+import { useAppSelector } from "../../state/hooks";
+import { getAppTranslations } from "../../translations";
 
 export function CategoryDetailsScreen({ route }) {
     const { id } = route?.params || {};
     const [article, setArticle] = useState();
     const [loading, setLoading] = useState(false);
-    const lang = 'en';
+    const lang = useAppSelector(state => state.language.lang);
+    const translations = useMemo(() => getAppTranslations(lang), [lang]);
     const navigation = useNavigation();
     const [isTitleSpoken, setIsTitleSpoken] = useState(false);
     const titleVoiceRef = React.useRef();
@@ -66,10 +68,8 @@ export function CategoryDetailsScreen({ route }) {
             const netInfoState = await NetInfo.fetch();
 
             if (netInfoState.isConnected) {
-                // If internet is available, fetch from API
                 const formData = { lang, id: id };
-                // const response = await axiosConn("post", "api/category/get-category-by-id", formData);
-                const response = await axios.post(`https://qasamvadini.aicte-india.org/api/category/get-category-by-id`, formData);
+                const response = await axios.post(`${env.API_BASE_URL}/category/get-category-by-id`, formData);
                 if (response.status === 200) {
                     setArticle(response.data.data);
                 } else {
@@ -164,7 +164,7 @@ export function CategoryDetailsScreen({ route }) {
                             end={{ x: 1, y: 0 }}
                             style={styles.send}
                         >
-                            <Text style={styles.viewMoreText}>View More</Text>
+                            <Text style={styles.viewMoreText}>{translations['viewMore'] || "View More"}</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
