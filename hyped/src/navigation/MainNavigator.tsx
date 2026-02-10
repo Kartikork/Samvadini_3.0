@@ -39,9 +39,10 @@ import { CategoryDetailsScreen } from '../screens/CategoryScreen/CategoryDetails
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
 import CallScreen from '../screens/CallScreen';
-
-// Header wrapper
-import { withHeader } from '../components/withHeader';
+import EventListScreen from '../screens/EventManagement/EventListScreen.js';
+import CreateEvents from '../screens/EventManagement/CreateEvents.js';
+import DetailsScreen from '../screens/EventManagement/DetailsScreen.js';
+import Header from '../components/Header';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -59,6 +60,17 @@ export type RootStackParamList = {
   ContactDesignScreen: undefined;
   CategoryScreen: undefined;
   CategoryDetailsScreen: undefined;
+  LRNScreen: undefined;
+  DailyPlanner: undefined;
+  AddPlan: undefined;
+  AddReminder: undefined;
+  UpdatePlanner: undefined;
+  SharePlan: undefined;
+  UpdateReminder: undefined;
+  SharePlannerCount: undefined;
+  EventListScreen: undefined;
+  CreateEvents: undefined;
+  DetailsScreen: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -170,8 +182,111 @@ export default function MainNavigator() {
         />
         <Stack.Screen
           name="CategoryDetailsScreen"
-          component={wrapWithHeader(CategoryDetailsScreen)}
-          options={{ animation: 'fade' }}
+          component={CategoryDetailsScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="LRNScreen"
+          component={LRNScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="DailyPlanner"
+          component={DailyPlanner}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="SharePlan"
+          component={SharePlan}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="AddPlan"
+          component={AddPlan}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="SharePlannerCount"
+          component={SharePlannerCount}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="EventListScreen"
+          component={EventListScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="CreateEvents"
+          component={CreateEvents}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="DetailsScreen"
+          component={DetailsScreen}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="UpdatePlanner"
+          component={UpdatePlanner}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="UpdateReminder"
+          component={UpdateReminder}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="AddReminder"
+          component={AddReminder}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen
           name="LanguageGameScreen"
