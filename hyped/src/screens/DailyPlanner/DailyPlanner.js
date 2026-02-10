@@ -433,7 +433,6 @@ const styles = StyleSheet.create({
     },
     tabContainer: {
         flexDirection: 'row',
-        paddingHorizontal: 15,
     },
     close: {
         backgroundColor: '#ddd',
@@ -454,9 +453,9 @@ const styles = StyleSheet.create({
         // width: wp('12%'),
     },
     selectedDay: {
-        backgroundColor: '#01d5f5',
+        backgroundColor: '#0095FF',
         borderRadius: 10,
-        paddingHorizontal: 8,
+        paddingHorizontal: 12,
     },
     dayText: {
         fontSize: 12,
@@ -524,7 +523,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
         paddingVertical: 10,
         position: 'absolute',
-        // bottom: hp('5%'),
+        bottom: 10,
         right: 10,
     },
     addButton: {
@@ -595,7 +594,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
         marginTop: 10,
         backgroundColor: '#EFEFEF',
-        // width: wp('45%'),
+        width: '45%',
     },
     activebtn: {
         borderRadius: 8,
@@ -604,7 +603,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
         marginTop: 10,
         backgroundColor: '#0095FF',
-        // width: wp('45%'),
+        width: '45%',
     },
     modalText: {
         color: '#fff',

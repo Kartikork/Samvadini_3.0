@@ -8,7 +8,7 @@ const { width } = Dimensions.get('window');
 
 export const headerStyles = StyleSheet.create({
   safeArea: {
-     backgroundColor: '#fff',
+    backgroundColor: '#fff',
   },
   safeAreaContainer: {
     backgroundColor: '#fff',
@@ -36,12 +36,12 @@ export const headerStyles = StyleSheet.create({
     // marginTop: 20,
     width: '100%',
     height: 1,
-  backgroundColor: '#eeeeee',
-  shadowColor: '#999',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.2,
-  shadowRadius: 6,
-  elevation: 6,
+    backgroundColor: '#eeeeee',
+    shadowColor: '#999',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
   },
   headerCenter: {
     alignItems: 'center',
@@ -51,7 +51,7 @@ export const headerStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-     flex: 1,
+    flex: 1,
   },
   backButton: {
     padding: 8,
@@ -79,24 +79,24 @@ export const headerStyles = StyleSheet.create({
   babyBossIcon: {
     // width: 100
     // position: 'relative'
-         flex: 2,
-    alignItems: 'center', 
+    flex: 2,
+    alignItems: 'center',
   },
   babyBossIconInner: {
-    width: 70,
-    height: 35,
-
+    width: 100,
+    height: 55,
+  marginTop: -15,
   },
   sosButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8, 
+    marginRight: 8,
   },
   sosText: {
-      width: 100,
-      height: 30,
+    width: 100,
+    height: 30,
   },
   languageIcon: {
     width: 35,
