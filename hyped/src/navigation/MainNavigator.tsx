@@ -43,6 +43,8 @@ import SnakeLaddersGame from '../screens/LanguageGameScreen/GAMER/SnakeLaddersGa
 const MemoryGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MemoryGame'));
 const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameIntroScreen.js'));
 const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameScreen.js'));
+const BubbleShooterGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/BubbleShooter/BubbleShooterGame.js'));
+const CarGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/cargame/CarGame'));
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
@@ -67,6 +69,8 @@ export type RootStackParamList = {
   MemoryGame: undefined;
   SnakeGameIntroScreen: undefined;
   SnakeGame: undefined;
+  BubbleShooterGame: undefined;
+  CarGame: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -116,7 +120,7 @@ export default function MainNavigator() {
           component={SplashScreen}
           options={{ animation: 'none' }}
         />
-       
+
         <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
         <Stack.Screen
           name="Login"
@@ -198,10 +202,10 @@ export default function MainNavigator() {
         />
 
         {/* Call Screen - No header, full screen */}
-        <Stack.Screen 
-          name="Call" 
+        <Stack.Screen
+          name="Call"
           component={CallScreen}
-          options={{ 
+          options={{
             animation: 'slide_from_bottom',
             headerShown: false,
             presentation: 'fullScreenModal',
@@ -232,6 +236,18 @@ export default function MainNavigator() {
         <Stack.Screen
           name="SnakeGame"
           component={SnakeGameScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="BubbleShooterGame"
+          component={BubbleShooterGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="CarGame"
+          component={CarGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
 
