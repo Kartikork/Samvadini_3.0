@@ -39,10 +39,10 @@ import { CategoryDetailsScreen } from '../screens/CategoryScreen/CategoryDetails
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
 import CallScreen from '../screens/CallScreen';
-import SnakeLaddersGame from '../screens/LanguageGameScreen/SnakeLaddersGame';
+import SnakeLaddersGame from '../screens/LanguageGameScreen/GAMER/SnakeLaddersGame/SnakeLaddersGame.js';
 const MemoryGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MemoryGame'));
-const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameIntroScreen'));
-const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameScreen'));
+const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameIntroScreen.js'));
+const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameScreen.js'));
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';

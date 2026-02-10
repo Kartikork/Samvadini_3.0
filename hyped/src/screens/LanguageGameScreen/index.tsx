@@ -26,13 +26,13 @@ import WaveBackground from '../../screens/LanguageGameScreen/GAMER/WaveBackgroun
 // import block_game_icon from '../GAMER/Assets/block_game_icon.jpg';
 
 import Bird_icon from '../GAMER/Assets/Bird_icon.png';
-import fruit_slice_icon from '../../screens/LanguageGameScreen/GAMER/fruit_slice.png';
+import fruit_slice_icon from '../../screens/LanguageGameScreen/GAMER/icons/fruit_slice.png';
 
 
 
-import carrom_icon from '../../screens/LanguageGameScreen/GAMER/carrom_icon.png';
-import NumberSort from '../../screens/LanguageGameScreen/GAMER/NumberSort.png';
-import Pongicon1 from '../../screens/LanguageGameScreen/GAMER/Pongicon1.png';
+import carrom_icon from '../../screens/LanguageGameScreen/GAMER/icons/carrom_icon.png';
+import NumberSort from '../../screens/LanguageGameScreen/GAMER/icons/NumberSort.png';
+import Pongicon1 from '../../screens/LanguageGameScreen/GAMER/icons/Pongicon1.png';
 
 interface GameProps {
   icon: any;
@@ -55,7 +55,7 @@ const hp = (percentage: number) => {
   return Math.round(value);
 };
 
-import snakeladder from '../../screens/LanguageGameScreen/GAMER/snakeladder_icon.jpg';
+import snakeladder from '../../screens/LanguageGameScreen/GAMER/icons/snakeladder_icon.jpg';
 const LanguageGamesScreen = ({ navigation }) => {
   const [sourceLanguage, setSourceLanguage] = useState('english');
   const [isLoading, setIsLoading] = useState(true);
@@ -94,30 +94,30 @@ const LanguageGamesScreen = ({ navigation }) => {
       {
         section: 'Offline Games',
         items: [
-          { icon: snakeladder, image: require('../../screens/LanguageGameScreen/GAMER/snakeladder_icon.jpg'), title: 'Snake & Ladders', route: 'SnakeLaddersGame' },
-          { icon: carrom_icon, image: require('../../screens/LanguageGameScreen/GAMER/carrom_icon.png'), title: 'Carrom', route: 'CarromGame' },
-          { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/Pongicon1.png'), title: 'Chess', route: 'ChessGame' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/space_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/space_icon.png'), title: 'Space Exploration', route: 'PlanetSelectionScreen' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/ludo_icon_new.png'), image: require('../../screens/LanguageGameScreen/GAMER/ludo_icon_new.png'), title: 'Ludo', route: 'WelcomeScreen' },
-          { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/slingshot.png'), title: 'Space Shooter', route: 'BalloonShootingGame' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/car_logo.png'), image: require('../../screens/LanguageGameScreen/GAMER/car_logo.png'), title: 'Car Race', route: 'CarGame' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/gilli.png'), image: require('../../screens/LanguageGameScreen/GAMER/gilli.png'), title: 'Gilli Danda', route: 'TipCat' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/basketball.png'), image: require('../../screens/LanguageGameScreen/GAMER/basketball.png'), title: 'BasketBall', route: 'Basketball' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/cross-word.png'), image: require('../../screens/LanguageGameScreen/GAMER/cross-word.png'), title: 'Crossword', route: 'crossword' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/memory.png'), image: require('../../screens/LanguageGameScreen/GAMER/memory.png'), title: 'Memory Game', route: 'MemoryGame' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/snake.png'), image: require('../../screens/LanguageGameScreen/GAMER/snake.png'), title: 'Snake Game', route: 'SnakeGameIntroScreen' },
+          { icon: snakeladder, image: require('../../screens/LanguageGameScreen/GAMER/icons/snakeladder_icon.jpg'), title: 'Snake & Ladders', route: 'SnakeLaddersGame' },
+          { icon: carrom_icon, image: require('../../screens/LanguageGameScreen/GAMER/icons/carrom_icon.png'), title: 'Carrom', route: 'CarromGame' },
+          { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/icons/Pongicon1.png'), title: 'Chess', route: 'ChessGame' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/space_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/space_icon.png'), title: 'Space Exploration', route: 'PlanetSelectionScreen' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), title: 'Ludo', route: 'WelcomeScreen' },
+          { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/icons/slingshot.png'), title: 'Space Shooter', route: 'BalloonShootingGame' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/car_logo.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/car_logo.png'), title: 'Car Race', route: 'CarGame' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/gilli.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/gilli.png'), title: 'Gilli Danda', route: 'TipCat' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/basketball.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/basketball.png'), title: 'BasketBall', route: 'Basketball' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/cross-word.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/cross-word.png'), title: 'Crossword', route: 'crossword' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/memory.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/memory.png'), title: 'Memory Game', route: 'MemoryGame' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/snake.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/snake.png'), title: 'Snake Game', route: 'SnakeGameIntroScreen' },
           // { icon: block_game_icon, image: require('../../assets/games/block.png'), title: 'Block Puzzle', route: 'IntroScreen' },
-          { icon: fruit_slice_icon, image: require('../../screens/LanguageGameScreen/GAMER/fruit-slice.png'), title: 'Fruit Slice', route: 'SliceGame' },
+          { icon: fruit_slice_icon, image: require('../../screens/LanguageGameScreen/GAMER/icons/fruit-slice.png'), title: 'Fruit Slice', route: 'SliceGame' },
           // { icon: gameIcn1, image: require('../../assets/games/sentence.png'), title: 'Sentence Scramble', route: 'SentenceScrambleScreen' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/bubble-shooter.png'), image: require('../../screens/LanguageGameScreen/GAMER/bubble-shooter.png'), title: 'Bubble Shooter', route: 'BubbleShooterGame' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/tictactoe_icon2.png'), image: require('../../screens/LanguageGameScreen/GAMER/tictactoe_icon2.png'), title: 'Tic Tac Toe', route: 'TicTacToe' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/maze.png'), image: require('../../screens/LanguageGameScreen/GAMER/maze.png'), title: 'Maze Game', route: 'MazeGame' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/bubble-shooter.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/bubble-shooter.png'), title: 'Bubble Shooter', route: 'BubbleShooterGame' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/tictactoe_icon2.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/tictactoe_icon2.png'), title: 'Tic Tac Toe', route: 'TicTacToe' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/maze.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/maze.png'), title: 'Maze Game', route: 'MazeGame' },
           { icon: NumberSort, image: NumberSort, title: 'NumberSort', route: 'NumberSortIntroScreen' },
           { icon: Pongicon1, image: Pongicon1, title: 'Pong', route: 'footballNet' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/bowling_icon.jpg'), image: require('../../screens/LanguageGameScreen/GAMER/bowling_icon.jpg'), title: 'Desi Bowling', route: 'BowlingGame' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/drum_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/drum_icon.png'), title: 'Drum Game', route: 'Game' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/pianologo.png'), image: require('../../screens/LanguageGameScreen/GAMER/pianologo.png'), title: 'Piano Game', route: 'PianoGame' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/talkingtom_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/talkingtom_icon.png'), title: 'Talking Tom', route: 'talkingtom' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/bowling_icon.jpg'), image: require('../../screens/LanguageGameScreen/GAMER/icons/bowling_icon.jpg'), title: 'Desi Bowling', route: 'BowlingGame' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/drum_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/drum_icon.png'), title: 'Drum Game', route: 'Game' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/pianologo.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/pianologo.png'), title: 'Piano Game', route: 'PianoGame' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/talkingtom_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/talkingtom_icon.png'), title: 'Talking Tom', route: 'talkingtom' },
           // { icon: require('./Assets/hill_climb_icon.png'), image: require('./Assets/hill_climb_icon.png'), title: 'Hill Climb', route: 'HillClimbGame' },
         ]
       },
@@ -125,7 +125,7 @@ const LanguageGamesScreen = ({ navigation }) => {
         section: 'Online Games',
         items: [
           // { icon: doodleDashIcon, image: require('../../assets/games/dash.png'), title: 'Doodle Dash', route: 'EnterScribble' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/antakshari.png'), image: require('../../screens/LanguageGameScreen/GAMER/antakshari.png'), title: 'Antaksahri Arena', route: 'HomeScreenn' }
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/antakshari.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/antakshari.png'), title: 'Antaksahri Arena', route: 'HomeScreenn' }
         ]
       },
     ];
@@ -225,7 +225,7 @@ const LanguageGamesScreen = ({ navigation }) => {
           if (item.image) imgs.push(item.image);
           if (item.icon) imgs.push(item.icon);
         }));
-        imgs.push(require('../../screens/LanguageGameScreen/GAMER/coin2.png'), require('../../screens/LanguageGameScreen/GAMER/gameSlider.png'));
+        imgs.push(require('../../screens/LanguageGameScreen/GAMER/gif&png/coin2.png'), require('../LanguageGameScreen/GAMER/gif&png/gameSlider.png'));
 
         const uniqueUris = [...new Set(
           imgs.filter(Boolean).map((img) => Image.resolveAssetSource(img).uri)
@@ -281,7 +281,7 @@ const LanguageGamesScreen = ({ navigation }) => {
     <View style={styles.fullScreen}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={{ padding: 10 }}>
-          <Image source={require('../../screens/LanguageGameScreen/GAMER/gameSlider.png')} resizeMode='contain' fadeDuration={0} style={{ width: "100%", height: 130, borderRadius: 10 }} />
+          <Image source={require('../LanguageGameScreen/GAMER/gif&png/gameSlider.png')} resizeMode='contain' fadeDuration={0} style={{ width: "100%", height: 130, borderRadius: 10 }} />
         </View>
 
         {renderHeading()}
@@ -291,7 +291,7 @@ const LanguageGamesScreen = ({ navigation }) => {
             <React.Fragment key={idx}>
 
               <View style={styles.coinContainer}>
-                <Image source={require('../../screens/LanguageGameScreen/GAMER/coin2.png')} fadeDuration={0} style={{ width: 22, height: 22 }} />
+                <Image source={require('../LanguageGameScreen/GAMER/gif&png/coin2.png')} fadeDuration={0} style={{ width: 22, height: 22 }} />
                 <Text style={styles.coinText}>{totalCoins}</Text>
               </View>
 
