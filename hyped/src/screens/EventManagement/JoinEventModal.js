@@ -12,6 +12,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 // import Checking from './Checking';
 import { env } from '../../config/env';
+import { useAppSelector } from '../../state/hooks';
 
 const JoinEventModal = ({ visible, onClose, eventId, onSuccess }) => {
   const [formData, setFormData] = useState({

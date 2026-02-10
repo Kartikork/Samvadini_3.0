@@ -5,13 +5,13 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 import BottomNavigation from '../../components/BottomNavigation';
 import { env } from '../../config/env';
+import { userIcon } from '../../assets';
 
 export default function AttendeesScreen({ eventId, creatorId, chatId }) {
   const navigation = useNavigation();
   const [attendees, setAttendees] = useState();
   const [loading, setLoading] = useState(false);
   const { uniqueId } = useAppSelector(state => state.auth);
-
 
   useEffect(() => {
     if (eventId) {
@@ -93,7 +93,7 @@ export default function AttendeesScreen({ eventId, creatorId, chatId }) {
         source={
           item.photo
             ? { uri: item.photo + env.SAS_KEY }
-            : require("../../assets/user-icon.png")
+            : userIcon
         }
         style={styles.attendeeImage}
       />

@@ -1,4 +1,4 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -24,12 +24,11 @@ import Icon2 from 'react-native-vector-icons/MaterialCommunityIcons';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import RNFS from 'react-native-fs';
 import VoiceToText from '../../helper/VoiceToText';
-import {languages} from '../../helper/Helper';
-import CustomText from '../../components/CustomText';
+import { languages } from '../../helper/Helper';
 import LinearGradient from 'react-native-linear-gradient';
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
-const {width: windowWidth, height: windowHeight} = Dimensions.get('window');
+const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
 
 export default function Checking({
   onTranscription,
@@ -310,7 +309,7 @@ export default function Checking({
               ]}
             />
           )}
-          <Animated.View style={{transform: [{scale: micPulseAnimation}]}}>
+          <Animated.View style={{ transform: [{ scale: micPulseAnimation }] }}>
             {isActive && !isRecording ? (
               <Svg height="24" width="24" viewBox="0 0 24 24">
                 <Defs>
@@ -348,16 +347,16 @@ export default function Checking({
           animationType="fade">
           <TouchableWithoutFeedback onPress={handleClose}>
             <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
+              <TouchableWithoutFeedback onPress={() => { }}>
                 <View style={styles.recordingModalContainer}>
                   {showLanguageSelectionButton && (
                     <TouchableOpacity
                       onPress={() => setShowLanguageModal(true)}
                       style={styles.languageSelector}>
-                      <CustomText style={styles.languageSelectorText}>
+                      <Text style={styles.languageSelectorText}>
                         {languages.find(l => l.id === selectedLanguage)?.name ||
                           'English'}
-                      </CustomText>
+                      </Text>
                       <Icon2 name="chevron-down" size={18} color="#000" />
                     </TouchableOpacity>
                   )}
@@ -409,14 +408,14 @@ export default function Checking({
                         ? stopRecording
                         : () => startRecording('modal')
                     }>
-                    <CustomText style={styles.recordingStatus}>
+                    <Text style={styles.recordingStatus}>
                       {isRecording ? 'Tap to stop' : 'Tap to start'}
-                    </CustomText>
+                    </Text>
                   </TouchableOpacity>
 
-                  <CustomText style={styles.recordingText}>
+                  <Text style={styles.recordingText}>
                     {isRecording ? 'Listening...' : voiceTranslatedText}
-                  </CustomText>
+                  </Text>
 
                   <View style={styles.actionButtons}>
                     <TouchableOpacity
@@ -428,8 +427,8 @@ export default function Checking({
                       <LinearGradient
                         style={styles.submitButton}
                         colors={['#6462AC', '#028BD3']}
-                        start={{x: 0, y: 0}}
-                        end={{x: 1, y: 0}}>
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}>
                         <Icon name="check" size={22} color="#fff" />
                       </LinearGradient>
                     </TouchableOpacity>
@@ -449,7 +448,7 @@ export default function Checking({
           animationType="slide">
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <CustomText style={styles.modalTitle}>Select Language</CustomText>
+              <Text style={styles.modalTitle}>Select Language</Text>
               <ScrollView style={styles.languageList}>
                 {languages.map(language => (
                   <TouchableOpacity
@@ -457,25 +456,25 @@ export default function Checking({
                     style={[
                       styles.languageItem,
                       selectedLanguage === language.id &&
-                        styles.selectedLanguageItem,
+                      styles.selectedLanguageItem,
                     ]}
                     onPress={() => handleLanguageSelect(language.id)}>
-                    <CustomText
+                    <Text
                       style={[
                         styles.languageName,
                         selectedLanguage === language.id &&
-                          styles.selectedLanguageText,
+                        styles.selectedLanguageText,
                       ]}>
                       {language.name}
-                    </CustomText>
-                    <CustomText
+                    </Text>
+                    <Text
                       style={[
                         styles.englishName,
                         selectedLanguage === language.id &&
-                          styles.selectedEnglishName,
+                        styles.selectedEnglishName,
                       ]}>
                       {language.englishName}
-                    </CustomText>
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -483,9 +482,9 @@ export default function Checking({
                 <LinearGradient
                   style={styles.closeModalButton}
                   colors={['#6462AC', '#028BD3']}
-                  start={{x: 0, y: 0}}
-                  end={{x: 1, y: 0}}>
-                  <CustomText style={styles.closeButtonText}>Close</CustomText>
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}>
+                  <Text style={styles.closeButtonText}>Close</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>

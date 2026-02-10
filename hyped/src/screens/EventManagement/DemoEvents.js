@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import CustomText from '../../components/CustomText';
 import BottomNavigation from '../../components/BottomNavigation';
 
 // Sample demo events data
@@ -42,12 +41,12 @@ export default function DemoEvents() {
     >
       <Image source={item.image} style={styles.eventImage} />
       <View style={styles.eventDetails}>
-        <CustomText style={styles.eventCategory}>{item.category}</CustomText>
-        <CustomText style={styles.eventTitle}>{item.title}</CustomText>
-        <CustomText style={styles.eventDate}>📅 {item.date}</CustomText>
-        <CustomText style={styles.eventLocation}>📍 {item.location}</CustomText>
+        <Text style={styles.eventCategory}>{item.category}</Text>
+        <Text style={styles.eventTitle}>{item.title}</Text>
+        <Text style={styles.eventDate}>📅 {item.date}</Text>
+        <Text style={styles.eventLocation}>📍 {item.location}</Text>
         <TouchableOpacity>
-          <CustomText style={styles.learnMore}>Learn more ➔</CustomText>
+          <Text style={styles.learnMore}>Learn more ➔</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -55,7 +54,7 @@ export default function DemoEvents() {
 
   return (
     <View style={styles.container}>
-      <CustomText style={styles.header}>Demo Events</CustomText>
+      <Text style={styles.header}>Demo Events</Text>
       <FlatList
         data={demoEvents}
         renderItem={renderDemoEvent}
