@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import CustomText from '../../components/CustomText';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import BottomNavigation from '../../components/BottomNavigation';
@@ -82,19 +81,19 @@ export default function CommunityScreen() {
       </View>
       <View style={styles.postDetails}>
         <View style={styles.postHeader}>
-          <CustomText style={styles.postDate}>Last {item.category.toLowerCase()} {item.date}</CustomText>
+          <Text style={styles.postDate}>Last {item.category.toLowerCase()} {item.date}</Text>
           {item.pinned && <Icon name="pin" size={16} color="#757575" />}
         </View>
-        <CustomText style={styles.postTitle}>{item.title}</CustomText>
-        <CustomText style={styles.postDescription}>{item.description}</CustomText>
-        <CustomText style={styles.postMetrics}>{item.metrics}</CustomText>
+        <Text style={styles.postTitle}>{item.title}</Text>
+        <Text style={styles.postDescription}>{item.description}</Text>
+        <Text style={styles.postMetrics}>{item.metrics}</Text>
       </View>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-      <CustomText style={styles.header}>Community</CustomText>
+      <Text style={styles.header}>Community</Text>
       <FlatList
         data={communityPosts}
         renderItem={renderPost}
@@ -110,7 +109,7 @@ export default function CommunityScreen() {
           end={{ x: 1, y: 0 }}
           style={styles.fab}
         >
-          <CustomText style={styles.fabText}>Add topic or social group</CustomText>
+          <Text style={styles.fabText}>Add topic or social group</Text>
         </LinearGradient>
       </TouchableOpacity>
       <BottomNavigation />

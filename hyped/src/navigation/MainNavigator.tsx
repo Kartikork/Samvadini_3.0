@@ -53,6 +53,7 @@ import SharePlannerCount from '../screens/DailyPlanner/SharePlannerCount';
 import CallScreen from '../screens/CallScreen';
 import EventListScreen from '../screens/EventManagement/EventListScreen.js';
 import CreateEvents from '../screens/EventManagement/CreateEvents.js';
+import DetailsScreen from '../screens/EventManagement/DetailsScreen.js';
 import Header from '../components/Header';
 
 export type RootStackParamList = {
@@ -81,6 +82,7 @@ export type RootStackParamList = {
   SharePlannerCount: undefined;
   EventListScreen: undefined;
   CreateEvents: undefined;
+  DetailsScreen: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -282,6 +284,15 @@ export default function MainNavigator() {
         <Stack.Screen
           name="CreateEvents"
           component={CreateEvents}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="DetailsScreen"
+          component={DetailsScreen}
           options={{
             headerShown: true,
             header: () => <Header />,

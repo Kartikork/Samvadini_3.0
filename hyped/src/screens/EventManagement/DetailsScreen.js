@@ -7,10 +7,12 @@ import AttendeesScreen from './AttendeesScreen';
 import AgendaScreen from './AgendaScreen';
 import JoinEventModal from './JoinEventModal';
 import { getEventTimeLeft } from '../../helper/DateFormate';
-import BottomNavigation from '../../components/BottomNavigation';
+import { educationGroupIcons } from '../../assets';
+import { useAppSelector } from '../../state/hooks';
 
 export default function DetailsScreen({ route, navigation }) {
   const { item } = route.params;
+  useHardwareBackHandler("EventListScreen");
   const [tab, setTab] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,7 +63,7 @@ export default function DetailsScreen({ route, navigation }) {
                 source={
                   item?.images?.length > 0
                     ? { uri: item.images[0] + env.SAS_KEY }
-                    : require('../../assets/education.jpg')
+                    : educationGroupIcons
                 }
                 style={styles.headerImage}
               />
@@ -140,7 +142,7 @@ export default function DetailsScreen({ route, navigation }) {
           {tab === 3 && <CommunityScreen />}
         </View>
       </View>
-      <BottomNavigation />
+
       <JoinEventModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
