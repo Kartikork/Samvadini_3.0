@@ -25,6 +25,7 @@ import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
+import NewContactFormScreen from '../screens/NewContactFormScreen';
 import CallScreen from '../screens/CallScreen';
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
@@ -135,6 +136,7 @@ export type RootStackParamList = {
   JobsDetailsScreen: undefined;
   LanguageGameScreen: undefined;
   ContactDesignScreen: undefined;
+  NewContactForm: undefined;
   CategoryScreen: undefined;
   CategoryDetailsScreen: undefined;
   LRNScreen: undefined;
@@ -334,6 +336,11 @@ export default function MainNavigator() {
         <Stack.Screen
           name="ContactDesignScreen"
           component={ContactDesignScreen}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="NewContactForm"
+          component={NewContactFormScreen}
           options={commonHeaderOptions}
         />
 
