@@ -34,6 +34,7 @@ import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
+import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
 import CallHistoryScreen from '../screens/CallHistoryScreen';
 import StatusScreen from '../screens/StatusScreen';
 import { JobScreen } from '../screens/CategoryScreen/JobScreen.js';
@@ -55,6 +56,7 @@ import EventListScreen from '../screens/EventManagement/EventListScreen.js';
 import CreateEvents from '../screens/EventManagement/CreateEvents.js';
 import DetailsScreen from '../screens/EventManagement/DetailsScreen.js';
 import Header from '../components/Header';
+
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -86,6 +88,7 @@ export type RootStackParamList = {
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
+  SelectedFiles: { assets: any[] } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -160,7 +163,6 @@ export default function MainNavigator() {
             animation: 'slide_from_right',
           }}
         />
-
         {/* Chat Screens */}
         <Stack.Screen
           name="ChatList"
@@ -347,9 +349,22 @@ export default function MainNavigator() {
         />
 
         <Stack.Screen
+          name="SelectedFiles"
+          component={SelectedFilesScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+
+        <Stack.Screen
           name="ContactDesignScreen"
           component={ContactDesignScreen}
-          options={{ animation: 'slide_from_right' }}
+          options={{
+            headerShown: true,
+            header: () => <Header />,
+            animation: 'slide_from_right',
+          }}
         />
 
         {/* Call Screen - No header, full screen */}
