@@ -27,6 +27,7 @@ import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
 import CallScreen from '../screens/CallScreen';
 import Header from '../components/Header';
+import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
 
 // Loader Component
 const ScreenLoader = () => {
@@ -150,6 +151,7 @@ export type RootStackParamList = {
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
+  SelectedFiles: { assets: any[] } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -215,7 +217,6 @@ export default function MainNavigator() {
           component={DashboardScreen}
           options={commonHeaderOptions}
         />
-
         <Stack.Screen
           name="ChatList"
           component={ChatListScreen}
@@ -319,6 +320,15 @@ export default function MainNavigator() {
           name="Chat"
           component={ChatScreen}
           options={commonHeaderOptions}
+        />
+
+        <Stack.Screen
+          name="SelectedFiles"
+          component={SelectedFilesScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
         />
 
         <Stack.Screen
