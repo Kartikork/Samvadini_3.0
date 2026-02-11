@@ -3,7 +3,6 @@
  */
 
 import { StyleSheet, Dimensions } from 'react-native';
-import { authAPI } from '../../api';
 
 const { width: windowWidth } = Dimensions.get('window');
 

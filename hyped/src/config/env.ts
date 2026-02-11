@@ -21,10 +21,10 @@ interface EnvConfig {
 
 const envConfigs: Record<Environment, EnvConfig> = {
   development: {
-    API_BASE_URL: 'http://192.168.0.108:4000/api', // Local development server
-    SOCKET_URL: 'ws://192.168.0.108:4000/socket',
+    API_BASE_URL: 'https://qasamvadini.aicte-india.org/api', // Local development server
+    SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
     Market_Place_API_URL: 'https://anuvadiniaiapi.aicte-india.org/form1/',
-    FCM_URL: 'http://192.168.0.108:4000/',
+    FCM_URL: 'https://samvadiniprod.aicte-india.org/',
     LRN_URL: 'https://lrn.aicte-india.org',
     // API_BASE_URL: 'http://192.168.0.104:4000/api', // Local development server
     // SOCKET_URL: 'ws://192.168.0.104:4000/socket',
@@ -40,10 +40,10 @@ const envConfigs: Record<Environment, EnvConfig> = {
       '?sp=racwdl&st=2025-12-02T09:15:41Z&se=2026-03-20T17:30:41Z&spr=https&sv=2024-11-04&sr=c&sig=S8%2Bu1KJqnlz%2FtkdU4qkxguFZg8xK5vY3YuRzr02alQ8%3D',
   },
   staging: {
-    API_BASE_URL: 'http://192.168.0.108:4000/api',
-    SOCKET_URL: 'ws://192.168.0.108:4000/socket',
+    API_BASE_URL: 'https://qasamvadini.aicte-india.org/api',
+    SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
     Market_Place_API_URL: 'https://marketplace-prod.aicte-india.org/',
-    FCM_URL: 'http://192.168.0.108:4000/',
+    FCM_URL: 'https://samvadiniprod.aicte-india.org/',
     LRN_URL: 'https://lrn.aicte-india.org',
     // Socket.IO call signaling server (HTTP is fine, Socket.IO handles protocol upgrade)
     // Make sure the server is accessible and port 8000 is open
@@ -55,10 +55,10 @@ const envConfigs: Record<Environment, EnvConfig> = {
       '?sp=racwdl&st=2025-12-02T09:15:41Z&se=2026-03-20T17:30:41Z&spr=https&sv=2024-11-04&sr=c&sig=S8%2Bu1KJqnlz%2FtkdU4qkxguFZg8xK5vY3YuRzr02alQ8%3D',
   },
   production: {
-    API_BASE_URL: 'http://192.168.0.108:4000/api',
-    SOCKET_URL: 'ws://192.168.0.108:4000/socket',
+    API_BASE_URL: 'https://qasamvadini.aicte-india.org/api',
+    SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
     Market_Place_API_URL: 'https://marketplace-prod.aicte-india.org/',
-    FCM_URL: 'http://192.168.0.108:4000/',
+    FCM_URL: 'https://samvadiniprod.aicte-india.org/',
     LRN_URL: 'https://lrn.aicte-india.org',
     // Socket.IO call signaling server (HTTP is fine, Socket.IO handles protocol upgrade)
     // Make sure the server is accessible and port 8000 is open

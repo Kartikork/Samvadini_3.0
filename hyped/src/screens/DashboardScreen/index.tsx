@@ -20,9 +20,7 @@ import {
   Linking,
   Alert,
   Text,
-  ImageBackground,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+  } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAppTranslations } from '../../translations';
@@ -91,14 +89,13 @@ const NavigationCard = memo(function NavigationCard({
 export function DashboardScreen({ navigation }: { navigation: any }) {
   const lang = useAppSelector(state => state.language.lang);
   const isIndia = useAppSelector(state => state.country.isIndia);
+  const UserName = useAppSelector(state => state.auth.userSettings?.praman_patrika);
   const textToVoiceRef = useRef(null);
-  const [userNames, setUserName] = useState<string | null>(null);
-  const [isUserNameLoaded, setIsUserNameLoaded] = useState(false);
 
   const dashboardTexts = getAppTranslations(lang);
   const welcomeText = useMemo(
-    () => `${dashboardTexts.welcome}${userNames ? `, ${userNames}` : ''}`,
-    [dashboardTexts.welcome, userNames],
+    () => `${dashboardTexts.welcome}${UserName ? `, ${UserName}` : ''}`,
+    [dashboardTexts.welcome, UserName],
   );
 
   const navigateToCallHistory = useCallback(
@@ -133,20 +130,6 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
     () => navigation.navigate('JobScreen'),
     [navigation],
   );
-
-  useEffect(() => {
-    const fetchUserName = async () => {
-      try {
-        const name = await AsyncStorage.getItem('userName');
-        setUserName(name);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsUserNameLoaded(true);
-      }
-    };
-    fetchUserName();
-  }, []);
 
   useEffect(() => {
     const backAction = () => {
