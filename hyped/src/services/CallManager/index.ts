@@ -190,6 +190,18 @@ class CallManagerClass {
         callerName: receiverName,
     }));
 
+      // For video calls, get local media stream immediately for preview
+      if (callType === 'video') {
+        console.log('[CallManager] 📹 Video call - getting local media preview...');
+        try {
+          await WebRTCMediaService.getLocalMediaPreview('video');
+          console.log('[CallManager] ✅ Local video preview ready');
+        } catch (error) {
+          console.error('[CallManager] ⚠️ Failed to get local video preview:', error);
+          // Don't fail the call - preview is optional
+        }
+      }
+
       console.log('[CallManager] Outgoing call initiated:', result.callId);
       return result.callId;
     } catch (error) {
@@ -362,7 +374,7 @@ class CallManagerClass {
       return;
     }
     
-    // Monitor connection state
+    // Monitor connection state (preserve existing stream handlers from CallScreen)
     WebRTCMediaService.setEventHandlers({
       onConnectionStateChange: (state) => {
         console.log('[CallManager] 🔌 WebRTC connection state changed:', state);
@@ -376,6 +388,7 @@ class CallManagerClass {
           this.failCall('webrtc_connection_failed');
         }
       },
+      // Don't override onLocalStream and onRemoteStream - let CallScreen handle those
     });
   }
 
@@ -442,9 +455,17 @@ class CallManagerClass {
     console.log('[CallManager] 📹 Video toggled:', newVideoState ? 'ON' : 'OFF');
   }
 
-  public toggleSpeaker(): void {
+  public async toggleSpeaker(): Promise<void> {
     const current = store.getState().call.isSpeakerOn;
-    store.dispatch(callActions.setSpeaker(!current));
+    try {
+      const newSpeakerState = await WebRTCMediaService.toggleSpeaker(current);
+      store.dispatch(callActions.setSpeaker(newSpeakerState));
+      console.log('[CallManager] 🔊 Speaker toggled:', newSpeakerState ? 'ON' : 'OFF');
+    } catch (error) {
+      console.error('[CallManager] ❌ Failed to toggle speaker:', error);
+      // Still update UI state even if native call failed
+      store.dispatch(callActions.setSpeaker(!current));
+    }
   }
 
   private handleIncomingCall = (payload: IncomingCallPayload): void => {
@@ -473,6 +494,7 @@ class CallManagerClass {
       if (this.currentCall && this.currentUserId && payload.calleeId) {
         try {
           // Set up connection state handler BEFORE creating peer connection
+          // (preserve existing stream handlers from CallScreen)
           WebRTCMediaService.setEventHandlers({
             onConnectionStateChange: (state) => {
               console.log('[CallManager] 🔌 WebRTC connection state changed:', state);
@@ -486,6 +508,7 @@ class CallManagerClass {
                 this.failCall('webrtc_connection_failed');
               }
             },
+            // Don't override onLocalStream and onRemoteStream - let CallScreen handle those
           });
 
           await WebRTCMediaService.createPeerConnection(

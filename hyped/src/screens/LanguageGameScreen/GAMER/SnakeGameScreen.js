@@ -329,7 +329,7 @@ const SnakeGameScreen = () => {
   };
 
   return (
-    <ImageBackground source={require('../GAMER/snake.jpg')} style={{ flex: 1 }}>
+    <ImageBackground source={require('../GAMER/snakejpg.jpg')} style={{ flex: 1 }}>
       <View style={styles.container}>
         <Modal
           animationType="slide"

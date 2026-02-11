@@ -16,8 +16,10 @@ import {
   mediaDevices,
   MediaStream,
 } from 'react-native-webrtc';
+import { Platform, NativeModules } from 'react-native';
 import { WebRTCService } from '../WebRTCService';
 import { env } from '../../config/env';
+import type { CallType } from '../../types/call';
 
 type MediaStreamEvent = (stream: MediaStream | null) => void;
 
@@ -40,9 +42,16 @@ class WebRTCMediaServiceClass {
     onRemoteStream?: MediaStreamEvent;
     onConnectionStateChange?: (state: string) => void;
   }): void {
-    this.onLocalStream = handlers.onLocalStream || null;
-    this.onRemoteStream = handlers.onRemoteStream || null;
-    this.onConnectionStateChange = handlers.onConnectionStateChange || null;
+    // Merge handlers instead of replacing - preserve existing handlers if new ones aren't provided
+    if (handlers.onLocalStream !== undefined) {
+      this.onLocalStream = handlers.onLocalStream;
+    }
+    if (handlers.onRemoteStream !== undefined) {
+      this.onRemoteStream = handlers.onRemoteStream;
+    }
+    if (handlers.onConnectionStateChange !== undefined) {
+      this.onConnectionStateChange = handlers.onConnectionStateChange;
+    }
   }
 
   async createPeerConnection(
@@ -80,14 +89,18 @@ class WebRTCMediaServiceClass {
       console.log('[WebRTCMedia] 🔧 Creating RTCPeerConnection with ICE servers:', iceServers);
       this.peerConnection = new RTCPeerConnection({ iceServers });
 
-      // Get user media
-      const constraints = {
-        audio: true,
-        video: callType === 'video' ? { facingMode: 'user' } : false,
-      };
+      // Get user media - reuse existing stream if available (from preview)
+      if (!this.localStream) {
+        const constraints = {
+          audio: true,
+          video: callType === 'video' ? { facingMode: 'user' } : false,
+        };
 
-      console.log('[WebRTCMedia] 🎤 Requesting user media with constraints:', constraints);
-      this.localStream = await mediaDevices.getUserMedia(constraints);
+        console.log('[WebRTCMedia] 🎤 Requesting user media with constraints:', constraints);
+        this.localStream = await mediaDevices.getUserMedia(constraints);
+      } else {
+        console.log('[WebRTCMedia] ✅ Reusing existing local stream for peer connection');
+      }
       
       console.log('[WebRTCMedia] ✅ Got local stream:', {
         id: this.localStream.id,
@@ -403,6 +416,105 @@ class WebRTCMediaServiceClass {
 
   getIceConnectionState(): string | null {
     return this.peerConnection?.iceConnectionState || null;
+  }
+
+  /**
+   * Get local media stream for preview (before peer connection is created)
+   * This is useful for video calls where caller wants to see their preview while dialing
+   */
+  async getLocalMediaPreview(callType: CallType): Promise<MediaStream | null> {
+    try {
+      // If we already have a local stream, return it
+      if (this.localStream) {
+        console.log('[WebRTCMedia] ✅ Reusing existing local stream for preview');
+        return this.localStream;
+      }
+
+      console.log('[WebRTCMedia] 🎬 Getting local media preview for:', callType);
+      const constraints = {
+        audio: true,
+        video: callType === 'video' ? { facingMode: 'user' } : false,
+      };
+
+      console.log('[WebRTCMedia] 🎤 Requesting user media with constraints:', constraints);
+      const stream = await mediaDevices.getUserMedia(constraints);
+      
+      console.log('[WebRTCMedia] ✅ Got local preview stream:', {
+        id: stream.id,
+        audioTracks: stream.getAudioTracks().length,
+        videoTracks: stream.getVideoTracks().length,
+        active: stream.active,
+      });
+
+      // Store the stream so it can be reused when creating peer connection
+      this.localStream = stream;
+      
+      // Notify listeners about the local stream
+      if (this.onLocalStream) {
+        this.onLocalStream(stream);
+      }
+
+      return stream;
+    } catch (error) {
+      console.error('[WebRTCMedia] ❌ Failed to get local media preview:', error);
+      return null;
+    }
+  }
+
+  async setSpeakerOn(enabled: boolean): Promise<void> {
+    try {
+      console.log('[WebRTCMedia] 🔊 Setting speaker mode:', enabled ? 'ON' : 'OFF');
+      
+      const { WebRTCModule } = NativeModules;
+      
+      if (!WebRTCModule) {
+        console.warn('[WebRTCMedia] ⚠️ WebRTCModule not available');
+        return;
+      }
+
+      if (Platform.OS === 'android') {
+        // For Android, use WebRTCModule to control speaker
+        try {
+          // Try setSpeakerphoneOn first (most common method)
+          if (WebRTCModule.setSpeakerphoneOn) {
+            WebRTCModule.setSpeakerphoneOn(enabled);
+            console.log('[WebRTCMedia] 🔊 Speaker mode set via setSpeakerphoneOn:', enabled);
+            return;
+          }
+          
+          // Fallback: Try setAudioOutput
+          if (WebRTCModule.setAudioOutput) {
+            WebRTCModule.setAudioOutput(enabled ? 'speaker' : 'earpiece');
+            console.log('[WebRTCMedia] 🔊 Speaker mode set via setAudioOutput:', enabled);
+            return;
+          }
+          
+          console.warn('[WebRTCMedia] ⚠️ Speaker control methods not available in WebRTCModule');
+        } catch (error) {
+          console.error('[WebRTCMedia] ❌ Failed to set speaker mode (Android):', error);
+        }
+      } else if (Platform.OS === 'ios') {
+        // For iOS, try setAudioOutput if available
+        try {
+          if (WebRTCModule.setAudioOutput) {
+            WebRTCModule.setAudioOutput(enabled ? 'speaker' : 'earpiece');
+            console.log('[WebRTCMedia] 🔊 Speaker mode set via setAudioOutput (iOS):', enabled);
+          } else {
+            console.warn('[WebRTCMedia] ⚠️ setAudioOutput not available on iOS');
+          }
+        } catch (error) {
+          console.error('[WebRTCMedia] ❌ Failed to set speaker mode (iOS):', error);
+        }
+      }
+    } catch (error) {
+      console.error('[WebRTCMedia] ❌ Failed to set speaker mode:', error);
+    }
+  }
+
+  async toggleSpeaker(currentState: boolean): Promise<boolean> {
+    const newState = !currentState;
+    await this.setSpeakerOn(newState);
+    return newState;
   }
 }
 
