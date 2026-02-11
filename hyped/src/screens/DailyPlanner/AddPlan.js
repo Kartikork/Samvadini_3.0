@@ -606,13 +606,13 @@ const AddPlan = ({ route }) => {
                 <Text style={styles.detailValue}>{plan.priority} ⬇</Text>
               </TouchableOpacity>
             </View>
-            <TextInput
+            {/* <TextInput
               style={styles.input}
               value={plan.title}
               onChangeText={(text) => updatePlan(index, 'title', text)}
               placeholder='Add URL (Optional)'
               placeholderTextColor="#8F9BB3"
-            />
+            /> */}
             <Modal
               transparent
               visible={showPriorityModal.show && showPriorityModal.index === index}
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 16, color: '#333', marginBottom: 5 },
   input: {
     borderWidth: 1,
-    borderColor: '#EDF1F7',
+    borderColor: '#dddddd',
     borderRadius: 8,
     padding: 10,
     marginBottom: 15,
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#EDF1F7',
+    borderColor: '#dddddd',
     borderRadius: 8,
     padding: 10,
     marginBottom: 10,
@@ -741,7 +741,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 15,
-    // minWidth: wp('70%'),
+    minWidth: '70%',
     alignItems: 'center',
     paddingHorizontal: 10
   },

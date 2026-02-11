@@ -166,7 +166,7 @@ console.log(dashboardTexts)
   }
 
   return (
-    <SafeAreaView style={styles.safeAreaView}>
+    <SafeAreaView style={styles.safeAreaView} edges={['left', 'right', 'bottom']}>
       <View style={styles.flexContainer}>
         <View style={styles.container}>
           <View style={styles.scrollView}>
@@ -482,7 +482,7 @@ console.log(dashboardTexts)
                   </View>
                 </View>
               </View>
-              <View style={[styles.bottomContainer, { marginBottom: 12 }]}>
+              <View style={styles.bottomContainer}>
                 <View style={styles.banking} />
               </View>
             </ScrollView>
