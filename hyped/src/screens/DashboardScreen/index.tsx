@@ -95,8 +95,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
   const [userNames, setUserName] = useState<string | null>(null);
   const [isUserNameLoaded, setIsUserNameLoaded] = useState(false);
 
-  const dashboardTexts = getAppTranslations(lang)
-console.log(dashboardTexts)
+  const dashboardTexts = getAppTranslations(lang);
   const welcomeText = useMemo(
     () => `${dashboardTexts.welcome}${userNames ? `, ${userNames}` : ''}`,
     [dashboardTexts.welcome, userNames],
@@ -115,7 +114,7 @@ console.log(dashboardTexts)
     [navigation],
   );
   const navigateToCreateNewGroup = useCallback(
-    () => navigation.navigate('CreateNewGroup'),
+    () => navigation.navigate('CreateGroup'),
     [navigation],
   );
   const navigateToPrivateRoom = useCallback(
@@ -166,7 +165,10 @@ console.log(dashboardTexts)
   }
 
   return (
-    <SafeAreaView style={styles.safeAreaView} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView
+      style={styles.safeAreaView}
+      edges={['left', 'right', 'bottom']}
+    >
       <View style={styles.flexContainer}>
         <View style={styles.container}>
           <View style={styles.scrollView}>
