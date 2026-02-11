@@ -45,6 +45,11 @@ const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GA
 const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameScreen.js'));
 const BubbleShooterGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/BubbleShooter/BubbleShooterGame.js'));
 const CarGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/cargame/CarGame'));
+const BalloonShootingGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/BalloonShootingGame/BalloonShootingGame'));
+const TicTacToe = lazy(() => import('../screens/LanguageGameScreen/GAMER/TicTacToe'));
+const NumberSortIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/NumberSortIntroScreen'));
+const SortGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/SortGameScreen'));
+const DrumGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/DrumGame/Game'));
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
@@ -71,6 +76,11 @@ export type RootStackParamList = {
   SnakeGame: undefined;
   BubbleShooterGame: undefined;
   CarGame: undefined;
+  BalloonShootingGame: undefined;
+  TicTacToe: undefined;
+  NumberSortIntroScreen: undefined;
+  SortGameScreen: undefined;
+  DrumGame: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -250,6 +260,36 @@ export default function MainNavigator() {
           component={CarGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
+
+        <Stack.Screen
+          name="BalloonShootingGame"
+          component={BalloonShootingGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="TicTacToe"
+          component={TicTacToe}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="NumberSortIntroScreen"
+          component={NumberSortIntroScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="SortGameScreen"
+          component={SortGameScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="DrumGame"
+          component={DrumGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
 
         {/* TODO: Add these screens
         <Stack.Screen name="GroupChat" component={GroupChatScreen} />

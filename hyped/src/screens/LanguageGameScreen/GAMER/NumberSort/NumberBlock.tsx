@@ -15,7 +15,7 @@ interface NumberBlockProps {
     rowIndex: number;
     itemWidth: number;
     blockSize: number;
-    onMoveNumber: (item: NumberItem, startRowIndex: number, endRowIndex: number, targetIndex: number) => void;
+    onMoveNumber: (item: NumberItem, startRowIndex: number, endRowIndex: number) => void;
 }
 
 const NumberBlock: React.FC<NumberBlockProps> = ({ item, rowIndex, blockSize, onMoveNumber }) => {
@@ -29,37 +29,26 @@ const NumberBlock: React.FC<NumberBlockProps> = ({ item, rowIndex, blockSize, on
     );
 
     const onHandlerStateChange = (event: PanGestureHandlerStateChangeEvent) => {
-        const { state, oldState, translationY } = event.nativeEvent;
+        const { state, oldState, absoluteY } = event.nativeEvent;
 
         if (state === State.ACTIVE && oldState !== State.ACTIVE) {
             // Gesture Started
-            const initialRowLayout = rowLayouts.current[rowIndex];
-            if (initialRowLayout) {
-                // Calculate the absolute Y center of the block when drag starts
-                initialPosition.current.y = initialRowLayout.y + (initialRowLayout.height / 2);
-            }
-
             Animated.spring(scale, { toValue: 1.2, useNativeDriver: false, tension: 50 }).start();
         }
 
         if (oldState === State.ACTIVE && (state === State.END || state === State.CANCELLED || state === State.FAILED)) {
             // Gesture Ended
 
-            // Calculate current finger position (approximate drop location)
-            // translationY is the total movement from the start
-            const dropY = initialPosition.current.y + translationY;
+            // Calculate current finger position relative to the SCROLL CONTENT
+            const dropYInContent = absoluteY - rowLayouts.absoluteY + rowLayouts.scrollOffset;
 
-            // Find target row by checking if dropY is within the vertical bounds of the row
+            // Find target row
             const targetRowIndex = rowLayouts.current.findIndex((layout: RowLayout | null) =>
-                layout && dropY >= layout.y && dropY <= (layout.y + layout.height)
+                layout && dropYInContent >= layout.y && dropYInContent <= (layout.y + layout.height)
             );
 
             if (targetRowIndex > -1) {
-                const targetRowLayout = rowLayouts.current[targetRowIndex];
-                if (targetRowLayout) {
-                    const targetIndex = targetRowLayout.itemCount;
-                    onMoveNumber(item, rowIndex, targetRowIndex, targetIndex);
-                }
+                onMoveNumber(item, rowIndex, targetRowIndex);
             }
 
             // Animate back/reset regardless of success (if success, parent re-renders and moves it)
