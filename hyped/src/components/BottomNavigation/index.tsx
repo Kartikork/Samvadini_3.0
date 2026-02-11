@@ -54,9 +54,9 @@ const BottomNavigation = ({
     };
   }, []);
 
-  useEffect(() => {
-    checkNewStatus();
-  }, []);
+  // useEffect(() => {
+  //   checkNewStatus();
+  // }, []);
 
   const checkNewStatus = async () => {
     try {
