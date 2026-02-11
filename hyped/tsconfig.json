@@ -1,7 +1,8 @@
 {
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
-    "types": ["jest"],
+    "jsx": "react-jsx",
+    "types": ["jest"]
   },
   "include": ["**/*.ts", "**/*.tsx", "src/screens/CategoryScreen/JobScreen.js"],
   "exclude": ["**/node_modules", "**/Pods"]
