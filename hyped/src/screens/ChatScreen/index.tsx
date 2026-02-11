@@ -1,12 +1,12 @@
 /**
  * ChatScreen - Main Chat UI Component
- * 
+ *
  * ARCHITECTURE (Compatible with Existing Flow):
  * - Uses existing SQLite schema (ChatMessageSchema)
  * - Uses existing SocketService
  * - Works alongside ChatListScreen
  * - Does NOT break existing flow
- * 
+ *
  * PERFORMANCE:
  * - Virtualized list (FlashList)
  * - Memoized components
@@ -39,6 +39,7 @@ import ChatHeader from '../../components/ChatHeader';
 import { useChatById } from '../ChatListScreen/hooks/useChatListData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../../config/constants';
+import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -64,8 +65,8 @@ const AnyFlashList = FlashList as unknown as React.ComponentType<any>;
 const ChatScreen: React.FC = () => {
   const route = useRoute<ChatScreenRouteProp>();
   const dispatch = useAppDispatch();
-  const activeChat = useAppSelector((state) => state.activeChat);
-
+  const activeChat = useAppSelector(state => state.activeChat);
+  useHardwareBackHandler('ChatList');
   // Chat ID from Redux (primary) or route params (fallback)
   const chatId = activeChat.chatId ?? route.params.chatId;
 
@@ -115,7 +116,7 @@ const ChatScreen: React.FC = () => {
           username: chatFromDb.contact_name ?? chatFromDb.samvada_nama ?? '',
           avatar: chatFromDb.contact_photo ?? chatFromDb.samuha_chitram ?? null,
           isGroup: chatFromDb.prakara === 'Group',
-        })
+        }),
       );
     }
   }, [chatId, activeChat.chatId, activeChat.username, chatFromDb, dispatch]);
@@ -132,7 +133,6 @@ const ChatScreen: React.FC = () => {
   /**
    * Get current user ID
    */
-
 
   /**
    * Load initial messages from existing DB
@@ -152,11 +152,13 @@ const ChatScreen: React.FC = () => {
       // Use existing fetchChatMessages function
       // Initial load: last 20 messages from DB (latest -> oldest)
       const loadedMessages = await fetchChatMessages(chatId, 20, 0);
-      
+
       // Transform to include is_outgoing flag
       const transformedMessages = loadedMessages.map((msg: ChatMessage) => ({
         ...msg,
-        is_outgoing: currentUserId ? msg.pathakah_chinha === currentUserId : false,
+        is_outgoing: currentUserId
+          ? msg.pathakah_chinha === currentUserId
+          : false,
       }));
 
       // DB returns latest -> oldest (DESC). For top-to-bottom UI, reverse to oldest -> latest.
@@ -192,14 +194,16 @@ const ChatScreen: React.FC = () => {
       if (olderMessages.length > 0) {
         const transformed = olderMessages.map((msg: ChatMessage) => ({
           ...msg,
-          is_outgoing: currentUserId ? msg.pathakah_chinha === currentUserId : false,
+          is_outgoing: currentUserId
+            ? msg.pathakah_chinha === currentUserId
+            : false,
         }));
 
         // olderMessages come back latest -> older for that page; reverse to keep global ascending order
         const ascendingOlder = [...transformed].reverse();
 
         // Prepend older messages at the top
-        setMessages((prev) => [...ascendingOlder, ...prev]);
+        setMessages(prev => [...ascendingOlder, ...prev]);
         // If we got 50, there may be more history
         setHasMoreMessages(olderMessages.length === 50);
       } else {
@@ -224,11 +228,15 @@ const ChatScreen: React.FC = () => {
       const latestMsg = latest[0] as ChatMessage;
       const latestWithFlag: ChatMessage = {
         ...latestMsg,
-        is_outgoing: currentUserId ? latestMsg.pathakah_chinha === currentUserId : false,
+        is_outgoing: currentUserId
+          ? latestMsg.pathakah_chinha === currentUserId
+          : false,
       };
 
       setMessages(prev => {
-        const exists = prev.some(m => m.refrenceId === latestWithFlag.refrenceId);
+        const exists = prev.some(
+          m => m.refrenceId === latestWithFlag.refrenceId,
+        );
         if (exists) return prev;
         return [...prev, latestWithFlag];
       });
@@ -278,7 +286,7 @@ const ChatScreen: React.FC = () => {
 
       const visibleMessages = viewableItems
         .map((item: any) => {
-          const msg = messages.find((m) => m.refrenceId === item.item);
+          const msg = messages.find(m => m.refrenceId === item.item);
           return msg;
         })
         .filter((msg: ChatMessage | undefined) => {
@@ -290,7 +298,7 @@ const ChatScreen: React.FC = () => {
         updateChatAvashatha(chatId, currentUserId);
       }
     },
-    [messages, currentUserId, chatId]
+    [messages, currentUserId, chatId],
   );
 
   /**
@@ -306,29 +314,31 @@ const ChatScreen: React.FC = () => {
 
       return (
         <>
-          {showDate && <DateSeparator timestamp={new Date(message.preritam_tithih || message.createdAt).getTime()} />}
+          {showDate && (
+            <DateSeparator
+              timestamp={new Date(
+                message.preritam_tithih || message.createdAt,
+              ).getTime()}
+            />
+          )}
           <MessageBubble message={message} currentUserId={currentUserId} />
         </>
       );
     },
-    [messages, currentUserId]
+    [messages, currentUserId],
   );
 
   /**
    * Get item type for FlashList optimization
    */
-  const getItemType = useCallback(
-    (item: ChatMessage) => {
-      if (!item) return 'text';
-      return item.sandesha_prakara || 'text';
-    },
-    []
-  );
+  const getItemType = useCallback((item: ChatMessage) => {
+    if (!item) return 'text';
+    return item.sandesha_prakara || 'text';
+  }, []);
 
   /**
    * When user scrolls to TOP, load older messages from DB
    */
- 
 
   const handleMenuPress = useCallback(() => {
     // TODO: Open chat options (view contact, mute, etc.)
@@ -374,7 +384,10 @@ const ChatScreen: React.FC = () => {
   /**
    * Key extractor
    */
-  const keyExtractor = useCallback((item: ChatMessage) => item.refrenceId || item.anuvadata_id.toString(), []);
+  const keyExtractor = useCallback(
+    (item: ChatMessage) => item.refrenceId || item.anuvadata_id.toString(),
+    [],
+  );
 
   /**
    * Auto-scroll to bottom when needed (initial load + new messages)
@@ -419,51 +432,59 @@ const ChatScreen: React.FC = () => {
           {/* Connection status indicator */}
           {!SocketService.isConnected() && (
             <View style={styles.connectionBanner}>
-              <Text style={styles.connectionText}>
-                Reconnecting...
-              </Text>
+              <Text style={styles.connectionText}>Reconnecting...</Text>
             </View>
           )}
 
-        {/* Message list */}
-        <AnyFlashList
-          ref={flashListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={keyExtractor}
-          estimatedItemSize={80}
-          // Load older messages when user scrolls to TOP
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          ListHeaderComponent={renderListHeader}
-          ListFooterComponent={renderListFooter}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={viewabilityConfigRef.current}
-          getItemType={getItemType}
-          onContentSizeChange={() => {
-            // On first layout after initial load, jump to bottom without animation
-            if (!hasDoneInitialScrollRef.current && messages.length > 0 && flashListRef.current) {
-              try {
-                flashListRef.current.scrollToIndex({
-                  index: messages.length - 1,
-                  animated: false,
-                });
-                hasDoneInitialScrollRef.current = true;
-              } catch (error) {
-                console.warn('[ChatScreen] initial scrollToIndex failed:', error);
+          {/* Message list */}
+          <AnyFlashList
+            ref={flashListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={keyExtractor}
+            estimatedItemSize={80}
+            // Load older messages when user scrolls to TOP
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            ListHeaderComponent={renderListHeader}
+            ListFooterComponent={renderListFooter}
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfigRef.current}
+            getItemType={getItemType}
+            onContentSizeChange={() => {
+              // On first layout after initial load, jump to bottom without animation
+              if (
+                !hasDoneInitialScrollRef.current &&
+                messages.length > 0 &&
+                flashListRef.current
+              ) {
+                try {
+                  flashListRef.current.scrollToIndex({
+                    index: messages.length - 1,
+                    animated: false,
+                  });
+                  hasDoneInitialScrollRef.current = true;
+                } catch (error) {
+                  console.warn(
+                    '[ChatScreen] initial scrollToIndex failed:',
+                    error,
+                  );
+                }
               }
-            }
-          }}
-          // Performance optimizations
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
-          windowSize={5}
-          initialNumToRender={20}
-          updateCellsBatchingPeriod={50}
+            }}
+            // Performance optimizations
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={5}
+            initialNumToRender={20}
+            updateCellsBatchingPeriod={50}
           />
 
           {/* Chat input */}
-          <ChatInput chatId={chatId} onMessageSent={appendLatestMessageFromDb} />
+          <ChatInput
+            chatId={chatId}
+            onMessageSent={appendLatestMessageFromDb}
+          />
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -475,12 +496,16 @@ const ChatScreen: React.FC = () => {
  */
 function shouldShowDateSeparator(
   currentMessage: ChatMessage,
-  previousMessage?: ChatMessage
+  previousMessage?: ChatMessage,
 ): boolean {
   if (!previousMessage) return true;
 
-  const currentDate = new Date(currentMessage.preritam_tithih || currentMessage.createdAt);
-  const prevDate = new Date(previousMessage.preritam_tithih || previousMessage.createdAt);
+  const currentDate = new Date(
+    currentMessage.preritam_tithih || currentMessage.createdAt,
+  );
+  const prevDate = new Date(
+    previousMessage.preritam_tithih || previousMessage.createdAt,
+  );
 
   return (
     currentDate.getDate() !== prevDate.getDate() ||
@@ -520,4 +545,3 @@ const styles = StyleSheet.create({
 });
 
 export default React.memo(ChatScreen);
-

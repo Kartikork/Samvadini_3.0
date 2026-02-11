@@ -12,7 +12,7 @@ import { env } from "../../config/env";
 import { useAppSelector } from "../../state/hooks";
 import { getAppTranslations } from "../../translations";
 
-export function CategoryDetailsScreen({ route }) {
+const CategoryDetailsScreen = ({ route }) => {
     const { id } = route?.params || {};
     const [article, setArticle] = useState();
     const [loading, setLoading] = useState(false);
@@ -243,3 +243,5 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
 });
+
+export default CategoryDetailsScreen;

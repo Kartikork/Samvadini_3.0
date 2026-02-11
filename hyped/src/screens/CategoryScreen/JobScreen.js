@@ -20,7 +20,7 @@ import { env } from '../../config/env';
 import { useAppSelector } from '../../state/hooks';
 import { getAppTranslations } from '../../translations';
 
-export function JobScreen() {
+const JobScreen = () => {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -476,3 +476,5 @@ const styles = StyleSheet.create({
     // height: hp('7.5%'),
   },
 });
+
+export default JobScreen;

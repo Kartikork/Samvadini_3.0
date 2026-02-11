@@ -1,16 +1,26 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Text,
+  Platform,
+} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import { pick, types, errorCodes, isErrorWithCode } from '@react-native-documents/picker';
+import {
+  pick,
+  types,
+  errorCodes,
+  isErrorWithCode,
+} from '@react-native-documents/picker';
 import Geolocation from 'react-native-geolocation-service';
 import { useMediaPermission } from '../../../hooks';
 import { useAppSelector } from '../../../state/hooks';
 import { getAppTranslations } from '../../../translations';
 import { showPermissionDeniedWithSettings } from '../../../utils/permissions';
 import { useMediaPicker } from '../../../hooks/useMediaPicker';
-
 
 interface ActionButtonsProps {
   onClose: () => void;
@@ -48,10 +58,10 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
         onClose();
       },
       error => console.warn(error),
-      { enableHighAccuracy: true, timeout: 15000 }
+      { enableHighAccuracy: true, timeout: 15000 },
     );
   };
-  
+
   const handleCamera = () => {
     // Opens camera, filters image media, then navigates
     openCameraPicker(onClose);
@@ -68,7 +78,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
       showPermissionDeniedWithSettings(
         t.PermissionDenied,
         t.DocumentPermissionRequired,
-        t.Settings
+        t.Settings,
       );
       return;
     }
@@ -113,31 +123,11 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
         <Text style={styles.actionButtonText}>Camera</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionButton} onPress={handleDocuments}>
-        <View style={styles.actionButtonthree}>
-          <MaterialCommunityIcons
-            name="file-document-outline"
-            size={24}
-            color="#ffffff"
-          />
-        </View>
-        <Text style={styles.actionButtonText}>Documents</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.actionButton} onPress={handleGallery}>  
+      <TouchableOpacity style={styles.actionButton} onPress={handleGallery}>
         <View style={styles.actionButtonfour}>
           <Ionicons name="image-outline" size={24} color="#ffffff" />
         </View>
         <Text style={styles.actionButtonText}>Gallery</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={() => handleSimpleAction('Contact')}
-      >
-        <View style={styles.actionButtonSix}>
-          <Ionicons name="person-add-outline" size={24} color="#ffffff" />
-        </View>
-        <Text style={styles.actionButtonText}>Contact</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -152,8 +142,25 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
 
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={handleEventsPress}
+        onPress={() => handleSimpleAction('Contact')}
       >
+        <View style={styles.actionButtonSix}>
+          <Ionicons name="person-add-outline" size={24} color="#ffffff" />
+        </View>
+        <Text style={styles.actionButtonText}>Contact</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.actionButton} onPress={handleDocuments}>
+        <View style={styles.actionButtonthree}>
+          <MaterialCommunityIcons
+            name="file-document-outline"
+            size={24}
+            color="#ffffff"
+          />
+        </View>
+        <Text style={styles.actionButtonText}>Documents</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.actionButton} onPress={handleEventsPress}>
         <View style={styles.actionButtonNine}>
           <Ionicons name="calendar-outline" size={24} color="#ffffff" />
         </View>

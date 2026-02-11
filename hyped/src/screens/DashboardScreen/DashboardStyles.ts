@@ -54,12 +54,12 @@ export default StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 10, backgroundColor: '#F8F7F6' },
   scrollView: { flex: 1 },
   welcomeText: { fontSize: SIZES.fontSize.lg, fontWeight: 'bold', color: COLORS.gray.dark, textAlign: 'left', marginTop: 15 },
-  cardText: { ...BASE_STYLES.whiteText, ...BASE_STYLES.centerText, marginTop: SIZES.spacing.xs, marginLeft: 10, fontSize: 15,},
-  whiteCenterText: { fontSize: 15, fontWeight: 500, marginTop:10, color: COLORS.white },
+  cardText: { ...BASE_STYLES.whiteText, ...BASE_STYLES.centerText, marginTop: SIZES.spacing.xs, marginLeft: 10, fontSize: 15, },
+  whiteCenterText: { fontSize: 15, fontWeight: 500, marginTop: 10, color: COLORS.white },
   ordersCard: { backgroundColor: '#0a88d2', width: '48%', position: 'relative', borderRadius: 8, marginVertical: 5, marginLeft: 0, padding: 12, paddingLeft: 20, marginTop: 15, overflow: 'hidden' },
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', },
   gameZoneContainer: { ...BASE_STYLES.baseCard, ...BASE_STYLES.cardShadow, borderRadius: SIZES.borderRadius.md, marginVertical: 5, marginLeft: 0, backgroundColor: '#5D5FEF', padding: 5, },
-  reminderContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 },
+  reminderContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, marginBottom: 20, },
   gameZoneButton: { ...BASE_STYLES.baseButton, paddingVertical: 15, minHeight: SIZES.gameZoneHeight, overflow: 'hidden' },
   dailyPlannerButton: { width: '48%', flexDirection: 'row', alignItems: 'center', backgroundColor: '#6564a8', paddingVertical: 12, paddingLeft: 15, borderRadius: 8, position: 'relative', overflow: 'hidden', marginRight: 7 },
   eventButton: { width: '48%', flexDirection: 'row', alignItems: 'center', backgroundColor: '#6564a8', marginLeft: 7, paddingVertical: 12, paddingLeft: 15, borderRadius: 8, position: 'relative', overflow: 'hidden' },
@@ -101,15 +101,15 @@ export default StyleSheet.create({
   anuvadiniLogo: { width: 140, height: 40 },
   loadingView: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { fontSize: 16, color: COLORS.gray.medium },
-  bottomContainer: { marginTop: 20 },
+  bottomContainer: { marginTop: 10 },
   shapes: { position: 'absolute', width: 50, height: 50, right: -15, top: -12, resizeMode: 'contain' as const },
   shapesbottom: { position: 'absolute', width: 30, height: 30, left: -20, bottom: -15, resizeMode: 'contain' as const, zIndex: 0 },
   shapesevents: { position: 'absolute', width: 50, height: 50, right: -6, top: 2, resizeMode: 'contain' as const },
   shapesplanevents: { position: 'absolute', width: 50, height: 50, left: -10, bottom: -19, resizeMode: 'contain' as const },
   shapesbottompl: { position: 'absolute', left: 0, top: 0, right: 0, resizeMode: 'contain' as const, width: '100%', height: 90 },
-  shapeslng: { position: 'absolute', left: 0, top: 0, right:0, bottom: 0, margin: 'auto', resizeMode: 'contain' as const, height: 90 },
-  
-  
+  shapeslng: { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, margin: 'auto', resizeMode: 'contain' as const, height: 90 },
+
+
   quickParent: {
     borderWidth: 1,
     width: 22,
@@ -127,7 +127,7 @@ export default StyleSheet.create({
   },
   quickAction: {
     borderWidth: 1,
-    width:32,
+    width: 32,
     height: 32,
     borderRadius: 50,
     flex: 1,
@@ -138,12 +138,12 @@ export default StyleSheet.create({
     width: 40,
     height: 40,
     justifyContent: 'center',
-  alignItems: 'center',
+    alignItems: 'center',
   },
   iconSize: {
     width: '100%',
-  height: '100%',
-  resizeMode: 'contain',
+    height: '100%',
+    resizeMode: 'contain',
   },
   fontStyle: {
     fontSize: 15,
