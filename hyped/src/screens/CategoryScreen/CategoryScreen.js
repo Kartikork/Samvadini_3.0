@@ -24,7 +24,7 @@ import { formatChatDate } from '../../helper/DateFormate';
 import { useAppSelector } from '../../state/hooks';
 import { getAppTranslations } from '../../translations';
 
-export function CategoryScreen({ route }) {
+const CategoryScreen = ({ route }) => {
     const { id, name } = route.params;
     const lang = useAppSelector(state => state.language.lang);
     const translations = useMemo(() => getAppTranslations(lang), [lang]);
@@ -377,3 +377,5 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff'
     },
 });
+
+export default CategoryScreen;
