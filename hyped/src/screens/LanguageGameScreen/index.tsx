@@ -95,8 +95,8 @@ const LanguageGamesScreen = ({ navigation }) => {
         section: 'Offline Games',
         items: [
           { icon: snakeladder, image: require('../../screens/LanguageGameScreen/GAMER/snakeladder_icon.jpg'), title: 'Snake & Ladders', route: 'SnakeLaddersGame' },
-          { icon: carrom_icon, image: require('../../screens/LanguageGameScreen/GAMER/carrom_icon.png'), title: 'Carrom', route: 'CarromGame' },
-          { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/Pongicon1.png'), title: 'Chess', route: 'ChessGame' },
+          { icon: carrom_icon, image: require('../../screens/LanguageGameScreen/GAMER/carrom_icon.png'), title: 'Carrom', route: 'Carrom' },
+          { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/Chess/chess.png'), title: 'Chess', route: 'chess' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/space_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/space_icon.png'), title: 'Space Exploration', route: 'PlanetSelectionScreen' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/ludo_icon_new.png'), image: require('../../screens/LanguageGameScreen/GAMER/ludo_icon_new.png'), title: 'Ludo', route: 'WelcomeScreen' },
           { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/slingshot.png'), title: 'Space Shooter', route: 'BalloonShootingGame' },
@@ -113,7 +113,7 @@ const LanguageGamesScreen = ({ navigation }) => {
           { icon: require('../../screens/LanguageGameScreen/GAMER/tictactoe_icon2.png'), image: require('../../screens/LanguageGameScreen/GAMER/tictactoe_icon2.png'), title: 'Tic Tac Toe', route: 'TicTacToe' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/maze.png'), image: require('../../screens/LanguageGameScreen/GAMER/maze.png'), title: 'Maze Game', route: 'MazeGame' },
           { icon: NumberSort, image: NumberSort, title: 'NumberSort', route: 'NumberSortIntroScreen' },
-          { icon: Pongicon1, image: Pongicon1, title: 'Pong', route: 'footballNet' },
+          { icon: Pongicon1, image: Pongicon1, title: 'Pong', route: 'pong' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/bowling_icon.jpg'), image: require('../../screens/LanguageGameScreen/GAMER/bowling_icon.jpg'), title: 'Desi Bowling', route: 'BowlingGame' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/drum_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/drum_icon.png'), title: 'Drum Game', route: 'Game' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/pianologo.png'), image: require('../../screens/LanguageGameScreen/GAMER/pianologo.png'), title: 'Piano Game', route: 'PianoGame' },
@@ -125,7 +125,7 @@ const LanguageGamesScreen = ({ navigation }) => {
         section: 'Online Games',
         items: [
           // { icon: doodleDashIcon, image: require('../../assets/games/dash.png'), title: 'Doodle Dash', route: 'EnterScribble' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/antakshari.png'), image: require('../../screens/LanguageGameScreen/GAMER/antakshari.png'), title: 'Antaksahri Arena', route: 'HomeScreenn' }
+          { icon: require('../../screens/LanguageGameScreen/GAMER/antakshari.png'), image: require('../../screens/LanguageGameScreen/GAMER/antakshari.png'), title: 'Antaksahri Arena', route: 'homescreen' }
         ]
       },
     ];

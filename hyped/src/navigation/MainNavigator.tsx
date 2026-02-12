@@ -43,6 +43,11 @@ import SnakeLaddersGame from '../screens/LanguageGameScreen/SnakeLaddersGame';
 const MemoryGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MemoryGame'));
 const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameIntroScreen'));
 const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameScreen'));
+const Carrom = lazy(() => import('../screens/LanguageGameScreen/GAMER/CarromGame/CarromGame.js'));
+const chess = lazy(() => import('../screens/LanguageGameScreen/GAMER/Chess/chess.js'));
+const pong = lazy(() => import('../screens/LanguageGameScreen/GAMER/pong/footballNet.js'));
+const homescreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/HomeScreen.js'));
+const roomscreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/RoomScreen.js'));
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
@@ -212,8 +217,33 @@ export default function MainNavigator() {
 
 
         <Stack.Screen
+          name="pong"
+          component={pong}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="chess"
+          component={chess}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="homescreen"
+          component={homescreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="roomscreen"
+          component={roomscreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
           name="SnakeLaddersGame"
           component={SnakeLaddersGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="Carrom"
+          component={Carrom}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
 
