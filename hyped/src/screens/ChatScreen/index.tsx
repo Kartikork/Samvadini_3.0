@@ -40,6 +40,11 @@ import { useChatById } from '../ChatListScreen/hooks/useChatListData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../../config/constants';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
+import MessageActionsBar, {
+  MessageActionType,
+} from './components/MessageActionsBar';
+import MessageReactionPicker from './components/MessageReactionPicker';
+import { useMessageSelectionWithReactions } from './hooks/useMessageSelectionWithReactions';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -82,6 +87,21 @@ const ChatScreen: React.FC = () => {
   const currentUserId = useAppSelector(state => state.auth.uniqueId) ?? null;
   const [isTyping, setIsTyping] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+
+  // Message selection + reaction overlay (shared hook)
+  const {
+    selectedMessageIds,
+    isSelectionMode,
+    toggleMessageSelection,
+    handleMessageLongPress,
+    clearSelection,
+    isReactionPickerVisible,
+    reactionPickerPosition,
+    reactionTargetMessageId,
+    isSelfTargetMessage,
+    handleMeasureMessage,
+    closeReactionPicker,
+  } = useMessageSelectionWithReactions<ChatMessage>(messages);
 
   // Refs
   const flashListRef = useRef<FlashListRef<ChatMessage> | null>(null);
@@ -230,7 +250,7 @@ const ChatScreen: React.FC = () => {
         ...latestMsg,
         is_outgoing: currentUserId
           ? latestMsg.pathakah_chinha === currentUserId
-          : false,
+          : false,  
       };
 
       setMessages(prev => {
@@ -301,6 +321,18 @@ const ChatScreen: React.FC = () => {
     [messages, currentUserId, chatId],
   );
 
+  const handleMessageAction = useCallback(
+    (action: MessageActionType) => {
+      // TODO: Wire up with actual copy/delete/reply/forward/star logic.
+      // For now, this only clears selection for destructive actions like delete.
+      if (action === 'delete') {
+        // After delete logic, clear selection
+        clearSelection();
+      }
+    },
+    [clearSelection],
+  );
+
   /**
    * Render message item
    */
@@ -321,11 +353,27 @@ const ChatScreen: React.FC = () => {
               ).getTime()}
             />
           )}
-          <MessageBubble message={message} currentUserId={currentUserId} />
+          <MessageBubble
+            message={message}
+            currentUserId={currentUserId}
+            isSelected={selectedMessageIds.includes(message.refrenceId)}
+            isSelectionMode={isSelectionMode}
+            onPressMessage={toggleMessageSelection}
+            onLongPressMessage={handleMessageLongPress}
+            onMeasureMessage={handleMeasureMessage}
+          />
         </>
       );
     },
-    [messages, currentUserId],
+    [
+      messages,
+      currentUserId,
+      selectedMessageIds,
+      isSelectionMode,
+      toggleMessageSelection,
+      handleMessageLongPress,
+      handleMeasureMessage,
+    ],
   );
 
   /**
@@ -416,6 +464,15 @@ const ChatScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Selection bar (overlays header) */}
+      {isSelectionMode && (
+        <MessageActionsBar
+          selectedCount={selectedMessageIds.length}
+          onCloseSelection={clearSelection}
+          onActionPress={handleMessageAction}
+        />
+      )}
+
       <ChatHeader
         chatId={chatId}
         showCallButton
@@ -484,6 +541,18 @@ const ChatScreen: React.FC = () => {
           <ChatInput
             chatId={chatId}
             onMessageSent={appendLatestMessageFromDb}
+          />
+
+          {/* Full reaction picker (over message) */}
+          <MessageReactionPicker
+            visible={isReactionPickerVisible}
+            onClose={closeReactionPicker}
+            onSelectReaction={emoji => {
+              if (!reactionTargetMessageId) return;
+              // TODO: Persist selected emoji reaction for reactionTargetMessageId
+            }}
+            messagePosition={reactionPickerPosition || undefined}
+            isSelfMessage={isSelfTargetMessage}
           />
         </View>
       </KeyboardAvoidingView>
