@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -8,10 +8,15 @@ export type MessageActionType =
   | 'delete'
   | 'reply'
   | 'forward'
-  | 'info';
+  | 'info'
+  | 'pin'
+  | 'unpin'
+  | 'edit'
+  | 'addToCalendar';
 
 interface MessageActionsBarProps {
   selectedCount: number;
+  hasPinnedMessages?: boolean;
   onCloseSelection: () => void;
   onActionPress: (action: MessageActionType) => void;
 }
@@ -23,9 +28,12 @@ interface MessageActionsBarProps {
  */
 const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
   selectedCount,
+  hasPinnedMessages = false,
   onCloseSelection,
   onActionPress,
 }) => {
+  const [menuVisible, setMenuVisible] = useState(false);
+
   return (
     <View style={styles.wrapper}>
       {/* Top dark toolbar (selection count + actions) */}
@@ -42,32 +50,11 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
         </View>
 
         <View style={styles.rightSection}>
-          {/* Star / un-star */}
-          <ActionIcon
-            name="star-outline"
-            label="Star"
-            onPress={() => onActionPress('star')}
-          />
-
           {/* Reply */}
           <ActionIcon
             name="reply"
             label="Reply"
             onPress={() => onActionPress('reply')}
-          />
-
-          {/* Copy */}
-          <ActionIcon
-            name="content-copy"
-            label="Copy"
-            onPress={() => onActionPress('copy')}
-          />
-
-          {/* Forward */}
-          <ActionIcon
-            name="forward"
-            label="Forward"
-            onPress={() => onActionPress('forward')}
           />
 
           {/* Delete */}
@@ -76,8 +63,66 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
             label="Delete"
             onPress={() => onActionPress('delete')}
           />
+
+          {/* Forward / Share */}
+          <ActionIcon
+            name="share-variant"
+            label="Forward"
+            onPress={() => onActionPress('forward')}
+          />
+
+          {/* Overflow menu (3 dots) */}
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => setMenuVisible(prev => !prev)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MaterialCommunityIcons
+              name="dots-vertical"
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
         </View>
       </View>
+
+      {/* Overflow dropdown menu (as in screenshot) */}
+      {menuVisible && (
+        <View style={styles.menuContainer}>
+          <OverflowItem
+            iconName="pin-outline"
+            label={hasPinnedMessages ? 'Unpin' : 'Pin'}
+            onPress={() => {
+              onActionPress(hasPinnedMessages ? 'unpin' : 'pin');
+              setMenuVisible(false);
+            }}
+          />
+          <OverflowItem
+            iconName="content-copy"
+            label="Copy"
+            onPress={() => {
+              onActionPress('copy');
+              setMenuVisible(false);
+            }}
+          />
+          <OverflowItem
+            iconName="star-outline"
+            label="Star"
+            onPress={() => {
+              onActionPress('star');
+              setMenuVisible(false);
+            }}
+          />
+          <OverflowItem
+            iconName="calendar-month-outline"
+            label="Add to Calendar"
+            onPress={() => {
+              onActionPress('addToCalendar');
+              setMenuVisible(false);
+            }}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -96,6 +141,30 @@ const ActionIcon: React.FC<ActionIconProps> = ({ name, label, onPress }) => {
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       <MaterialCommunityIcons name={name} size={22} color="#FFFFFF" />
+    </TouchableOpacity>
+  );
+};
+
+interface OverflowItemProps {
+  iconName: string;
+  label: string;
+  onPress: () => void;
+}
+
+const OverflowItem: React.FC<OverflowItemProps> = ({
+  iconName,
+  label,
+  onPress,
+}) => {
+  return (
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+      <MaterialCommunityIcons
+        name={iconName}
+        size={20}
+        color="#444"
+        style={{ marginRight: 12 }}
+      />
+      <Text style={styles.menuItemText}>{label}</Text>
     </TouchableOpacity>
   );
 };
@@ -144,6 +213,36 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  menuContainer: {
+    position: 'absolute',
+    top: 40,
+    right: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingVertical: 4,
+    minWidth: 180,
+    ...Platform.select({
+      android: {
+        elevation: 6,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+      },
+    }),
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  menuItemText: {
+    fontSize: 14,
+    color: '#222',
   },
 });
 
