@@ -20,9 +20,7 @@ import {
   Linking,
   Alert,
   Text,
-  ImageBackground,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+  } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAppTranslations } from '../../translations';
@@ -91,15 +89,13 @@ const NavigationCard = memo(function NavigationCard({
 export function DashboardScreen({ navigation }: { navigation: any }) {
   const lang = useAppSelector(state => state.language.lang);
   const isIndia = useAppSelector(state => state.country.isIndia);
+  const UserName = useAppSelector(state => state.auth.userSettings?.praman_patrika);
   const textToVoiceRef = useRef(null);
-  const [userNames, setUserName] = useState<string | null>(null);
-  const [isUserNameLoaded, setIsUserNameLoaded] = useState(false);
 
-  const dashboardTexts = getAppTranslations(lang)
-console.log(dashboardTexts)
+  const dashboardTexts = getAppTranslations(lang);
   const welcomeText = useMemo(
-    () => `${dashboardTexts.welcome}${userNames ? `, ${userNames}` : ''}`,
-    [dashboardTexts.welcome, userNames],
+    () => `${dashboardTexts.welcome}${UserName ? `, ${UserName}` : ''}`,
+    [dashboardTexts.welcome, UserName],
   );
 
   const navigateToCallHistory = useCallback(
@@ -136,20 +132,6 @@ console.log(dashboardTexts)
   );
 
   useEffect(() => {
-    const fetchUserName = async () => {
-      try {
-        const name = await AsyncStorage.getItem('userName');
-        setUserName(name);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsUserNameLoaded(true);
-      }
-    };
-    fetchUserName();
-  }, []);
-
-  useEffect(() => {
     const backAction = () => {
       Alert.alert('Exit', 'Do you want to exit the app?', [
         { text: 'No', onPress: () => {} },
@@ -166,7 +148,7 @@ console.log(dashboardTexts)
   }
 
   return (
-    <SafeAreaView style={styles.safeAreaView}>
+    <SafeAreaView style={styles.safeAreaView} edges={['left', 'right', 'bottom']}>
       <View style={styles.flexContainer}>
         <View style={styles.container}>
           <View style={styles.scrollView}>
@@ -482,7 +464,7 @@ console.log(dashboardTexts)
                   </View>
                 </View>
               </View>
-              <View style={[styles.bottomContainer, { marginBottom: 12 }]}>
+              <View style={styles.bottomContainer}>
                 <View style={styles.banking} />
               </View>
             </ScrollView>

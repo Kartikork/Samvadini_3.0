@@ -588,7 +588,7 @@ export default function CreateEvents() {
               <Switch
                 value={formData.isPrivate}
                 onValueChange={(value) => handleInputChange('isPrivate', value)}
-                trackColor={{ false: '#D1D5DB', true: '#C084FC' }}
+                trackColor={{ false: '#D1D5DB', true: '#6361A8' }}
                 thumbColor={formData.isPrivate ? '#67E8F9' : '#F3F4F6'}
                 style={styles.switch}
                 accessibilityLabel="Toggle private event"
@@ -599,7 +599,7 @@ export default function CreateEvents() {
               <Switch
                 value={formData.isVirtual}
                 onValueChange={(value) => handleInputChange('isVirtual', value)}
-                trackColor={{ false: '#D1D5DB', true: '#C084FC' }}
+                trackColor={{ false: '#D1D5DB', true: '#6361A8' }}
                 thumbColor={formData.isVirtual ? '#67E8F9' : '#F3F4F6'}
                 style={styles.switch}
                 accessibilityLabel="Toggle virtual event"

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { TouchableOpacity, View, StyleSheet, FlatList, Image, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { env } from '../../config/env';
 import { getEventTimeLeft } from '../../helper/DateFormate';
@@ -123,7 +124,7 @@ export default function MyEvents({ searchQuery }) {
                         onPress={() => navigation.navigate('CreateEvents', { item })}
                         style={styles.actionButton}
                     >
-                        <Icon name="pencil-outline" size={20} color="#0080ff" />
+                        <MaterialCommunityIcons name="lead-pencil" size={20} color="#0080ff" />
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => handleDeleteEvent(item._id)}

@@ -73,6 +73,7 @@ import { SocketService } from '../../services/SocketService';
 import { handleIncomingMessage } from '../../services/MessageHandler';
 import { GradientBackground } from '../../components/GradientBackground';
 import BottomNavigation from '../../components/BottomNavigation';
+import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 
 // ============================================
 // LAZY LOADED COMPONENTS (Event-based)
@@ -118,6 +119,7 @@ export default function ChatListScreen() {
   const navigation = useNavigation<ChatListScreenNavigationProp>();
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
+  useHardwareBackHandler('Dashboard');
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(1)).current;

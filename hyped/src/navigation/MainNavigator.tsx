@@ -1,12 +1,3 @@
-/**
- * Main Navigation Structure
- *
- * PERFORMANCE OPTIMIZATIONS:
- * - Lazy loading for non-critical screens
- * - Screen options with animation presets
- * - Memoized components
- */
-
 import React, { lazy, Suspense, useRef, useEffect } from 'react';
 import {
   NavigationContainer,
@@ -27,38 +18,114 @@ import { AppLifecycleService } from '../services/AppLifecycleService';
 import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/AuthScreens/LoginScreen';
 import SignupScreen from '../screens/AuthScreens/SignupScreen';
-// Non-critical screens - can be lazy loaded in production
-// For now, direct import for simplicity
 import HomeScreen from '../screens/HomeScreen';
 import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
-import CallHistoryScreen from '../screens/CallHistoryScreen';
-import StatusScreen from '../screens/StatusScreen';
-import { JobScreen } from '../screens/CategoryScreen/JobScreen.js';
-import { JobsDetailsScreen } from '../screens/CategoryScreen/JobsDetailsScreen.js';
-import { CategoryScreen } from '../screens/CategoryScreen/CategoryScreen.js';
-import { CategoryDetailsScreen } from '../screens/CategoryScreen/CategoryDetailsScreen.js';
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
-import LRNScreen from '../screens/LRNModule/LRNScreen';
-import DailyPlanner from '../screens/DailyPlanner/DailyPlanner';
-import AddPlan from '../screens/DailyPlanner/AddPlan';
-import AddReminder from '../screens/DailyPlanner/AddReminder';
-import UpdatePlanner from '../screens/DailyPlanner/UpdatePlanner';
-import SharePlan from '../screens/DailyPlanner/SharePlan';
-import UpdateReminder from '../screens/DailyPlanner/UpdateReminder';
-import SharePlannerCount from '../screens/DailyPlanner/SharePlannerCount';
+import NewContactFormScreen from '../screens/NewContactFormScreen';
+import CreateNewGroupScreen from '../screens/CreateNewGroup';
 import CallScreen from '../screens/CallScreen';
 import SnakeLaddersGame from '../screens/LanguageGameScreen/SnakeLaddersGame';
 const MemoryGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MemoryGame'));
 const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameIntroScreen'));
 const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameScreen'));
-import EventListScreen from '../screens/EventManagement/EventListScreen.js';
-import CreateEvents from '../screens/EventManagement/CreateEvents.js';
-import DetailsScreen from '../screens/EventManagement/DetailsScreen.js';
 import Header from '../components/Header';
+import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
+
+// Loader Component
+const ScreenLoader = () => {
+  const isDarkMode = useColorScheme() === 'dark';
+
+  return (
+    <View
+      style={[
+        styles.loader,
+        { backgroundColor: isDarkMode ? '#121212' : '#F5F7FA' },
+      ]}
+    >
+      <ActivityIndicator size="large" color="#028BD3" />
+    </View>
+  );
+};
+
+// Lazy Wrapper
+const LazyScreen = (Component: React.LazyExoticComponent<any>) => {
+  return (props: any) => (
+    <Suspense fallback={<ScreenLoader />}>
+      <Component {...props} />
+    </Suspense>
+  );
+};
+
+// Lazy loaded screens
+const CallHistoryScreen = LazyScreen(
+  lazy(() => import('../screens/CallHistoryScreen')),
+);
+
+const StatusScreen = LazyScreen(lazy(() => import('../screens/StatusScreen')));
+
+const JobScreen = LazyScreen(
+  lazy(() => import('../screens/CategoryScreen/JobScreen')),
+);
+
+const LRNScreen = LazyScreen(
+  lazy(() => import('../screens/LRNModule/LRNScreen')),
+);
+
+const DailyPlanner = LazyScreen(
+  lazy(() => import('../screens/DailyPlanner/DailyPlanner')),
+);
+
+const AddPlan = LazyScreen(
+  lazy(() => import('../screens/DailyPlanner/AddPlan')),
+);
+
+const AddReminder = LazyScreen(
+  lazy(() => import('../screens/DailyPlanner/AddReminder')),
+);
+
+const EventListScreen = LazyScreen(
+  lazy(() => import('../screens/EventManagement/EventListScreen')),
+);
+
+const CreateEvents = LazyScreen(
+  lazy(() => import('../screens/EventManagement/CreateEvents')),
+);
+
+const DetailsScreen = LazyScreen(
+  lazy(() => import('../screens/EventManagement/DetailsScreen')),
+);
+
+const JobsDetailsScreen = LazyScreen(
+  lazy(() => import('../screens/CategoryScreen/JobsDetailsScreen')),
+);
+
+const CategoryScreen = LazyScreen(
+  lazy(() => import('../screens/CategoryScreen/CategoryScreen')),
+);
+
+const CategoryDetailsScreen = LazyScreen(
+  lazy(() => import('../screens/CategoryScreen/CategoryDetailsScreen')),
+);
+
+const UpdatePlanner = LazyScreen(
+  lazy(() => import('../screens/DailyPlanner/UpdatePlanner')),
+);
+
+const SharePlan = LazyScreen(
+  lazy(() => import('../screens/DailyPlanner/SharePlan')),
+);
+
+const UpdateReminder = LazyScreen(
+  lazy(() => import('../screens/DailyPlanner/UpdateReminder')),
+);
+
+const SharePlannerCount = LazyScreen(
+  lazy(() => import('../screens/DailyPlanner/SharePlannerCount')),
+);
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -74,6 +141,8 @@ export type RootStackParamList = {
   JobsDetailsScreen: undefined;
   LanguageGameScreen: undefined;
   ContactDesignScreen: undefined;
+  NewContactForm: undefined;
+  CreateNewGroup: undefined;
   CategoryScreen: undefined;
   CategoryDetailsScreen: undefined;
   SnakeLaddersGame: undefined;
@@ -94,16 +163,10 @@ export type RootStackParamList = {
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
+  SelectedFiles: { assets: any[] } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
-// Loading fallback for lazy screens
-const ScreenLoader = () => (
-  <View style={styles.loader}>
-    <ActivityIndicator size="large" color="#028BD3" />
-  </View>
-);
 
 export default function MainNavigator() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -111,12 +174,17 @@ export default function MainNavigator() {
   const navigationRef =
     useRef<NavigationContainerRef<RootStackParamList>>(null);
 
-  // Pass navigation ref to AppLifecycleService for cold start navigation
   useEffect(() => {
     if (navigationRef.current) {
       AppLifecycleService.setNavigationRef(navigationRef.current);
     }
   }, []);
+
+  const commonHeaderOptions = {
+    headerShown: true,
+    header: () => <Header />,
+    animation: 'slide_from_right' as const,
+  };
 
   return (
     <NavigationContainer ref={navigationRef} theme={theme}>
@@ -147,207 +215,128 @@ export default function MainNavigator() {
           options={{ animation: 'slide_from_right' }}
         />
 
-        {/* Main App - with Header automatically */}
+        {/* Main App */}
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
+
         <Stack.Screen
           name="Dashboard"
           component={DashboardScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
-
-        {/* Chat Screens */}
         <Stack.Screen
           name="ChatList"
           component={ChatListScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
 
-        {/* Bottom Nav Screens */}
+        {/* Lazy Screens */}
         <Stack.Screen
           name="CallHistory"
           component={CallHistoryScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="StatusScreen"
           component={StatusScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="JobScreen"
           component={JobScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="JobsDetailsScreen"
           component={JobsDetailsScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="CategoryScreen"
           component={CategoryScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="CategoryDetailsScreen"
           component={CategoryDetailsScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="LRNScreen"
           component={LRNScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="DailyPlanner"
           component={DailyPlanner}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="SharePlan"
           component={SharePlan}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="AddPlan"
           component={AddPlan}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="SharePlannerCount"
           component={SharePlannerCount}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="EventListScreen"
           component={EventListScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="CreateEvents"
           component={CreateEvents}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="DetailsScreen"
           component={DetailsScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="UpdatePlanner"
           component={UpdatePlanner}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="UpdateReminder"
           component={UpdateReminder}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="AddReminder"
           component={AddReminder}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
+          options={commonHeaderOptions}
         />
+
+        {/* Other Screens */}
         <Stack.Screen
           name="LanguageGameScreen"
           component={LanguageGameScreen}
-          options={{
-            headerShown: true,
-            header: () => <Header />,
-            animation: 'slide_from_right',
-          }}
         />
 
         <Stack.Screen
           name="Chat"
           component={ChatScreen}
+          options={commonHeaderOptions}
+        />
+
+        <Stack.Screen
+          name="SelectedFiles"
+          component={SelectedFilesScreen}
           options={{
-            headerShown: true,
-            header: () => <Header />,
+            headerShown: false,
             animation: 'slide_from_right',
           }}
         />
@@ -355,10 +344,19 @@ export default function MainNavigator() {
         <Stack.Screen
           name="ContactDesignScreen"
           component={ContactDesignScreen}
-          options={{ animation: 'slide_from_right' }}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="NewContactForm"
+          component={NewContactFormScreen}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="CreateNewGroup"
+          component={CreateNewGroupScreen}
+          options={commonHeaderOptions}
         />
 
-        {/* Call Screen - No header, full screen */}
         <Stack.Screen
           name="Call"
           component={CallScreen}
@@ -368,8 +366,6 @@ export default function MainNavigator() {
             presentation: 'fullScreenModal',
           }}
         />
-
-        {/* TODO: Add GroupChat screen when needed */}
 
 
         <Stack.Screen

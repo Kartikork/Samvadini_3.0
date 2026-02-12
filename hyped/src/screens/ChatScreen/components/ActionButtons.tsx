@@ -1,16 +1,26 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Text,
+  Platform,
+} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import { pick, types, errorCodes, isErrorWithCode } from '@react-native-documents/picker';
+import {
+  pick,
+  types,
+  errorCodes,
+  isErrorWithCode,
+} from '@react-native-documents/picker';
 import Geolocation from 'react-native-geolocation-service';
 import { useMediaPermission } from '../../../hooks';
 import { useAppSelector } from '../../../state/hooks';
 import { getAppTranslations } from '../../../translations';
 import { showPermissionDeniedWithSettings } from '../../../utils/permissions';
-
+import { useMediaPicker } from '../../../hooks/useMediaPicker';
 
 interface ActionButtonsProps {
   onClose: () => void;
@@ -20,7 +30,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
   const navigation = useNavigation<any>();
   const lang = useAppSelector(state => state.language.lang);
   const t = getAppTranslations(lang);
-  const { ensureCameraAccess, ensurePhotoLibraryAccess, ensureDocumentAccess } = useMediaPermission();
+  const { ensureDocumentAccess } = useMediaPermission();
+  const { openCameraPicker, openGalleryPicker } = useMediaPicker();
 
   const handleSimpleAction = (label: string) => {
     // Placeholder for future media/location/contact handling
@@ -47,55 +58,18 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
         onClose();
       },
       error => console.warn(error),
-      { enableHighAccuracy: true, timeout: 15000 }
+      { enableHighAccuracy: true, timeout: 15000 },
     );
   };
-  
-  const handleCamera = async () => {
-    const granted = await ensureCameraAccess();
-    if (!granted) {
-      showPermissionDeniedWithSettings(t.PermissionDenied, t.CameraPermissionRequired, t.Settings);
-      return;
-    }
-    const result = await launchCamera({
-      mediaType: 'photo',
-      cameraType: 'back',
-    });
 
-    if (result.didCancel) return;
-    if (result.errorCode) {
-      console.warn(result.errorMessage);
-      return;
-    }
-
-    console.log('Camera asset:', result.assets);
-    onClose();
+  const handleCamera = () => {
+    // Opens camera, filters image media, then navigates
+    openCameraPicker(onClose);
   };
 
-  const handleGallery = async () => {
-    const granted = await ensurePhotoLibraryAccess();
-    if (!granted) {
-      showPermissionDeniedWithSettings(
-        t.PermissionDenied,
-        t.PhotoLibraryPermissionRequired,
-        t.Settings
-      );
-      return;
-    }
-    const result = await launchImageLibrary({
-      mediaType: 'mixed',
-      selectionLimit: 5,
-    });
-
-    if (result.didCancel) return;
-
-    if (result.errorCode) {
-      console.warn(result.errorMessage);
-      return;
-    }
-
-    console.log('Gallery asset:', result.assets);
-    onClose();
+  const handleGallery = () => {
+    // Opens gallery, filters image media, then navigates
+    openGalleryPicker(onClose);
   };
 
   const handleDocuments = async () => {
@@ -104,7 +78,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
       showPermissionDeniedWithSettings(
         t.PermissionDenied,
         t.DocumentPermissionRequired,
-        t.Settings
+        t.Settings,
       );
       return;
     }
@@ -149,31 +123,11 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
         <Text style={styles.actionButtonText}>Camera</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionButton} onPress={handleDocuments}>
-        <View style={styles.actionButtonthree}>
-          <MaterialCommunityIcons
-            name="file-document-outline"
-            size={24}
-            color="#ffffff"
-          />
-        </View>
-        <Text style={styles.actionButtonText}>Documents</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.actionButton} onPress={handleGallery}>  
+      <TouchableOpacity style={styles.actionButton} onPress={handleGallery}>
         <View style={styles.actionButtonfour}>
           <Ionicons name="image-outline" size={24} color="#ffffff" />
         </View>
         <Text style={styles.actionButtonText}>Gallery</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={() => handleSimpleAction('Contact')}
-      >
-        <View style={styles.actionButtonSix}>
-          <Ionicons name="person-add-outline" size={24} color="#ffffff" />
-        </View>
-        <Text style={styles.actionButtonText}>Contact</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -188,8 +142,25 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
 
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={handleEventsPress}
+        onPress={() => handleSimpleAction('Contact')}
       >
+        <View style={styles.actionButtonSix}>
+          <Ionicons name="person-add-outline" size={24} color="#ffffff" />
+        </View>
+        <Text style={styles.actionButtonText}>Contact</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.actionButton} onPress={handleDocuments}>
+        <View style={styles.actionButtonthree}>
+          <MaterialCommunityIcons
+            name="file-document-outline"
+            size={24}
+            color="#ffffff"
+          />
+        </View>
+        <Text style={styles.actionButtonText}>Documents</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.actionButton} onPress={handleEventsPress}>
         <View style={styles.actionButtonNine}>
           <Ionicons name="calendar-outline" size={24} color="#ffffff" />
         </View>

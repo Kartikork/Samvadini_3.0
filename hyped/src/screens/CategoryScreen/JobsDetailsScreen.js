@@ -8,7 +8,7 @@ import BottomNavigation from "../../components/BottomNavigation";
 import { useAppSelector } from "../../state/hooks";
 import { getAppTranslations } from "../../translations";
 
-export function JobsDetailsScreen({ route }) {
+const JobsDetailsScreen = ({ route }) => {
     const { item } = route?.params || {};
     const [jobDetails] = useState(item);
     const navigation = useNavigation();
@@ -341,4 +341,6 @@ const styles = StyleSheet.create({
         marginLeft: 8,
         padding: 4,
     },
-}); 
+});
+
+export default JobsDetailsScreen;
