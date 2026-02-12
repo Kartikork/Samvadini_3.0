@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+// Slider from community package (native); TS types may be missing locally
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Slider = require('@react-native-community/slider').default as React.ComponentType<any>;
 
 interface AgeGroup {
   min: string;
@@ -61,6 +64,11 @@ const GroupSettingsToggle: React.FC<Props> = ({
     { key: 'Female', label: getTranslation('Female', 'Female') },
     { key: 'Other', label: getTranslation('Other', 'Other') },
   ];
+
+  const maxAgeValue =
+    ageGroup.max && !Number.isNaN(Number(ageGroup.max))
+      ? Number(ageGroup.max)
+      : 40;
 
   if (!expanded) {
     return null;
@@ -127,8 +135,23 @@ const GroupSettingsToggle: React.FC<Props> = ({
         {getTranslation('AgeRangeLabel', 'Age Range')}: 10 -{' '}
         {ageGroup.max || '__'} {getTranslation('years', 'years')}
       </Text>
-      <View style={styles.sliderFake}>
-        <View style={styles.sliderThumb} />
+      <View style={styles.sliderRow}>
+        <Slider
+          style={{ width: '100%', height: 30 }}
+          minimumValue={10}
+          maximumValue={80}
+          step={1}
+          minimumTrackTintColor="#028BD3"
+          maximumTrackTintColor="#E0E0E0"
+          thumbTintColor="#028BD3"
+          value={maxAgeValue}
+          onValueChange={(value: number) =>
+            setAgeGroup({
+              min: '10',
+              max: String(Math.round(value)),
+            })
+          }
+        />
       </View>
 
       {/* Gender */}
@@ -280,21 +303,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 8,
   },
-  sliderFake: {
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: '#E0E0E0',
+  sliderRow: {
     marginBottom: 16,
     marginTop: 4,
-  },
-  sliderThumb: {
-    position: 'absolute',
-    left: 0,
-    top: -6,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#028BD3',
   },
 });
 

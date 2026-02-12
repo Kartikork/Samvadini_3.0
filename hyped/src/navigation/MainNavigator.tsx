@@ -26,6 +26,7 @@ import ChatScreen from '../screens/ChatScreen';
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
 import NewContactFormScreen from '../screens/NewContactFormScreen';
+import CreateNewGroupScreen from '../screens/CreateNewGroup';
 import CallScreen from '../screens/CallScreen';
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
@@ -137,6 +138,7 @@ export type RootStackParamList = {
   LanguageGameScreen: undefined;
   ContactDesignScreen: undefined;
   NewContactForm: undefined;
+  CreateNewGroup: undefined;
   CategoryScreen: undefined;
   CategoryDetailsScreen: undefined;
   LRNScreen: undefined;
@@ -341,6 +343,11 @@ export default function MainNavigator() {
         <Stack.Screen
           name="NewContactForm"
           component={NewContactFormScreen}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="CreateNewGroup"
+          component={CreateNewGroupScreen}
           options={commonHeaderOptions}
         />
 
