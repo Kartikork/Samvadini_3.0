@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export type MessageActionType =
@@ -13,6 +19,7 @@ export type MessageActionType =
   | 'unpin'
   | 'unstar'
   | 'edit'
+  | 'share'
   | 'addToCalendar';
 
 interface MessageActionsBarProps {
@@ -60,6 +67,15 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
             onPress={() => onActionPress('reply')}
           />
 
+          {/* Star */}
+          <ActionIcon
+            name={hasStarredMessages ? 'star' : 'star-outline'}
+            label={hasStarredMessages ? 'Unstar' : 'Star'}
+            onPress={() => {
+              onActionPress(hasStarredMessages ? 'unstar' : 'star');
+              setMenuVisible(false);
+            }}
+          />
           {/* Delete */}
           <ActionIcon
             name="delete-outline"
@@ -67,9 +83,19 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
             onPress={() => onActionPress('delete')}
           />
 
-          {/* Forward / Share */}
+          {/* Copy */}
           <ActionIcon
-            name="share-variant"
+            name="content-copy"
+            label="Copy"
+            onPress={() => {
+              onActionPress('copy');
+              setMenuVisible(false);
+            }}
+          />
+
+          {/* Forward */}
+          <ActionIcon
+            name="share-all-outline"
             label="Forward"
             onPress={() => onActionPress('forward')}
           />
@@ -92,6 +118,7 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
       {/* Overflow dropdown menu (as in screenshot) */}
       {menuVisible && (
         <View style={styles.menuContainer}>
+          {/* Pin */}
           <OverflowItem
             iconName="pin-outline"
             label={hasPinnedMessages ? 'Unpin' : 'Pin'}
@@ -100,22 +127,13 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
               setMenuVisible(false);
             }}
           />
+          {/* Share */}
           <OverflowItem
-            iconName={hasStarredMessages ? 'star' : 'star-outline'}
-            label={hasStarredMessages ? 'Unstar' : 'Star'}
-            onPress={() => {
-              onActionPress(hasStarredMessages ? 'unstar' : 'star');
-              setMenuVisible(false);
-            }}
+            iconName="share-variant"
+            label="Share"
+            onPress={() => onActionPress('share')}
           />
-          <OverflowItem
-            iconName="content-copy"
-            label="Copy"
-            onPress={() => {
-              onActionPress('copy');
-              setMenuVisible(false);
-            }}
-          />
+          {/* Calendar */}
           <OverflowItem
             iconName="calendar-month-outline"
             label="Add to Calendar"
@@ -250,4 +268,3 @@ const styles = StyleSheet.create({
 });
 
 export default MessageActionsBar;
-
