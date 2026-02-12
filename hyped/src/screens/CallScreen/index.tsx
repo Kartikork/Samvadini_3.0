@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, ImageBackground } from 'react-native';
 import { RTCView } from 'react-native-webrtc';
 import { useNavigation } from '@react-navigation/native';
@@ -28,6 +28,7 @@ export default function CallScreen() {
   const navigation = useNavigationSafe();
   const [localStream, setLocalStream] = useState<any>(null);
   const [remoteStream, setRemoteStream] = useState<any>(null);
+  const speakerEnabledRef = useRef(false);
 
   // Setup stream listeners
   useEffect(() => {
@@ -59,6 +60,22 @@ export default function CallScreen() {
       }
     }
   }, [call.state, remoteStream]);
+
+  // Enable speaker mode by default for video calls (only once per call)
+  useEffect(() => {
+    // Reset ref when call ends or changes
+    if (call.state === 'ENDED' || call.state === 'FAILED' || call.state === 'IDLE') {
+      speakerEnabledRef.current = false;
+      return;
+    }
+
+    // Enable speaker for video calls when connecting or connected
+    if (call.callType === 'video' && (call.state === 'CONNECTING' || call.state === 'CONNECTED') && !call.isSpeakerOn && !speakerEnabledRef.current) {
+      console.log('[CallScreen] 🔊 Enabling speaker mode for video call');
+      CallManager.toggleSpeaker();
+      speakerEnabledRef.current = true;
+    }
+  }, [call.callType, call.state, call.isSpeakerOn]);
 
   const title = useMemo(() => {
     if (call.callerName) return call.callerName;
