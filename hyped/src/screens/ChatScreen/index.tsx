@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useRoute, RouteProp } from '@react-navigation/native';
@@ -36,6 +37,7 @@ import { useMessageSelectionWithReactions } from './hooks/useMessageSelectionWit
 import {
   updateMessagesPinState,
   copyMessagesToClipboard,
+  deleteMessages,
 } from './helpers/messageActions';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
@@ -365,8 +367,51 @@ const ChatScreen: React.FC = () => {
       }
 
       if (action === 'delete') {
-        // TODO: Implement delete flow (local + server) similar to pin/unpin
-        clearSelection();
+        if (!chatId || selectedMessages.length === 0) {
+          return;
+        }
+
+        Alert.alert(
+          'Delete message?',
+          selectedMessages.length === 1
+            ? 'Do you want to delete this message?'
+            : 'Do you want to delete the selected messages?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Delete for me',
+              style: 'default',
+              onPress: () => {
+                // Clear selection immediately
+                clearSelection();
+                deleteMessages({
+                  type: 'delete',
+                  chatId,
+                  selectedMessages: selectedMessages as any,
+                  setMessages: setMessages as any,
+                });
+              },
+            },
+            {
+              text: 'Delete for everyone',
+              style: 'destructive',
+              onPress: () => {
+                clearSelection();
+                deleteMessages({
+                  type: 'deleteEveryone',
+                  chatId,
+                  selectedMessages: selectedMessages as any,
+                  setMessages: setMessages as any,
+                });
+              },
+            },
+          ],
+          { cancelable: true },
+        );
+
         return;
       }
 
