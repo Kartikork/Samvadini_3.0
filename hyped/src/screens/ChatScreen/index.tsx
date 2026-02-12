@@ -1,19 +1,3 @@
-/**
- * ChatScreen - Main Chat UI Component
- *
- * ARCHITECTURE (Compatible with Existing Flow):
- * - Uses existing SQLite schema (ChatMessageSchema)
- * - Uses existing SocketService
- * - Works alongside ChatListScreen
- * - Does NOT break existing flow
- *
- * PERFORMANCE:
- * - Virtualized list (FlashList)
- * - Memoized components
- * - Instant rendering from DB
- * - Optimistic updates
- */
-
 import React, { useEffect, useCallback, useRef, useState } from 'react';
 import {
   View,
@@ -37,8 +21,6 @@ import TypingIndicator from './components/TypingIndicator';
 import DateSeparator from './components/DateSeparator';
 import ChatHeader from '../../components/ChatHeader';
 import { useChatById } from '../ChatListScreen/hooks/useChatListData';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../../config/constants';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 import MessageActionsBar, {
   MessageActionType,
@@ -202,7 +184,7 @@ const ChatScreen: React.FC = () => {
   /**
    * Load more messages (pagination)
    */
-  const loadMoreMessages = async () => {
+  const loadMoreMessages = useCallback(async () => {
     if (isLoadingMore || !hasMoreMessages) return;
 
     setIsLoadingMore(true);
@@ -234,7 +216,7 @@ const ChatScreen: React.FC = () => {
     } finally {
       setIsLoadingMore(false);
     }
-  };
+  }, [isLoadingMore, hasMoreMessages, messages.length, chatId, currentUserId]);
 
   /**
    * Append latest message from DB after socket + MessageHandler have processed it
@@ -250,7 +232,7 @@ const ChatScreen: React.FC = () => {
         ...latestMsg,
         is_outgoing: currentUserId
           ? latestMsg.pathakah_chinha === currentUserId
-          : false,  
+          : false,
       };
 
       setMessages(prev => {
@@ -280,10 +262,6 @@ const ChatScreen: React.FC = () => {
 
       // Only handle messages for this chat
       if (incomingChatId !== chatId) return;
-
-      console.log('[ChatScreen] New message received for this chat');
-
-      // Give MessageHandler time to decrypt + insert into DB
       setTimeout(() => {
         appendLatestMessageFromDb();
       }, 300);
