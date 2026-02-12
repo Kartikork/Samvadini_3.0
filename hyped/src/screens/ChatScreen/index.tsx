@@ -14,7 +14,7 @@
  * - Optimistic updates
  */
 
-import React, { useEffect, useCallback, useRef, useState } from 'react';
+import React, { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -45,6 +45,10 @@ import MessageActionsBar, {
 } from './components/MessageActionsBar';
 import MessageReactionPicker from './components/MessageReactionPicker';
 import { useMessageSelectionWithReactions } from './hooks/useMessageSelectionWithReactions';
+import {
+  updateMessagesPinState,
+  copyMessagesToClipboard,
+} from './helpers/messageActions';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -102,6 +106,17 @@ const ChatScreen: React.FC = () => {
     handleMeasureMessage,
     closeReactionPicker,
   } = useMessageSelectionWithReactions<ChatMessage>(messages);
+
+  const selectedMessages = useMemo(
+    () => messages.filter(m => selectedMessageIds.includes(m.refrenceId)),
+    [messages, selectedMessageIds],
+  );
+
+  const hasPinnedMessages = useMemo(
+    () =>
+      selectedMessages.some(m => Number((m as any).sthapitam_sandesham) === 1),
+    [selectedMessages],
+  );
 
   // Refs
   const flashListRef = useRef<FlashListRef<ChatMessage> | null>(null);
@@ -172,7 +187,7 @@ const ChatScreen: React.FC = () => {
       // Use existing fetchChatMessages function
       // Initial load: last 20 messages from DB (latest -> oldest)
       const loadedMessages = await fetchChatMessages(chatId, 20, 0);
-
+  console.log('loadedMessages', JSON.stringify(loadedMessages));
       // Transform to include is_outgoing flag
       const transformedMessages = loadedMessages.map((msg: ChatMessage) => ({
         ...msg,
@@ -322,15 +337,38 @@ const ChatScreen: React.FC = () => {
   );
 
   const handleMessageAction = useCallback(
-    (action: MessageActionType) => {
-      // TODO: Wire up with actual copy/delete/reply/forward/star logic.
-      // For now, this only clears selection for destructive actions like delete.
-      if (action === 'delete') {
-        // After delete logic, clear selection
+    async (action: MessageActionType) => {
+      if (action === 'pin' || action === 'unpin') {
+        console.log('action', action);
+        if (!chatId || selectedMessages.length === 0) return;
+
+        await updateMessagesPinState({
+          type: action === 'pin' ? 'pin' : 'unPin',
+          chatId,
+          selectedMessages,
+          // setMessages is typed for ChatMessage but helper is generic LocalMessage
+          // so we cast to satisfy TS without affecting runtime.
+          setMessages: setMessages as any,
+        });
+
         clearSelection();
+        return;
       }
+
+      if (action === 'copy') {
+        copyMessagesToClipboard(selectedMessages as any);
+        return;
+      }
+
+      if (action === 'delete') {
+        // TODO: Implement delete flow (local + server) similar to pin/unpin
+        clearSelection();
+        return;
+      }
+
+      // Other actions (reply, forward, star, addToCalendar, edit) can be wired here later
     },
-    [clearSelection],
+    [chatId, selectedMessages, clearSelection],
   );
 
   /**
@@ -468,6 +506,7 @@ const ChatScreen: React.FC = () => {
       {isSelectionMode && (
         <MessageActionsBar
           selectedCount={selectedMessageIds.length}
+          hasPinnedMessages={hasPinnedMessages}
           onCloseSelection={clearSelection}
           onActionPress={handleMessageAction}
         />
