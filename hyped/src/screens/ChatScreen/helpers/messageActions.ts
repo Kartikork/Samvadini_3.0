@@ -8,10 +8,10 @@ type LocalMessage = {
   [key: string]: any;
 };
 
-type PinUpdateType = 'pin' | 'unPin';
+type MessageUpdateType = 'pin' | 'unPin' | 'star' | 'unStar';
 
 interface PinUpdateParams {
-  type: PinUpdateType;
+  type: MessageUpdateType;
   chatId: string;
   selectedMessages: LocalMessage[];
   setMessages: React.Dispatch<React.SetStateAction<LocalMessage[]>>;
@@ -53,10 +53,20 @@ console.log('selectedMessages in updateMessagesPinState', selectedMessages,type,
     const updated = prevMessages.map(msg => {
       if (refrenceIds.includes(msg.refrenceId)) {
         hasChanges = true;
-        return {
-          ...msg,
-          sthapitam_sandesham: type === 'pin' ? 1 : 0,
-        };
+
+        if (type === 'pin' || type === 'unPin') {
+          return {
+            ...msg,
+            sthapitam_sandesham: type === 'pin' ? 1 : 0,
+          };
+        }
+
+        if (type === 'star' || type === 'unStar') {
+          return {
+            ...msg,
+            kimTaritaSandesha: type === 'star' ? 1 : 0,
+          };
+        }
       }
       return msg;
     });
@@ -75,7 +85,11 @@ console.log('selectedMessages in updateMessagesPinState', selectedMessages,type,
   const baseUpdates =
     type === 'pin'
       ? { sthapitam_sandesham: 1 }
-      : { sthapitam_sandesham: 0 };
+      : type === 'unPin'
+      ? { sthapitam_sandesham: 0 }
+      : type === 'star'
+      ? { kimTaritaSandesha: 1 }
+      : { kimTaritaSandesha: 0 };
 
   const formData = {
     refrenceIds,
