@@ -4,8 +4,8 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 interface CallControlsProps {
   isMuted: boolean;
-  isSpeakerOn: boolean;
   isVideoOn: boolean;
+  isSpeakerOn: boolean;
   onToggleMute: () => void;
   onToggleVideo: () => void;
   onToggleSpeaker: () => void;
@@ -23,20 +23,28 @@ export default function CallControls({
 }: CallControlsProps) {
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.controlButton} onPress={onToggleMute}>
-        <MaterialIcons
-          name={isMuted ? 'mic-off' : 'mic'}
-          size={24}
-          color="#fff"
+      <TouchableOpacity 
+        style={[styles.controlButton, isMuted && styles.activeButton]} 
+        onPress={onToggleMute}
+      >
+        <MaterialIcons 
+          name={isMuted ? 'mic-off' : 'mic'} 
+          size={24} 
+          color="#FFFFFF" 
         />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.controlButton} onPress={onToggleSpeaker}>
-        <MaterialIcons
-          name={isSpeakerOn ? 'volume-up' : 'volume-off'}
-          size={24}
-          color="#fff"
+      
+      <TouchableOpacity 
+        style={[styles.controlButton, isSpeakerOn && styles.activeButton]} 
+        onPress={onToggleSpeaker}
+      >
+        <MaterialIcons 
+          name={isSpeakerOn ? 'volume-up' : 'volume-off'} 
+          size={24} 
+          color="#FFFFFF" 
         />
       </TouchableOpacity>
+      
       <TouchableOpacity style={styles.controlButton} onPress={onToggleVideo}>
         <MaterialIcons
           name={isVideoOn ? 'videocam' : 'videocam-off'}
@@ -44,6 +52,7 @@ export default function CallControls({
           color="#fff"
         />
       </TouchableOpacity>
+      
       <TouchableOpacity style={[styles.controlButton, styles.endButton]} onPress={onEnd}>
         <MaterialIcons
           name="call-end"
@@ -61,26 +70,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly',
     alignItems: 'center',
     paddingVertical: 10,
+    paddingHorizontal: 20,
   },
   controlButton: {
     backgroundColor: '#1E1E1E',
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 8,
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderRadius: 100,
-     marginHorizontal: 12,
   },
-  controlText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+  activeButton: {
+    backgroundColor: '#2E7D32',
   },
   endButton: {
     backgroundColor: '#D32F2F',
-  },
-  endText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
   },
 });
 
