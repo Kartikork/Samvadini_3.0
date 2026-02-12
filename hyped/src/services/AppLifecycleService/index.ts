@@ -19,6 +19,32 @@ class AppLifecycleServiceClass {
     this.navigationRef = ref;
   }
 
+  navigateToCallScreen(callId: string, callerId: string, callType: 'audio' | 'video'): void {
+    if (this.navigationRef?.isReady()) {
+      console.log('[AppLifecycleService] 🧭 Navigating to Call screen...');
+      this.navigationRef.navigate('Call', {
+        callId,
+        peerId: callerId,
+        isVideo: callType === 'video',
+      });
+    } else {
+      console.warn('[AppLifecycleService] ⚠️ Navigation not ready, will retry...');
+      // Retry after navigation is ready
+      setTimeout(() => {
+        if (this.navigationRef?.isReady()) {
+          console.log('[AppLifecycleService] 🧭 Navigating to Call screen (retry)...');
+          this.navigationRef.navigate('Call', {
+            callId,
+            peerId: callerId,
+            isVideo: callType === 'video',
+          });
+        } else {
+          console.warn('[AppLifecycleService] ⚠️ Navigation still not ready after retry');
+        }
+      }, 1000);
+    }
+  }
+
   async initialize(): Promise<void> {
     if (this.initialized) return;
     this.initialized = true;
