@@ -106,6 +106,14 @@ const ChatScreen: React.FC = () => {
     [selectedMessages],
   );
 
+  const hasStarredMessages = useMemo(
+    () =>
+      selectedMessages.some(
+        m => Number((m as any).kimTaritaSandesha) === 1,
+      ),
+    [selectedMessages],
+  );
+
   // Refs
   const flashListRef = useRef<FlashListRef<ChatMessage> | null>(null);
   const hasDoneInitialScrollRef = useRef(false);
@@ -320,12 +328,26 @@ const ChatScreen: React.FC = () => {
 
   const handleMessageAction = useCallback(
     async (action: MessageActionType) => {
-      if (action === 'pin' || action === 'unpin') {
-        console.log('action', action);
+      if (
+        action === 'pin' ||
+        action === 'unpin' ||
+        action === 'star' ||
+        action === 'unstar'
+      ) {
         if (!chatId || selectedMessages.length === 0) return;
 
+        // Clear selection immediately for better UX (like WhatsApp)
+        clearSelection();
+
         await updateMessagesPinState({
-          type: action === 'pin' ? 'pin' : 'unPin',
+          type:
+            action === 'pin'
+              ? 'pin'
+              : action === 'unpin'
+              ? 'unPin'
+              : action === 'star'
+              ? 'star'
+              : 'unStar',
           chatId,
           selectedMessages,
           // setMessages is typed for ChatMessage but helper is generic LocalMessage
@@ -333,12 +355,12 @@ const ChatScreen: React.FC = () => {
           setMessages: setMessages as any,
         });
 
-        clearSelection();
         return;
       }
 
       if (action === 'copy') {
         copyMessagesToClipboard(selectedMessages as any);
+        clearSelection();
         return;
       }
 
@@ -348,7 +370,8 @@ const ChatScreen: React.FC = () => {
         return;
       }
 
-      // Other actions (reply, forward, star, addToCalendar, edit) can be wired here later
+      // For now, clear selection after other actions as well
+      clearSelection();
     },
     [chatId, selectedMessages, clearSelection],
   );
@@ -489,6 +512,7 @@ const ChatScreen: React.FC = () => {
         <MessageActionsBar
           selectedCount={selectedMessageIds.length}
           hasPinnedMessages={hasPinnedMessages}
+          hasStarredMessages={hasStarredMessages}
           onCloseSelection={clearSelection}
           onActionPress={handleMessageAction}
         />

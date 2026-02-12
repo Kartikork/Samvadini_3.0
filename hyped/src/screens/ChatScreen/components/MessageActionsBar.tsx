@@ -11,12 +11,14 @@ export type MessageActionType =
   | 'info'
   | 'pin'
   | 'unpin'
+  | 'unstar'
   | 'edit'
   | 'addToCalendar';
 
 interface MessageActionsBarProps {
   selectedCount: number;
   hasPinnedMessages?: boolean;
+  hasStarredMessages?: boolean;
   onCloseSelection: () => void;
   onActionPress: (action: MessageActionType) => void;
 }
@@ -29,6 +31,7 @@ interface MessageActionsBarProps {
 const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
   selectedCount,
   hasPinnedMessages = false,
+  hasStarredMessages = false,
   onCloseSelection,
   onActionPress,
 }) => {
@@ -98,18 +101,18 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
             }}
           />
           <OverflowItem
-            iconName="content-copy"
-            label="Copy"
+            iconName={hasStarredMessages ? 'star' : 'star-outline'}
+            label={hasStarredMessages ? 'Unstar' : 'Star'}
             onPress={() => {
-              onActionPress('copy');
+              onActionPress(hasStarredMessages ? 'unstar' : 'star');
               setMenuVisible(false);
             }}
           />
           <OverflowItem
-            iconName="star-outline"
-            label="Star"
+            iconName="content-copy"
+            label="Copy"
             onPress={() => {
-              onActionPress('star');
+              onActionPress('copy');
               setMenuVisible(false);
             }}
           />

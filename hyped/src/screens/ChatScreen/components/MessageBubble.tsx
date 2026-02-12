@@ -13,6 +13,7 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MessageStatusIcon from './MessageStatusIcon';
 
 interface ChatMessage {
@@ -54,14 +55,19 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   if (!message) return null;
 
   // Determine if message is outgoing
-  const isOutgoing = message.is_outgoing ?? (currentUserId ? message.pathakah_chinha === currentUserId : false);
-  
+  const isOutgoing =
+    message.is_outgoing ??
+    (currentUserId ? message.pathakah_chinha === currentUserId : false);
+
+  // Only show selection highlight while selection mode is active
+  const isHighlighted = isSelected && isSelectionMode;
+
   // Map avastha to status
   const currentStatus = message.avastha || 'sent';
 
   const styles = useMemo(
-    () => createStyles(isOutgoing, isSelected),
-    [isOutgoing, isSelected],
+    () => createStyles(isOutgoing, isHighlighted),
+    [isOutgoing, isHighlighted],
   );
 
   const hasMedia = message.sandesha_prakara && message.sandesha_prakara !== 'text';
@@ -147,12 +153,33 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         {/* Timestamp and status */}
         <View style={styles.footer}>
-          <Text style={styles.timestamp}>
-            {formatTimestamp(new Date(message.preritam_tithih || message.createdAt).getTime())}
-          </Text>
-          {isOutgoing && (
-            <MessageStatusIcon status={currentStatus as any} />
+          {Number(message.sthapitam_sandesham) === 1 && (
+            <MaterialCommunityIcons
+              name="pin-outline"
+              size={14}
+              color={isOutgoing ? 'rgba(255,255,255,0.8)' : '#999999'}
+              style={styles.metaIcon}
+            />
           )}
+          {Number(message.kimTaritaSandesha) === 1 && (
+            <MaterialCommunityIcons
+              name="star"
+              size={14}
+              color={isOutgoing ? 'rgba(255,255,255,0.8)' : '#999999'}
+              style={styles.metaIcon}
+            />
+          )}
+          {message.sampaditam ? (
+            <Text style={styles.editedText}>edited</Text>
+          ) : null}
+          <Text style={styles.timestamp}>
+            {formatTimestamp(
+              new Date(
+                message.preritam_tithih || message.createdAt,
+              ).getTime(),
+            )}
+          </Text>
+          {isOutgoing && <MessageStatusIcon status={currentStatus as any} />}
         </View>
       </Pressable>
     </View>
@@ -172,9 +199,9 @@ function formatTimestamp(timestamp: number): string {
 /**
  * Dynamic styles based on message direction
  */
-function createStyles(isOutgoing: boolean, isSelected: boolean) {
-  const outgoingBg = isSelected ? '#075E54' : '#007AFF';
-  const incomingBg = isSelected ? '#2A3942' : '#FFFFFF';
+function createStyles(isOutgoing: boolean, isHighlighted: boolean) {
+  const outgoingBg = isHighlighted ? '#075E54' : '#007AFF';
+  const incomingBg = isHighlighted ? '#2A3942' : '#FFFFFF';
 
   return StyleSheet.create({
     container: {
@@ -182,7 +209,7 @@ function createStyles(isOutgoing: boolean, isSelected: boolean) {
       paddingVertical: 4,
       flexDirection: 'row',
       justifyContent: isOutgoing ? 'flex-end' : 'flex-start',
-      backgroundColor: isSelected ? '#0B141A' : 'transparent',
+      backgroundColor: isHighlighted ? '#0B141A' : 'transparent',
     },
     bubble: {
       maxWidth: '75%',
@@ -261,11 +288,19 @@ function createStyles(isOutgoing: boolean, isSelected: boolean) {
       alignItems: 'center',
       justifyContent: 'flex-end',
       marginTop: 4,
-      gap: 4,
+    },
+    metaIcon: {
+      marginRight: 4,
+    },
+    editedText: {
+      fontSize: 11,
+      color: isOutgoing ? 'rgba(255,255,255,0.8)' : '#999999',
+      marginRight: 4,
     },
     timestamp: {
       fontSize: 11,
       color: isOutgoing ? 'rgba(255,255,255,0.8)' : '#999999',
+      marginLeft: 2,
     },
   });
 }
@@ -277,8 +312,8 @@ function createStyles(isOutgoing: boolean, isSelected: boolean) {
 export default React.memo(
   MessageBubble,
   (prevProps, nextProps) =>
-    prevProps.message.refrenceId === nextProps.message.refrenceId &&
+    prevProps.message === nextProps.message &&
     prevProps.isSelected === nextProps.isSelected &&
-    prevProps.isSelectionMode === nextProps.isSelectionMode
+    prevProps.isSelectionMode === nextProps.isSelectionMode,
 );
 
