@@ -20,7 +20,7 @@ const SnakeGameIntroScreen = () => {
 
   return (
     <ImageBackground
-      source={require('../GAMER/snake.jpg')}
+      source={require('../snake.jpg')}
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageStyle}
     >

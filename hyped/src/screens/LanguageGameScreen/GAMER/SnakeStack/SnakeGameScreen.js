@@ -329,7 +329,7 @@ const SnakeGameScreen = () => {
   };
 
   return (
-    <ImageBackground source={require('../GAMER/snake.jpg')} style={{ flex: 1 }}>
+    <ImageBackground source={require('../snake.jpg')} style={{ flex: 1 }}>
       <View style={styles.container}>
         <Modal
           animationType="slide"
@@ -462,7 +462,7 @@ const SnakeGameScreen = () => {
         {isGameOver && (
           <View style={styles.gameOverOverlay}>
             <Image
-              source={require('../GAMER/betterluck1.png')}
+              source={require('../gif&png/betterluck1.png')}
               style={styles.gameOverImage}
             />
             <Text style={styles.gameOverScoreText}>Your Score: {score}</Text>
