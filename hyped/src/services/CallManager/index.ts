@@ -21,6 +21,7 @@ import { PersistenceService } from '../PersistenceService';
 import { WebRTCService } from '../WebRTCService';
 import { WebRTCMediaService } from '../WebRTCMediaService';
 import { NotificationService } from '../NotificationService';
+import { AppLifecycleService } from '../AppLifecycleService';
 import type { CallState, IncomingCallPayload, PendingCallAction, PersistedCall } from '../../types/call';
 import { buildPersistedCall, isCallExpired } from '../../utils/call';
 
@@ -251,13 +252,43 @@ class CallManagerClass {
     }
   }
 
-  private handleNotificationAction = (action: PendingCallAction, callId: string): void => {
+  private handleNotificationAction = async (action: PendingCallAction, callId: string): Promise<void> => {
     if (action === 'accept') {
-      this.acceptCall(callId);
+      // Navigate to Call screen when accepting from foreground notification
+      this.navigateToCallScreen(callId);
+      // Then accept the call
+      await this.acceptCall(callId);
     } else {
-      this.rejectCall(callId);
+      await this.rejectCall(callId);
     }
   };
+
+  private navigateToCallScreen(callId: string): void {
+    // Get the call data to pass navigation params
+    const activeCall = this.currentCall;
+    if (!activeCall && callId) {
+      // Try to get from persistence if not in memory
+      PersistenceService.getActiveCall().then(call => {
+        if (call) {
+          this.navigateToCallScreenWithData(call);
+        }
+      }).catch(() => {
+        // If we can't get call data, navigate with just callId
+        this.navigateToCallScreenWithData({ callId, callerId: '', callType: 'audio', timestamp: Date.now(), expiresAt: Date.now() + 60000 });
+      });
+      return;
+    }
+    
+    if (activeCall) {
+      this.navigateToCallScreenWithData(activeCall);
+    }
+  }
+
+  private navigateToCallScreenWithData(call: PersistedCall): void {
+    // Use AppLifecycleService's public method to navigate
+    console.log('[CallManager] 🧭 Navigating to Call screen from notification action...');
+    AppLifecycleService.navigateToCallScreen(call.callId, call.callerId, call.callType);
+  }
 
   public async acceptCall(callId?: string): Promise<void> {
     const call = await this.getOrRestoreCall(callId);
