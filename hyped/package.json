@@ -25,6 +25,7 @@
     "@reduxjs/toolkit": "^2.0.1",
     "@shopify/flash-list": "^2.2.1",
     "axios": "^1.13.4",
+    "grapheme-splitter": "^1.0.4",
     "lottie-react-native": "^7.3.5",
     "matter-js": "^0.20.0",
     "phoenix": "^1.8.3",

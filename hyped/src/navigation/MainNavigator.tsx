@@ -50,6 +50,11 @@ const TicTacToe = lazy(() => import('../screens/LanguageGameScreen/GAMER/TicTacT
 const NumberSortIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/NumberSortIntroScreen'));
 const SortGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/SortGameScreen'));
 const DrumGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/DrumGame/Game'));
+const CarromGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/CarromGame'));
+const TipCat = lazy(() => import('../screens/LanguageGameScreen/GAMER/GilliDanda/TipCat'));
+const Crossword = lazy(() => import('../screens/LanguageGameScreen/GAMER/Crossword/crossword'));
+const MazeGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MazeGame'));
+const SliceGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/FruitSlice/SliceGame'));
 
 // Header wrapper
 import { withHeader } from '../components/withHeader';
@@ -81,6 +86,11 @@ export type RootStackParamList = {
   NumberSortIntroScreen: undefined;
   SortGameScreen: undefined;
   DrumGame: undefined;
+  CarromGame: undefined;
+  TipCat: undefined;
+  crossword: undefined;
+  MazeGame: undefined;
+  SliceGame: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -287,6 +297,31 @@ export default function MainNavigator() {
         <Stack.Screen
           name="DrumGame"
           component={DrumGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="CarromGame"
+          component={CarromGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="TipCat"
+          component={TipCat}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="crossword"
+          component={Crossword}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="MazeGame"
+          component={MazeGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="SliceGame"
+          component={SliceGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
 
