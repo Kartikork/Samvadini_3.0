@@ -2,7 +2,7 @@ import SQLite from 'react-native-sqlite-storage';
 import { downloadFile } from '../../helper/Helper';
 import { getEncryptionKey } from './Participants';
 import { decryptMessage } from '../../../helper/Encryption';
-import { socketService } from '../../../services/socketService';
+import { SocketService } from '../../../services/SocketService';
 import { getRandomLayout } from '../../../helper/MessageLayout';
 
 SQLite.enablePromise(true);
@@ -362,6 +362,7 @@ export const insertOrUpdateBulkChatMessages = async (records, curUserUid) => {
           }
 
           const layout = getRandomLayout();
+          const scalar = (v) => (v == null ? null : typeof v === 'object' ? JSON.stringify(v) : v);
 
           const insertParams = [
             data.samvada_chinha,
@@ -376,22 +377,22 @@ export const insertOrUpdateBulkChatMessages = async (records, curUserUid) => {
             data.kimTaritaSandesha || 0,
             data.nirastah || 0,
             data.sthapitam_sandesham || 0,
-            data.preritam_tithih,
+            scalar(data.preritam_tithih),
             data.pratisandeshah || "",
             data.kimFwdSandesha || 0,
             data.sampaditam || 0,
-            data.reaction,
-            data.reaction_by,
-            data.reaction_updated_at,
+            scalar(data.reaction),
+            scalar(data.reaction_by),
+            scalar(data.reaction_updated_at),
             data.reaction_details,
             data.reaction_summary,
-            data.createdAt,
-            data.updatedAt,
+            scalar(data.createdAt),
+            scalar(data.updatedAt),
             data.is_disappearing || 0,
-            data.disappear_at || null,
-            layout,
+            scalar(data.disappear_at),
+            typeof layout === 'string' ? layout : (layout || 'layout1'),
             data.prasaranamId || "",
-            data.last_disappear_check,
+            scalar(data.last_disappear_check),
           ];
 
           tx.executeSql(
@@ -433,14 +434,14 @@ export const insertOrUpdateBulkChatMessages = async (records, curUserUid) => {
                   data.sthapitam_sandesham || 0,
                   data.pratisandeshah || "",
                   data.sampaditam || 0,
-                  data.reaction,
-                  data.reaction_by,
-                  data.reaction_updated_at,
+                  scalar(data.reaction),
+                  scalar(data.reaction_by),
+                  scalar(data.reaction_updated_at),
                   data.reaction_details,
                   data.reaction_summary,
                   nowUTC,
                   data.is_disappearing || 0,
-                  data.disappear_at || null,
+                  scalar(data.disappear_at),
                   nowUTC,
                   data.prasaranamId || "",
                   data.refrenceId
@@ -448,7 +449,7 @@ export const insertOrUpdateBulkChatMessages = async (records, curUserUid) => {
               );
 
               try {
-                socketService.sendMessageStatusUpdate({
+                SocketService.sendMessageStatusUpdate({
                   refrenceId: data.refrenceId,
                   avastha: "delivered",
                   ekatma_chinha: curUserUid,
@@ -460,7 +461,7 @@ export const insertOrUpdateBulkChatMessages = async (records, curUserUid) => {
               }
 
               try {
-                socketService.emit("message_inserted", {
+                SocketService.emit("message_inserted", {
                   ...data,
                   vishayah: data.vishayahValue,
                 });
