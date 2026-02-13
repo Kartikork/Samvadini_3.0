@@ -14,20 +14,20 @@ import {
 
 // --- Asset Imports ---
 const diceImages = [
-  require('../LanguageGameScreen/GAMER/dice_1.png'), require('../LanguageGameScreen/GAMER/dice_2.png'), require('../LanguageGameScreen/GAMER/dice_3.png'),
-  require('../LanguageGameScreen/GAMER/dice_4.png'), require('../LanguageGameScreen/GAMER/dice_5.png'), require('../LanguageGameScreen/GAMER/dice_6.png'),
+  require('../SnakeLaddersGame/dice_1.png'), require('../SnakeLaddersGame/dice_2.png'), require('../SnakeLaddersGame/dice_3.png'),
+  require('../SnakeLaddersGame/dice_4.png'), require('../SnakeLaddersGame/dice_5.png'), require('../SnakeLaddersGame/dice_6.png'),
 ];
 const playerPieces = [
-  require('../LanguageGameScreen/GAMER/pawn_red.png'), require('../LanguageGameScreen/GAMER/pawn_blue.png'),
-  require('../LanguageGameScreen/GAMER/pawn_green.png'), require('../LanguageGameScreen/GAMER/pawn_yellow.png'),
+  require('../SnakeLaddersGame/pawn_red.png'), require('../SnakeLaddersGame/pawn_blue.png'),
+  require('../SnakeLaddersGame/pawn_green.png'), require('../SnakeLaddersGame/pawn_yellow.png'),
 ];
-const ladderImage = require('../LanguageGameScreen/GAMER/ladder.png');
+const ladderImage = require('../SnakeLaddersGame/ladder.png');
 const snakes = {
-  16: { end: 6, image: require('../LanguageGameScreen/GAMER/snake3.png') }, 47: { end: 26, image: require('../LanguageGameScreen/GAMER/snake2.png') },
-  49: { end: 11, image: require('../LanguageGameScreen/GAMER/snake3.png') }, 67: { end: 51, image: require('../LanguageGameScreen/GAMER/snake4.png') },
-  62: { end: 19, image: require('../LanguageGameScreen/GAMER/snake2.png') },
-  87: { end: 24, image: require('../LanguageGameScreen/GAMER/snake4.png') }, 93: { end: 73, image: require('../LanguageGameScreen/GAMER/snake2.png') },
-  95: { end: 75, image: require('../LanguageGameScreen/GAMER/snake3.png') }, 99: { end: 8, image: require('../LanguageGameScreen/GAMER/snake4.png') },
+  16: { end: 6, image: require('../SnakeLaddersGame/snake3.png') }, 47: { end: 26, image: require('../SnakeLaddersGame/snake2.png') },
+  49: { end: 11, image: require('../SnakeLaddersGame/snake3.png') }, 67: { end: 51, image: require('../SnakeLaddersGame/snake4.png') },
+  62: { end: 19, image: require('../SnakeLaddersGame/snake2.png') },
+  87: { end: 24, image: require('../SnakeLaddersGame/snake4.png') }, 93: { end: 73, image: require('../SnakeLaddersGame/snake2.png') },
+  95: { end: 75, image: require('../SnakeLaddersGame/snake3.png') }, 99: { end: 8, image: require('../SnakeLaddersGame/snake4.png') },
 };
 // const ladders are just data, no images referenced directly in the object definition except where used
 const ladders = { 1: { end: 38 }, 4: { end: 14 }, 9: { end: 31 }, 21: { end: 42 }, 28: { end: 66 }, 36: { end: 44 }, 71: { end: 91 }, 60: { end: 80 } };
