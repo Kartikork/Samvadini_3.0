@@ -1,9 +1,3 @@
-/**
- * MessageBubble - Memoized Message Component
- * 
- * Compatible with existing message structure from ChatMessageSchema
- */
-
 import React, { useMemo, useEffect, useRef } from 'react';
 import {
   View,
@@ -37,7 +31,7 @@ interface MessageBubbleProps {
   isSelectionMode: boolean;
   onPressMessage: (message: ChatMessage) => void;
   onLongPressMessage: (message: ChatMessage) => void;
-   onMeasureMessage?: (
+  onMeasureMessage?: (
     id: string,
     layout: { x: number; y: number; width: number; height: number },
   ) => void;
@@ -70,7 +64,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     [isOutgoing, isHighlighted],
   );
 
-  const hasMedia = message.sandesha_prakara && message.sandesha_prakara !== 'text';
+  const hasMedia =
+    message.sandesha_prakara && message.sandesha_prakara !== 'text';
 
   const bubbleRef = useRef<View | null>(null);
 
@@ -88,12 +83,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [
-    isSelectionMode,
-    isSelected,
-    message.refrenceId,
-    onMeasureMessage,
-  ]);
+  }, [isSelectionMode, isSelected, message.refrenceId, onMeasureMessage]);
 
   return (
     <View style={styles.container}>
@@ -106,7 +96,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             : { color: isOutgoing ? 'rgba(255,255,255,0.15)' : '#e0e0e0' }
         }
         onPress={() => {
-          // In selection mode, tap toggles selection (like WhatsApp)
           if (isSelectionMode) {
             onPressMessage(message);
           }
@@ -115,43 +104,63 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           onLongPressMessage(message);
         }}
       >
-        {/* Reply indicator */}
-        {message.reply_to && (
-          <View style={styles.replyContainer}>
-            <View style={styles.replyLine} />
-            <Text style={styles.replyText} numberOfLines={1}>
-              Reply to previous message
-            </Text>
+        {/* DELETED MESSAGE */}
+        {Number(message.nirastah) === 1 ? (
+          <View style={styles.deletedContainer}>
+            <MaterialCommunityIcons
+              name="delete-outline"
+              size={16}
+              color={isOutgoing ? 'rgba(255,255,255,0.7)' : '#777'}
+              style={{ marginRight: 6 }}
+            />
+            <Text style={styles.deletedText}>This message was deleted</Text>
           </View>
-        )}
-
-        {/* Media */}
-        {hasMedia && (
-          <View style={styles.mediaContainer}>
-            {message.sandesha_prakara === 'image' || message.sandesha_prakara === 'gif' || message.sandesha_prakara === 'sticker' ? (
-              <Image
-                source={{ uri: message.vishayah }}
-                style={styles.mediaImage}
-                resizeMode={message.sandesha_prakara === 'gif' ? 'contain' : 'cover'}
-              />
-            ) : message.sandesha_prakara === 'video' ? (
-              <View style={styles.videoPlaceholder}>
-                <Text style={styles.videoText}>📹 Video</Text>
-              </View>
-            ) : (
-              <View style={styles.documentPlaceholder}>
-                <Text style={styles.documentText}>📄 {message.sandesha_prakara}</Text>
+        ) : (
+          <>
+            {message.reply_to && (
+              <View style={styles.replyContainer}>
+                <View style={styles.replyLine} />
+                <Text style={styles.replyText} numberOfLines={1}>
+                  Reply to previous message
+                </Text>
               </View>
             )}
-          </View>
+
+            {/* Media */}
+            {hasMedia && (
+              <View style={styles.mediaContainer}>
+                {message.sandesha_prakara === 'image' ||
+                message.sandesha_prakara === 'gif' ||
+                message.sandesha_prakara === 'sticker' ? (
+                  <Image
+                    source={{ uri: message.vishayah }}
+                    style={styles.mediaImage}
+                    resizeMode={
+                      message.sandesha_prakara === 'gif' ? 'contain' : 'cover'
+                    }
+                  />
+                ) : message.sandesha_prakara === 'video' ? (
+                  <View style={styles.videoPlaceholder}>
+                    <Text style={styles.videoText}>📹 Video</Text>
+                  </View>
+                ) : (
+                  <View style={styles.documentPlaceholder}>
+                    <Text style={styles.documentText}>
+                      📄 {message.sandesha_prakara}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Text */}
+            {message.vishayah && message.sandesha_prakara === 'text' && (
+              <Text style={styles.messageText}>{message.vishayah}</Text>
+            )}
+          </>
         )}
 
-        {/* Text */}
-        {message.vishayah && message.sandesha_prakara === 'text' && (
-          <Text style={styles.messageText}>{message.vishayah}</Text>
-        )}
-
-        {/* Timestamp and status */}
+        {/* Footer always visible */}
         <View style={styles.footer}>
           {Number(message.sthapitam_sandesham) === 1 && (
             <MaterialCommunityIcons
@@ -161,6 +170,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               style={styles.metaIcon}
             />
           )}
+
           {Number(message.kimTaritaSandesha) === 1 && (
             <MaterialCommunityIcons
               name="star"
@@ -169,16 +179,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               style={styles.metaIcon}
             />
           )}
+
           {message.sampaditam ? (
             <Text style={styles.editedText}>edited</Text>
           ) : null}
+
           <Text style={styles.timestamp}>
             {formatTimestamp(
-              new Date(
-                message.preritam_tithih || message.createdAt,
-              ).getTime(),
+              new Date(message.preritam_tithih || message.createdAt).getTime(),
             )}
           </Text>
+
           {isOutgoing && <MessageStatusIcon status={currentStatus as any} />}
         </View>
       </Pressable>
@@ -186,9 +197,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   );
 };
 
-/**
- * Format timestamp to HH:MM
- */
 function formatTimestamp(timestamp: number): string {
   const date = new Date(timestamp);
   const hours = date.getHours().toString().padStart(2, '0');
@@ -196,9 +204,6 @@ function formatTimestamp(timestamp: number): string {
   return `${hours}:${minutes}`;
 }
 
-/**
- * Dynamic styles based on message direction
- */
 function createStyles(isOutgoing: boolean, isHighlighted: boolean) {
   const outgoingBg = isHighlighted ? '#075E54' : '#007AFF';
   const incomingBg = isHighlighted ? '#2A3942' : '#FFFFFF';
@@ -302,13 +307,20 @@ function createStyles(isOutgoing: boolean, isHighlighted: boolean) {
       color: isOutgoing ? 'rgba(255,255,255,0.8)' : '#999999',
       marginLeft: 2,
     },
+    deletedContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 4,
+    },
+
+    deletedText: {
+      fontSize: 14,
+      fontStyle: 'italic',
+      color: isOutgoing ? 'rgba(255,255,255,0.7)' : '#777',
+    },
   });
 }
 
-/**
- * Custom comparison function for React.memo
- * Only re-render if message refrenceId changes
- */
 export default React.memo(
   MessageBubble,
   (prevProps, nextProps) =>
@@ -316,4 +328,3 @@ export default React.memo(
     prevProps.isSelected === nextProps.isSelected &&
     prevProps.isSelectionMode === nextProps.isSelectionMode,
 );
-

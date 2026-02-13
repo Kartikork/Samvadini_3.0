@@ -1,6 +1,7 @@
 import { axiosConn } from '../../../storage/helper/Config';
 import { updateChatMessage } from '../../../storage/sqllite/chat/ChatMessageSchema';
 import { SocketService } from '../../../services/SocketService';
+import { Clipboard } from 'react-native';
 
 type LocalMessage = {
   refrenceId: string;
@@ -55,7 +56,6 @@ export async function updateMessagesActionState({
   setMessages,
 }: PinUpdateParams): Promise<void> {
   if (!chatId || !selectedMessages?.length) return;
-
   const isInterNetAvailable = await SocketService.checkInternetConnection();
   if (!isInterNetAvailable) return;
 
@@ -81,14 +81,6 @@ export async function updateMessagesActionState({
 
     return hasChanges ? updated : prevMessages;
   });
-  console.log(
-    {
-      refrenceIds,
-      type,
-      updates,
-    },
-    '000000000000000000000000000000000000000000000000000000000000000',
-  );
 
   // SQLite update
   try {
@@ -113,10 +105,6 @@ export async function updateMessagesActionState({
     updates,
     timeStamp: new Date().toISOString(),
   };
-  console.log(
-    payload,
-    '2222222222222222222222222222222222222222222222222222222222222222222',
-  );
 
   try {
     // realtime sync

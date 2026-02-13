@@ -1,13 +1,7 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Platform,
-  Alert,
-} from 'react-native';
+import React, { useState, useMemo, memo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useAppSelector } from '../../../state/hooks';
 
 export type MessageActionType =
   | 'star'
@@ -25,6 +19,7 @@ export type MessageActionType =
   | 'addToCalendar';
 
 interface MessageActionsBarProps {
+  selectedMessages: any[];
   selectedCount: number;
   hasPinnedMessages?: boolean;
   hasStarredMessages?: boolean;
@@ -32,7 +27,15 @@ interface MessageActionsBarProps {
   onActionPress: (action: MessageActionType) => void;
 }
 
+const FIFTEEN_MINUTES = 15 * 60 * 1000;
+
+const parseMessageTime = (msg: any): number | null => {
+  const time = new Date(msg?.preritam_tithih || msg?.createdAt).getTime();
+  return isNaN(time) ? null : time;
+};
+
 const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
+  selectedMessages = [],
   selectedCount,
   hasPinnedMessages = false,
   hasStarredMessages = false,
@@ -40,132 +43,193 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
   onActionPress,
 }) => {
   const [menuVisible, setMenuVisible] = useState(false);
+  const currentUserId = useAppSelector(state => state.auth.uniqueId);
+
+  const derived = useMemo(() => {
+    const now = Date.now();
+    const hasSingleSelection = selectedMessages.length === 1;
+    const firstMessage = hasSingleSelection ? selectedMessages[0] : null;
+
+    const hasDeleted = selectedMessages.some(
+      msg => Number(msg?.nirastah) === 1,
+    );
+
+    const isTextMessage = firstMessage?.sandesha_prakara === 'text';
+    const isOwnMessage = firstMessage?.pathakah_chinha === currentUserId;
+    const isLiveLocation = firstMessage?.sandesha_prakara === 'live_location';
+
+    const hasNonText = selectedMessages.some(
+      msg =>
+        msg?.sandesha_prakara !== 'text' && msg?.sandesha_prakara !== 'link',
+    );
+
+    const hasOtherUserMessage = selectedMessages.some(
+      msg => msg?.pathakah_chinha !== currentUserId,
+    );
+
+    const hasOldMessage = selectedMessages.some(msg => {
+      const time = parseMessageTime(msg);
+      return time ? now - time > FIFTEEN_MINUTES : false;
+    });
+
+    const canDeleteForEveryone =
+      !hasDeleted && !hasOtherUserMessage && !hasOldMessage;
+
+    return {
+      hasSingleSelection,
+      firstMessage,
+      hasDeleted,
+      isTextMessage,
+      isOwnMessage,
+      isLiveLocation,
+      hasNonText,
+      hasOldMessage,
+      canDeleteForEveryone,
+    };
+  }, [selectedMessages, currentUserId]);
+
+  const {
+    hasSingleSelection,
+    hasDeleted,
+    isTextMessage,
+    isOwnMessage,
+    isLiveLocation,
+    hasNonText,
+    hasOldMessage,
+    canDeleteForEveryone,
+  } = derived;
+
+  const handleDelete = () => {
+    const buttons: any[] = [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete for me',
+        onPress: () => onActionPress('delete'),
+      },
+    ];
+
+    if (canDeleteForEveryone) {
+      buttons.push({
+        text: 'Delete for everyone',
+        style: 'destructive',
+        onPress: () => onActionPress('deleteEveryone'),
+      });
+    }
+
+    Alert.alert(
+      'Delete message?',
+      selectedCount === 1
+        ? 'Do you want to delete this message?'
+        : 'Do you want to delete the selected messages?',
+      buttons,
+      { cancelable: true },
+    );
+  };
+
+  const handleOverflowAction = (action: MessageActionType) => {
+    setMenuVisible(false);
+    onActionPress(action);
+  };
 
   return (
     <View style={styles.wrapper}>
-      {/* Top dark toolbar (selection count + actions) */}
       <View style={styles.toolbar}>
+        {/* Left */}
         <View style={styles.leftSection}>
           <TouchableOpacity
             onPress={onCloseSelection}
             style={styles.iconButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <MaterialCommunityIcons name="close" size={22} color="#FFFFFF" />
+            <MaterialCommunityIcons name="close" size={22} color="#FFF" />
           </TouchableOpacity>
+
           <Text style={styles.countText}>{selectedCount}</Text>
         </View>
 
+        {/* Right */}
         <View style={styles.rightSection}>
-          {/* Reply */}
-          <ActionIcon
-            name="reply"
-            label="Reply"
-            onPress={() => onActionPress('reply')}
-          />
+          {hasSingleSelection && !hasDeleted && (
+            <ActionIcon name="reply" onPress={() => onActionPress('reply')} />
+          )}
 
-          {/* Star */}
-          <ActionIcon
-            name={hasStarredMessages ? 'star' : 'star-outline'}
-            label={hasStarredMessages ? 'Unstar' : 'Star'}
-            onPress={() => {
-              onActionPress(hasStarredMessages ? 'unstar' : 'star');
-              setMenuVisible(false);
-            }}
-          />
-          {/* Delete */}
-          <ActionIcon
-            name="delete-outline"
-            label="Delete"
-            onPress={() => {
-              Alert.alert(
-                'Delete message?',
-                selectedCount === 1
-                  ? 'Do you want to delete this message?'
-                  : 'Do you want to delete the selected messages?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Delete for me',
-                    style: 'default',
-                    onPress: () => {
-                      onActionPress('delete');
-                      setMenuVisible(false);
-                    },
-                  },
-                  {
-                    text: 'Delete for everyone',
-                    style: 'destructive',
-                    onPress: () => {
-                      onActionPress('deleteEveryone');
-                      setMenuVisible(false);
-                    },
-                  },
-                ],
-                { cancelable: true },
-              );
-            }}
-          />
+          {hasSingleSelection &&
+            !hasDeleted &&
+            isOwnMessage &&
+            isTextMessage &&
+            !hasOldMessage && (
+              <ActionIcon
+                name="pencil-outline"
+                onPress={() => onActionPress('edit')}
+              />
+            )}
 
-          {/* Copy */}
-          <ActionIcon
-            name="content-copy"
-            label="Copy"
-            onPress={() => {
-              onActionPress('copy');
-              setMenuVisible(false);
-            }}
-          />
-
-          {/* Forward */}
-          <ActionIcon
-            name="share-all-outline"
-            label="Forward"
-            onPress={() => onActionPress('forward')}
-          />
-
-          {/* Overflow menu (3 dots) */}
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => setMenuVisible(prev => !prev)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <MaterialCommunityIcons
-              name="dots-vertical"
-              size={22}
-              color="#FFFFFF"
+          {hasSingleSelection && !hasDeleted && !hasNonText && (
+            <ActionIcon
+              name="content-copy"
+              onPress={() => onActionPress('copy')}
             />
-          </TouchableOpacity>
+          )}
+
+          {!hasDeleted && !(hasSingleSelection && isLiveLocation) && (
+            <ActionIcon
+              name="share-all-outline"
+              onPress={() => onActionPress('forward')}
+            />
+          )}
+
+          <ActionIcon name="delete-outline" onPress={handleDelete} />
+
+          {!hasDeleted && (
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => setMenuVisible(prev => !prev)}
+            >
+              <MaterialCommunityIcons
+                name="dots-vertical"
+                size={22}
+                color="#FFF"
+              />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
-      {/* Overflow dropdown menu (as in screenshot) */}
-      {menuVisible && (
+      {/* Overflow Menu */}
+      {menuVisible && !hasDeleted && (
         <View style={styles.menuContainer}>
-          {/* Pin */}
+          {hasSingleSelection && (
+            <OverflowItem
+              iconName={hasPinnedMessages ? 'pin-off' : 'pin-outline'}
+              label={hasPinnedMessages ? 'Unpin' : 'Pin'}
+              onPress={() =>
+                handleOverflowAction(hasPinnedMessages ? 'unpin' : 'pin')
+              }
+            />
+          )}
+
           <OverflowItem
-            iconName="pin-outline"
-            label={hasPinnedMessages ? 'Unpin' : 'Pin'}
-            onPress={() => {
-              onActionPress(hasPinnedMessages ? 'unpin' : 'pin');
-              setMenuVisible(false);
-            }}
+            iconName={hasStarredMessages ? 'star' : 'star-outline'}
+            label={hasStarredMessages ? 'Unstar' : 'Star'}
+            onPress={() =>
+              handleOverflowAction(hasStarredMessages ? 'unstar' : 'star')
+            }
           />
-          {/* Share */}
-          <OverflowItem
-            iconName="share-variant"
-            label="Share"
-            onPress={() => onActionPress('share')}
-          />
-          {/* Calendar */}
-          <OverflowItem
-            iconName="calendar-month-outline"
-            label="Add to Calendar"
-            onPress={() => {
-              onActionPress('addToCalendar');
-              setMenuVisible(false);
-            }}
-          />
+
+          {hasSingleSelection && (
+            <OverflowItem
+              iconName="share-variant"
+              label="Share"
+              onPress={() => handleOverflowAction('share')}
+            />
+          )}
+
+          {isTextMessage && hasSingleSelection && (
+            <OverflowItem
+              iconName="calendar"
+              label="Add to Calendar"
+              onPress={() => handleOverflowAction('addToCalendar')}
+            />
+          )}
         </View>
       )}
     </View>
@@ -174,21 +238,14 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
 
 interface ActionIconProps {
   name: string;
-  label: string;
   onPress: () => void;
 }
 
-const ActionIcon: React.FC<ActionIconProps> = ({ name, label, onPress }) => {
-  return (
-    <TouchableOpacity
-      style={styles.iconButton}
-      onPress={onPress}
-      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-    >
-      <MaterialCommunityIcons name={name} size={22} color="#FFFFFF" />
-    </TouchableOpacity>
-  );
-};
+const ActionIcon = memo(({ name, onPress }: ActionIconProps) => (
+  <TouchableOpacity style={styles.iconButton} onPress={onPress}>
+    <MaterialCommunityIcons name={name} size={22} color="#FFF" />
+  </TouchableOpacity>
+));
 
 interface OverflowItemProps {
   iconName: string;
@@ -196,23 +253,17 @@ interface OverflowItemProps {
   onPress: () => void;
 }
 
-const OverflowItem: React.FC<OverflowItemProps> = ({
-  iconName,
-  label,
-  onPress,
-}) => {
-  return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-      <MaterialCommunityIcons
-        name={iconName}
-        size={20}
-        color="#444"
-        style={{ marginRight: 12 }}
-      />
-      <Text style={styles.menuItemText}>{label}</Text>
-    </TouchableOpacity>
-  );
-};
+const OverflowItem = memo(({ iconName, label, onPress }: OverflowItemProps) => (
+  <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+    <MaterialCommunityIcons
+      name={iconName}
+      size={20}
+      color="#444"
+      style={{ marginRight: 12 }}
+    />
+    <Text style={styles.menuItemText}>{label}</Text>
+  </TouchableOpacity>
+));
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -229,17 +280,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     backgroundColor: '#202C33',
-    ...Platform.select({
-      android: {
-        elevation: 4,
-      },
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-      },
-    }),
+    elevation: 4,
   },
   leftSection: {
     flexDirection: 'row',
@@ -254,7 +295,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   countText: {
-    color: '#FFFFFF',
+    color: '#FFF',
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 4,
@@ -263,21 +304,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 40,
     right: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
     borderRadius: 8,
     paddingVertical: 4,
     minWidth: 180,
-    ...Platform.select({
-      android: {
-        elevation: 6,
-      },
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-      },
-    }),
+    elevation: 6,
   },
   menuItem: {
     flexDirection: 'row',

@@ -12,7 +12,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useRoute, RouteProp } from '@react-navigation/native';
@@ -67,16 +66,10 @@ const ChatScreen: React.FC = () => {
   useHardwareBackHandler('ChatList');
   // Chat ID from Redux (primary) or route params (fallback)
   const chatId = activeChat.chatId ?? route.params.chatId;
-
-  // Sync Redux when opened from deep link (useChatById loads from DB)
   const chatFromDb = useChatById(chatId);
-
-  // Local state
-  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
-  // Use Redux auth.uniqueId as the single source of truth for current user
   const currentUserId = useAppSelector(state => state.auth.uniqueId) ?? null;
   const [isTyping, setIsTyping] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
@@ -121,18 +114,12 @@ const ChatScreen: React.FC = () => {
     minimumViewTime: 500,
   });
 
-  /**
-   * Ensure chatId is in Redux when on Chat screen (for deep link / direct navigation)
-   */
   useEffect(() => {
     if (chatId && activeChat.chatId !== chatId) {
       dispatch(activeChatActions.setActiveChatId(chatId));
     }
   }, [chatId, activeChat.chatId, dispatch]);
 
-  /**
-   * Sync full chat data from DB when opened from deep link (activeChat has chatId but no username)
-   */
   useEffect(() => {
     if (
       chatId &&
@@ -151,36 +138,20 @@ const ChatScreen: React.FC = () => {
     }
   }, [chatId, activeChat.chatId, activeChat.username, chatFromDb, dispatch]);
 
-  /**
-   * Clear active chat when leaving screen
-   */
   useEffect(() => {
     return () => {
       dispatch(activeChatActions.clearActiveChat());
     };
   }, [dispatch]);
 
-  /**
-   * Get current user ID
-   */
-
-  /**
-   * Load initial messages from existing DB
-   */
   useEffect(() => {
     if (chatId) {
       loadMessages();
     }
   }, [chatId]);
 
-  /**
-   * Load messages from existing SQLite schema
-   */
   const loadMessages = async () => {
-    setIsLoading(true);
     try {
-      // Use existing fetchChatMessages function
-      // Initial load: last 20 messages from DB (latest -> oldest)
       const loadedMessages = await fetchChatMessages(chatId, 20, 0);
       const transformedMessages = loadedMessages.map((msg: ChatMessage) => ({
         ...msg,
@@ -202,14 +173,9 @@ const ChatScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('[ChatScreen] Load messages error:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  /**
-   * Load more messages (pagination)
-   */
   const loadMoreMessages = useCallback(async () => {
     if (isLoadingMore || !hasMoreMessages) return;
 
@@ -244,10 +210,6 @@ const ChatScreen: React.FC = () => {
     }
   }, [isLoadingMore, hasMoreMessages, messages.length, chatId, currentUserId]);
 
-  /**
-   * Append latest message from DB after socket + MessageHandler have processed it
-   * Avoids reloading full list and ensures chat updates while open
-   */
   const appendLatestMessageFromDb = useCallback(async () => {
     try {
       const latest = await fetchChatMessages(chatId, 1, 0);
@@ -276,9 +238,6 @@ const ChatScreen: React.FC = () => {
     }
   }, [chatId, currentUserId]);
 
-  /**
-   * Listen for new messages from existing SocketService
-   */
   useEffect(() => {
     if (!chatId) return;
 
@@ -301,9 +260,6 @@ const ChatScreen: React.FC = () => {
     };
   }, [chatId, appendLatestMessageFromDb]);
 
-  /**
-   * Handle viewable items changed (for read receipts)
-   */
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: any) => {
       if (!currentUserId) return;
@@ -349,8 +305,6 @@ const ChatScreen: React.FC = () => {
               : 'unStar',
           chatId,
           selectedMessages,
-          // setMessages is typed for ChatMessage but helper is generic LocalMessage
-          // so we cast to satisfy TS without affecting runtime.
           setMessages: setMessages as any,
         });
 
@@ -384,9 +338,6 @@ const ChatScreen: React.FC = () => {
     [chatId, selectedMessages, clearSelection],
   );
 
-  /**
-   * Render message item
-   */
   const renderMessage = useCallback(
     ({ item: message, index }: { item: ChatMessage; index: number }) => {
       if (!message) return null;
@@ -427,17 +378,10 @@ const ChatScreen: React.FC = () => {
     ],
   );
 
-  /**
-   * Get item type for FlashList optimization
-   */
   const getItemType = useCallback((item: ChatMessage) => {
     if (!item) return 'text';
     return item.sandesha_prakara || 'text';
   }, []);
-
-  /**
-   * When user scrolls to TOP, load older messages from DB
-   */
 
   const handleMenuPress = useCallback(() => {
     // TODO: Open chat options (view contact, mute, etc.)
@@ -458,10 +402,6 @@ const ChatScreen: React.FC = () => {
     [hasMoreMessages, isLoadingMore, loadMoreMessages],
   );
 
-  /**
-   * List header (shows loading indicator when loading more)
-   * Note: we avoid full-screen loading; only small header on pagination
-   */
   const renderListHeader = () => {
     if (!isLoadingMore) return null;
 
@@ -472,25 +412,16 @@ const ChatScreen: React.FC = () => {
     );
   };
 
-  /**
-   * List footer (shows typing indicator)
-   */
   const renderListFooter = () => {
     if (!isTyping) return null;
     return <TypingIndicator />;
   };
 
-  /**
-   * Key extractor
-   */
   const keyExtractor = useCallback(
     (item: ChatMessage) => item.refrenceId || item.anuvadata_id.toString(),
     [],
   );
 
-  /**
-   * Auto-scroll to bottom when needed (initial load + new messages)
-   */
   useEffect(() => {
     if (!shouldScrollToBottom) return;
     if (!flashListRef.current) return;
@@ -518,6 +449,7 @@ const ChatScreen: React.FC = () => {
       {/* Selection bar (overlays header) */}
       {isSelectionMode && (
         <MessageActionsBar
+          selectedMessages={selectedMessages}
           selectedCount={selectedMessageIds.length}
           hasPinnedMessages={hasPinnedMessages}
           hasStarredMessages={hasStarredMessages}
@@ -613,9 +545,6 @@ const ChatScreen: React.FC = () => {
   );
 };
 
-/**
- * Determine if date separator should be shown
- */
 function shouldShowDateSeparator(
   currentMessage: ChatMessage,
   previousMessage?: ChatMessage,
