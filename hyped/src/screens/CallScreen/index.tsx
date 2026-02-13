@@ -49,6 +49,17 @@ export default function CallScreen() {
     if (currentRemote) setRemoteStream(currentRemote);
   }, []);
 
+  // Re-check for streams when call state changes (in case remote stream arrives)
+  useEffect(() => {
+    if (call.state === 'CONNECTING' || call.state === 'CONNECTED') {
+      const currentRemote = WebRTCMediaService.getRemoteStream();
+      if (currentRemote && !remoteStream) {
+        console.log('[CallScreen] 🔍 Found remote stream on state change:', currentRemote.id);
+        setRemoteStream(currentRemote);
+      }
+    }
+  }, [call.state, remoteStream]);
+
   const title = useMemo(() => {
     if (call.callerName) return call.callerName;
     return call.callerId || 'Unknown';
@@ -96,40 +107,53 @@ export default function CallScreen() {
     return '';
   }, [call.state, call.callType]);
 
-  const showVideo = call.callType === 'video' && (call.state === 'CONNECTED' || call.state === 'CONNECTING');
+  // Show video UI for video calls in all active states (including OUTGOING_DIALING for caller preview)
+  const showVideo = call.callType === 'video' && (
+    call.state === 'OUTGOING_DIALING' || 
+    call.state === 'CONNECTING' || 
+    call.state === 'CONNECTED' ||
+    call.state === 'INCOMING_NOTIFICATION' ||
+    call.state === 'ACCEPTING'
+  );
 
-
-
-    return (
-      <ImageBackground
-        source={callBackgroung}
-        resizeMode="cover"
-        style={styles.container}
-      >
-        {/* Video streams for video calls */}
-        {showVideo && (
-          <View style={styles.videoContainer}>
-            {/* Remote video (full screen) */}
-            {remoteStream && (
-              <RTCView
-                streamURL={remoteStream.toURL()}
-                style={styles.remoteVideo}
-                objectFit="cover"
-                mirror={false}
-              />
-            )}
-
-            {/* Local video (picture-in-picture) */}
-            {localStream && (
-              <RTCView
-                streamURL={localStream.toURL()}
-                style={styles.localVideo}
-                objectFit="cover"
-                mirror={true}
-              />
-            )}
-          </View>
-        )}
+  return (
+    <ImageBackground
+    source={callBackgroung}
+    resizeMode="cover"
+    style={styles.container}
+  >    
+    {/* Video streams for video calls */}
+      {showVideo && (
+        <View style={styles.videoContainer}>
+          {/* Remote video (full screen) - only show when remote stream is available */}
+          {remoteStream ? (
+            <RTCView
+              streamURL={remoteStream.toURL()}
+              style={styles.remoteVideo}
+              objectFit="cover"
+              mirror={false}
+            />
+          ) : localStream ? (
+            // When only local stream is available, show it full screen
+            <RTCView
+              streamURL={localStream.toURL()}
+              style={styles.remoteVideo}
+              objectFit="cover"
+              mirror={true}
+            />
+          ) : null}
+          
+          {/* Local video (picture-in-picture) - only show when both streams are available */}
+          {localStream && remoteStream && (
+            <RTCView
+              streamURL={localStream.toURL()}
+              style={styles.localVideo}
+              objectFit="cover"
+              mirror={true}
+            />
+          )}
+        </View>
+      )}
 
         {/* Audio call UI (overlay on video or standalone) */}
         <View style={[styles.audioOverlay, showVideo && styles.audioOverlayVideo]}>
@@ -150,9 +174,11 @@ export default function CallScreen() {
               <CallControls
                 isMuted={call.isMuted}
                 isVideoOn={call.isVideoOn}
-                onToggleMute={() => CallManager.toggleMute()}
+                isSpeakerOn={call.isSpeakerOn}
+            onToggleMute={() => CallManager.toggleMute()}
                 onToggleVideo={() => CallManager.toggleVideo()}
-                onEnd={() => CallManager.endCall('user_ended')}
+                onToggleSpeaker={() => CallManager.toggleSpeaker()}
+            onEnd={() => CallManager.endCall('user_ended')}
               />
             </View>
           </View>
