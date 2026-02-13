@@ -376,9 +376,7 @@ export default function MainNavigator() {
           options={commonHeaderOptions}
         />
 
-        <Stack.Screen
-          name="Call"
-
+       
         {/* Call Screen - No header, full screen */}
         <Stack.Screen
           name="Call"
