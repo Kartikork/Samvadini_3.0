@@ -29,21 +29,71 @@ import NewContactFormScreen from '../screens/NewContactFormScreen';
 import CreateNewGroupScreen from '../screens/CreateNewGroup';
 import CallScreen from '../screens/CallScreen';
 import SnakeLaddersGame from '../screens/LanguageGameScreen/GAMER/SnakeLaddersGame/SnakeLaddersGame.js';
-const MemoryGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MemoryGame'));
-const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameIntroScreen.js'));
-const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameScreen.js'));
-const BubbleShooterGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/BubbleShooter/BubbleShooterGame.js'));
-const CarGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/cargame/CarGame'));
-const BalloonShootingGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/BalloonShootingGame/BalloonShootingGame'));
-const TicTacToe = lazy(() => import('../screens/LanguageGameScreen/GAMER/TicTacToe'));
-const NumberSortIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/NumberSortIntroScreen'));
-const SortGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/SortGameScreen'));
-const DrumGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/DrumGame/Game'));
-const Carrom = lazy(() => import('../screens/LanguageGameScreen/GAMER/CarromGame/CarromGame.js'));
-const chess = lazy(() => import('../screens/LanguageGameScreen/GAMER/Chess/chess.js'));
-const pong = lazy(() => import('../screens/LanguageGameScreen/GAMER/pong/footballNet.js'));
-const homescreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/HomeScreen.js'));
-const roomscreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/RoomScreen.js'));
+const MemoryGame = lazy(
+  () => import('../screens/LanguageGameScreen/GAMER/MemoryGame'),
+);
+const SnakeGameIntroScreen = lazy(
+  () =>
+    import(
+      '../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameIntroScreen.js'
+    ),
+);
+const SnakeGameScreen = lazy(
+  () =>
+    import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameScreen.js'),
+);
+const BubbleShooterGame = lazy(
+  () =>
+    import(
+      '../screens/LanguageGameScreen/GAMER/BubbleShooter/BubbleShooterGame.js'
+    ),
+);
+const CarGame = lazy(
+  () => import('../screens/LanguageGameScreen/GAMER/cargame/CarGame'),
+);
+const BalloonShootingGame = lazy(
+  () =>
+    import(
+      '../screens/LanguageGameScreen/GAMER/BalloonShootingGame/BalloonShootingGame'
+    ),
+);
+const TicTacToe = lazy(
+  () => import('../screens/LanguageGameScreen/GAMER/TicTacToe'),
+);
+const NumberSortIntroScreen = lazy(
+  () =>
+    import(
+      '../screens/LanguageGameScreen/GAMER/NumberSort/NumberSortIntroScreen'
+    ),
+);
+const SortGameScreen = lazy(
+  () => import('../screens/LanguageGameScreen/GAMER/NumberSort/SortGameScreen'),
+);
+const DrumGame = lazy(
+  () => import('../screens/LanguageGameScreen/GAMER/DrumGame/Game'),
+);
+const Carrom = lazy(
+  () => import('../screens/LanguageGameScreen/GAMER/CarromGame/CarromGame.js'),
+);
+const chess = lazy(
+  () => import('../screens/LanguageGameScreen/GAMER/Chess/chess.js'),
+);
+const pong = lazy(
+  () => import('../screens/LanguageGameScreen/GAMER/pong/footballNet.js'),
+);
+const homescreen = lazy(
+  () =>
+    import(
+      '../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/HomeScreen.js'
+    ),
+);
+const roomscreen = lazy(
+  () =>
+    import(
+      '../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/RoomScreen.js'
+    ),
+);
+const ChatProfile = lazy(() => import('../screens/Profile/ChatProfile.js'));
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
 
@@ -179,6 +229,7 @@ export type RootStackParamList = {
   EventListScreen: undefined;
   CreateEvents: undefined;
   DetailsScreen: undefined;
+  ChatProfile: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -222,7 +273,10 @@ export default function MainNavigator() {
           options={{ animation: 'none' }}
         />
 
-        <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
+        <Stack.Screen
+          name="LanguageSelection"
+          component={LanguageSelectionScreen}
+        />
         <Stack.Screen
           name="Login"
           component={LoginScreen}
@@ -375,8 +429,12 @@ export default function MainNavigator() {
           component={CreateNewGroupScreen}
           options={commonHeaderOptions}
         />
+        <Stack.Screen
+          name="ChatProfile"
+          component={ChatProfile}
+          options={commonHeaderOptions}
+        />
 
-       
         {/* Call Screen - No header, full screen */}
         <Stack.Screen
           name="Call"
@@ -389,7 +447,6 @@ export default function MainNavigator() {
         />
 
         {/* TODO: Add GroupChat screen when needed */}
-
 
         <Stack.Screen
           name="pong"
@@ -480,7 +537,6 @@ export default function MainNavigator() {
           component={DrumGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
-
 
         {/* TODO: Add these screens
         <Stack.Screen name="GroupChat" component={GroupChatScreen} />

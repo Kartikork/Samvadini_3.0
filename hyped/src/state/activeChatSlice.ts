@@ -11,44 +11,72 @@ export interface ActiveChatState {
   chatId: string | null;
   username: string;
   avatar: string | null;
+  otherUserId: string;
+  BlockedUser: string[];
+  request: string | null;
+  hidePhoneNumber: boolean;
   isGroup: boolean;
+  otherUserPhoneNumber: string | null;
+}
+
+export interface SetActiveChatPayload {
+  chatId: string;
+  username: string;
+  avatar?: string | null;
+  otherUserId: string;
+  BlockedUser?: string[];
+  request?: string | null;
+  hidePhoneNumber?: boolean;
+  isGroup?: boolean;
+  otherUserPhoneNumber: string | null;
 }
 
 const initialState: ActiveChatState = {
   chatId: null,
   username: '',
   avatar: null,
+  otherUserId: '',
+  BlockedUser: [],
+  request: null,
+  hidePhoneNumber: false,
   isGroup: false,
+  otherUserPhoneNumber: null,
 };
 
 export const activeChatSlice = createSlice({
   name: 'activeChat',
   initialState,
   reducers: {
-    setActiveChat: (
-      state,
-      action: PayloadAction<{
-        chatId: string;
-        username: string;
-        avatar?: string | null;
-        isGroup?: boolean;
-      }>
-    ) => {
-      state.chatId = action.payload.chatId;
-      state.username = action.payload.username;
-      state.avatar = action.payload.avatar ?? null;
-      state.isGroup = action.payload.isGroup ?? false;
+    setActiveChat: (state, action: PayloadAction<SetActiveChatPayload>) => {
+      const {
+        chatId,
+        username,
+        avatar,
+        otherUserId,
+        BlockedUser,
+        request,
+        hidePhoneNumber,
+        isGroup,
+        otherUserPhoneNumber,
+      } = action.payload;
+
+      state.chatId = chatId;
+      state.username = username;
+      state.avatar = avatar ?? null;
+      state.otherUserId = otherUserId;
+      state.BlockedUser = BlockedUser ?? [];
+      state.request = request ?? null;
+      state.hidePhoneNumber = hidePhoneNumber ?? false;
+      state.otherUserPhoneNumber = otherUserPhoneNumber ?? null;
+      state.isGroup = isGroup ?? false;
     },
+
     /** Set only chatId (e.g. when opening from deep link before DB loads) */
     setActiveChatId: (state, action: PayloadAction<string>) => {
       state.chatId = action.payload;
     },
-    clearActiveChat: (state) => {
-      state.chatId = null;
-      state.username = '';
-      state.avatar = null;
-      state.isGroup = false;
-    },
+
+    clearActiveChat: () => initialState,
   },
 });
 
