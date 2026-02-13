@@ -4,8 +4,15 @@
  * Compatible with existing message structure from ChatMessageSchema
  */
 
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Image, Pressable, Platform } from 'react-native';
+import React, { useMemo, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Pressable,
+  Platform,
+} from 'react-native';
 import MessageStatusIcon from './MessageStatusIcon';
 
 interface ChatMessage {
@@ -25,9 +32,25 @@ interface ChatMessage {
 interface MessageBubbleProps {
   message: ChatMessage;
   currentUserId: string | null;
+  isSelected: boolean;
+  isSelectionMode: boolean;
+  onPressMessage: (message: ChatMessage) => void;
+  onLongPressMessage: (message: ChatMessage) => void;
+   onMeasureMessage?: (
+    id: string,
+    layout: { x: number; y: number; width: number; height: number },
+  ) => void;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUserId }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({
+  message,
+  currentUserId,
+  isSelected,
+  isSelectionMode,
+  onPressMessage,
+  onLongPressMessage,
+  onMeasureMessage,
+}) => {
   if (!message) return null;
 
   // Determine if message is outgoing
@@ -36,16 +59,54 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUserId })
   // Map avastha to status
   const currentStatus = message.avastha || 'sent';
 
-  const styles = useMemo(() => createStyles(isOutgoing), [isOutgoing]);
+  const styles = useMemo(
+    () => createStyles(isOutgoing, isSelected),
+    [isOutgoing, isSelected],
+  );
 
   const hasMedia = message.sandesha_prakara && message.sandesha_prakara !== 'text';
+
+  const bubbleRef = useRef<View | null>(null);
+
+  useEffect(() => {
+    if (!onMeasureMessage) return;
+    if (!isSelectionMode || !isSelected) return;
+    if (!bubbleRef.current) return;
+
+    const handle = bubbleRef.current;
+    // Measure in next frame to ensure layout is ready
+    const timer = setTimeout(() => {
+      handle?.measureInWindow?.((x, y, width, height) => {
+        onMeasureMessage(message.refrenceId, { x, y, width, height });
+      });
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [
+    isSelectionMode,
+    isSelected,
+    message.refrenceId,
+    onMeasureMessage,
+  ]);
 
   return (
     <View style={styles.container}>
       <Pressable
+        ref={bubbleRef}
         style={styles.bubble}
+        android_ripple={
+          isSelectionMode || isSelected
+            ? undefined
+            : { color: isOutgoing ? 'rgba(255,255,255,0.15)' : '#e0e0e0' }
+        }
+        onPress={() => {
+          // In selection mode, tap toggles selection (like WhatsApp)
+          if (isSelectionMode) {
+            onPressMessage(message);
+          }
+        }}
         onLongPress={() => {
-          // Handle long press (copy, delete, forward)
+          onLongPressMessage(message);
         }}
       >
         {/* Reply indicator */}
@@ -111,28 +172,33 @@ function formatTimestamp(timestamp: number): string {
 /**
  * Dynamic styles based on message direction
  */
-function createStyles(isOutgoing: boolean) {
+function createStyles(isOutgoing: boolean, isSelected: boolean) {
+  const outgoingBg = isSelected ? '#075E54' : '#007AFF';
+  const incomingBg = isSelected ? '#2A3942' : '#FFFFFF';
+
   return StyleSheet.create({
     container: {
       paddingHorizontal: 12,
       paddingVertical: 4,
       flexDirection: 'row',
       justifyContent: isOutgoing ? 'flex-end' : 'flex-start',
+      backgroundColor: isSelected ? '#0B141A' : 'transparent',
     },
     bubble: {
       maxWidth: '75%',
-      borderRadius: 12,
-      padding: 8,
-      backgroundColor: isOutgoing ? '#007AFF' : '#FFFFFF',
+      borderRadius: 16,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      backgroundColor: isOutgoing ? outgoingBg : incomingBg,
       ...Platform.select({
         ios: {
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.1,
-          shadowRadius: 2,
+          shadowOpacity: 0.12,
+          shadowRadius: 1.5,
         },
         android: {
-          elevation: 2,
+          elevation: 1,
         },
       }),
     },
@@ -210,6 +276,9 @@ function createStyles(isOutgoing: boolean) {
  */
 export default React.memo(
   MessageBubble,
-  (prevProps, nextProps) => prevProps.message.refrenceId === nextProps.message.refrenceId
+  (prevProps, nextProps) =>
+    prevProps.message.refrenceId === nextProps.message.refrenceId &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.isSelectionMode === nextProps.isSelectionMode
 );
 
