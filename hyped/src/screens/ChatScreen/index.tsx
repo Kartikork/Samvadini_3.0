@@ -260,6 +260,51 @@ const ChatScreen: React.FC = () => {
     };
   }, [chatId, appendLatestMessageFromDb]);
 
+  /**
+   * Global message update (pin/star/edit/reaction): patch local state so UI updates instantly
+   * when the other user (or another device) updates a message. DB is already updated by SocketService.
+   */
+  useEffect(() => {
+    if (!chatId) return;
+
+    const handleMessageUpdated = (payload: any) => {
+      const updatedChatId = payload?.samvada_chinha;
+      const refrenceIds = payload?.refrenceIds;
+      let updates = payload?.updates;
+      const type = payload?.type;
+
+      if (updatedChatId !== chatId || !refrenceIds?.length) return;
+
+      if (!updates || typeof updates !== 'object') {
+        if (!type) return;
+        updates =
+          type === 'pin'
+            ? { sthapitam_sandesham: 1 }
+            : type === 'unPin'
+            ? { sthapitam_sandesham: 0 }
+            : type === 'star'
+            ? { kimTaritaSandesha: 1 }
+            : type === 'unStar'
+            ? { kimTaritaSandesha: 0 }
+            : {};
+      }
+
+      setMessages(prev =>
+        prev.map(m =>
+          refrenceIds.includes(m.refrenceId) ? { ...m, ...updates } : m,
+        ),
+      );
+    };
+
+    SocketService.on('message_updated', handleMessageUpdated);
+    return () => {
+      SocketService.off('message_updated', handleMessageUpdated);
+    };
+  }, [chatId]);
+
+  /**
+   * Handle viewable items changed (for read receipts)
+   */
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: any) => {
       if (!currentUserId) return;
