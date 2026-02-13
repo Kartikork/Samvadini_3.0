@@ -17,13 +17,21 @@ import { OutgoingMessageManager } from '../../../services/OutgoingMessageManager
 import { useAppSelector } from '../../../state/hooks';
 import PickerModal from '../../../components/EmojiGifStickerPicker/PickerModal';
 import ActionButtons from './ActionButtons';
+import ReplyPreview from './ReplyPreview';
 
 interface ChatInputProps {
   chatId: string;
   onMessageSent?: () => void;
+  replyMessage?: any;
+  onCancelReply?: () => void;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
+const ChatInput: React.FC<ChatInputProps> = ({
+  chatId,
+  onMessageSent,
+  replyMessage,
+  onCancelReply,
+}) => {
   const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -90,13 +98,16 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
 
     try {
       console.log('Sending message:', chatId, isSending, currentUserId);
-      await OutgoingMessageManager.sendTextMessage(chatId, messageText);
-      
+      await OutgoingMessageManager.sendTextMessage(chatId, messageText, {
+        replyMessage,
+      });
+
       // Message sent successfully - trigger refresh in ChatScreen
       // Give DB a moment to ensure message is committed
       setTimeout(() => {
         onMessageSent?.();
       }, 10);
+      onCancelReply?.();
     } catch (error) {
       console.error('[ChatInput] Send error:', error);
       // Restore text on error
@@ -104,7 +115,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
     } finally {
       setIsSending(false);
     }
-  }, [text, chatId, isSending, currentUserId, onMessageSent]);
+  }, [text, chatId, isSending, currentUserId, onMessageSent, replyMessage, onCancelReply]);
 
   /**
    * Handle media attachment
@@ -181,9 +192,41 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
   const canSend = text.trim().length > 0 && !isSending;
   const hasText = text.trim().length > 0;
 
+  // Derive reply preview content
+  const replyTitle =
+    replyMessage &&
+    (replyMessage.is_outgoing ||
+      replyMessage.pathakah_chinha === currentUserId)
+      ? 'You'
+      : replyMessage?.ukti || replyMessage?.senderName || '';
+
+  let replySnippet = '';
+  if (replyMessage) {
+    if (replyMessage.vishayah) {
+      replySnippet = replyMessage.vishayah;
+    } else if (
+      replyMessage.sandesha_prakara &&
+      replyMessage.sandesha_prakara !== 'text'
+    ) {
+      replySnippet =
+        replyMessage.sandesha_prakara === 'image'
+          ? 'Photo'
+          : replyMessage.sandesha_prakara === 'video'
+          ? 'Video'
+          : 'Media';
+    }
+  }
+
   return (
-   <>
-   <View style={styles.container}>
+   <View style={[styles.container, { paddingBottom: 8 + insets.bottom }]}>
+  {replyMessage && (
+    <ReplyPreview
+      title={replyTitle || 'Replying to'}
+      message={replySnippet || 'Tap message to reply'}
+      onClose={onCancelReply || (() => {})}
+    />
+  )}
+  <View style={styles.inputRow}>
   <View style={styles.inputWrapper}>
     {/* Emoji */}
     <TouchableOpacity
@@ -241,19 +284,23 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
       onClose={() => setShowActions(false)}
     />
   )}
-  </>
+  </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: 'column',
+    alignItems: 'stretch',
     paddingHorizontal: 8,
     paddingVertical: 8,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E5E5E5',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
   },
   inputWrapper: {
  flex: 1,
