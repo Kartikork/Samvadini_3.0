@@ -16,8 +16,33 @@ import {
   mediaDevices,
   MediaStream,
 } from 'react-native-webrtc';
+import { Platform, NativeModules } from 'react-native';
+
+// Helper function to get WebRTCModule
+function getWebRTCModule(): any {
+  try {
+    // Try to get from NativeModules first
+    let module = NativeModules.WebRTCModule;
+    
+    // If not found, try alternative names
+    if (!module) {
+      module = NativeModules.RTCModule;
+    }
+    
+    // If still not found, try WebRTC (without Module suffix)
+    if (!module) {
+      module = NativeModules.WebRTC;
+    }
+    
+    return module;
+  } catch (e) {
+    console.warn('[WebRTCMedia] Could not load WebRTCModule:', e);
+    return null;
+  }
+}
 import { WebRTCService } from '../WebRTCService';
 import { env } from '../../config/env';
+import type { CallType } from '../../types/call';
 
 type MediaStreamEvent = (stream: MediaStream | null) => void;
 
@@ -40,9 +65,16 @@ class WebRTCMediaServiceClass {
     onRemoteStream?: MediaStreamEvent;
     onConnectionStateChange?: (state: string) => void;
   }): void {
-    this.onLocalStream = handlers.onLocalStream || null;
-    this.onRemoteStream = handlers.onRemoteStream || null;
-    this.onConnectionStateChange = handlers.onConnectionStateChange || null;
+    // Merge handlers instead of replacing - preserve existing handlers if new ones aren't provided
+    if (handlers.onLocalStream !== undefined) {
+      this.onLocalStream = handlers.onLocalStream;
+    }
+    if (handlers.onRemoteStream !== undefined) {
+      this.onRemoteStream = handlers.onRemoteStream;
+    }
+    if (handlers.onConnectionStateChange !== undefined) {
+      this.onConnectionStateChange = handlers.onConnectionStateChange;
+    }
   }
 
   async createPeerConnection(
@@ -80,14 +112,18 @@ class WebRTCMediaServiceClass {
       console.log('[WebRTCMedia] 🔧 Creating RTCPeerConnection with ICE servers:', iceServers);
       this.peerConnection = new RTCPeerConnection({ iceServers });
 
-      // Get user media
-      const constraints = {
-        audio: true,
-        video: callType === 'video' ? { facingMode: 'user' } : false,
-      };
+      // Get user media - reuse existing stream if available (from preview)
+      if (!this.localStream) {
+        const constraints = {
+          audio: true,
+          video: callType === 'video' ? { facingMode: 'user' } : false,
+        };
 
-      console.log('[WebRTCMedia] 🎤 Requesting user media with constraints:', constraints);
-      this.localStream = await mediaDevices.getUserMedia(constraints);
+        console.log('[WebRTCMedia] 🎤 Requesting user media with constraints:', constraints);
+        this.localStream = await mediaDevices.getUserMedia(constraints);
+      } else {
+        console.log('[WebRTCMedia] ✅ Reusing existing local stream for peer connection');
+      }
       
       console.log('[WebRTCMedia] ✅ Got local stream:', {
         id: this.localStream.id,
@@ -359,13 +395,15 @@ class WebRTCMediaServiceClass {
       return false;
     }
 
-    const newMuteState = !audioTracks[0].enabled;
+    const currentEnabled = audioTracks[0].enabled;
+    const newEnabledState = !currentEnabled;
     audioTracks.forEach(track => {
-      track.enabled = newMuteState;
-      console.log('[WebRTCMedia] 🎤', newMuteState ? 'Muted' : 'Unmuted', 'audio track:', track.id);
+      track.enabled = newEnabledState;
+      console.log('[WebRTCMedia] 🎤', newEnabledState ? 'Unmuted' : 'Muted', 'audio track:', track.id);
     });
 
-    return newMuteState;
+    // Return the muted state (inverse of enabled state)
+    return !newEnabledState;
   }
 
   toggleVideo(): boolean {
@@ -403,6 +441,206 @@ class WebRTCMediaServiceClass {
 
   getIceConnectionState(): string | null {
     return this.peerConnection?.iceConnectionState || null;
+  }
+
+  /**
+   * Get local media stream for preview (before peer connection is created)
+   * This is useful for video calls where caller wants to see their preview while dialing
+   */
+  async getLocalMediaPreview(callType: CallType): Promise<MediaStream | null> {
+    try {
+      // If we already have a local stream, return it
+      if (this.localStream) {
+        console.log('[WebRTCMedia] ✅ Reusing existing local stream for preview');
+        return this.localStream;
+      }
+
+      console.log('[WebRTCMedia] 🎬 Getting local media preview for:', callType);
+      const constraints = {
+        audio: true,
+        video: callType === 'video' ? { facingMode: 'user' } : false,
+      };
+
+      console.log('[WebRTCMedia] 🎤 Requesting user media with constraints:', constraints);
+      const stream = await mediaDevices.getUserMedia(constraints);
+      
+      console.log('[WebRTCMedia] ✅ Got local preview stream:', {
+        id: stream.id,
+        audioTracks: stream.getAudioTracks().length,
+        videoTracks: stream.getVideoTracks().length,
+        active: stream.active,
+      });
+
+      // Store the stream so it can be reused when creating peer connection
+      this.localStream = stream;
+      
+      // Notify listeners about the local stream
+      if (this.onLocalStream) {
+        this.onLocalStream(stream);
+      }
+
+      return stream;
+    } catch (error) {
+      console.error('[WebRTCMedia] ❌ Failed to get local media preview:', error);
+      return null;
+    }
+  }
+
+  async setSpeakerOn(enabled: boolean): Promise<void> {
+    try {
+      console.log('[WebRTCMedia] 🔊 Setting speaker mode:', enabled ? 'ON' : 'OFF');
+      
+      const WebRTCModule = getWebRTCModule();
+      
+      if (!WebRTCModule) {
+        console.warn('[WebRTCMedia] ⚠️ WebRTCModule not available');
+        console.log('[WebRTCMedia] Available NativeModules:', Object.keys(NativeModules));
+        return;
+      }
+
+      if (Platform.OS === 'android') {
+        // For Android, try multiple methods to control speaker
+        try {
+          // Method 1: Try react-native-incall-manager (recommended solution)
+          try {
+            const InCallManager = require('react-native-incall-manager');
+            // Handle both default export and direct export
+            const manager = InCallManager.default || InCallManager;
+            if (manager && typeof manager.setSpeakerphoneOn === 'function') {
+              manager.setSpeakerphoneOn(enabled);
+              console.log('[WebRTCMedia] ✅ Speaker mode set via react-native-incall-manager:', enabled);
+              return;
+            }
+          } catch (e) {
+            // react-native-incall-manager not installed or error loading
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            console.log('[WebRTCMedia] react-native-incall-manager not available:', errorMessage);
+          }
+          
+          // Method 2: Try setSpeakerphoneOn in WebRTCModule (if available)
+          if (typeof WebRTCModule.setSpeakerphoneOn === 'function') {
+            const result = WebRTCModule.setSpeakerphoneOn(enabled);
+            if (result && typeof result.then === 'function') {
+              await result;
+            }
+            console.log('[WebRTCMedia] ✅ Speaker mode set via setSpeakerphoneOn:', enabled);
+            return;
+          }
+          
+          // Method 3: Try setAudioOutput in WebRTCModule
+          if (typeof WebRTCModule.setAudioOutput === 'function') {
+            const result = WebRTCModule.setAudioOutput(enabled ? 'speaker' : 'earpiece');
+            if (result && typeof result.then === 'function') {
+              await result;
+            }
+            console.log('[WebRTCMedia] ✅ Speaker mode set via setAudioOutput:', enabled);
+            return;
+          }
+          
+          // Method 4: Try switchAudioOutput (alternative method name)
+          if (typeof WebRTCModule.switchAudioOutput === 'function') {
+            const result = WebRTCModule.switchAudioOutput(enabled ? 'speaker' : 'earpiece');
+            if (result && typeof result.then === 'function') {
+              await result;
+            }
+            console.log('[WebRTCMedia] ✅ Speaker mode set via switchAudioOutput:', enabled);
+            return;
+          }
+          
+          // Method 5: Try using Android AudioManager directly
+          try {
+            const AudioManager = NativeModules.AudioManager || NativeModules.AudioManagerModule;
+            if (AudioManager && typeof AudioManager.setSpeakerphoneOn === 'function') {
+              const result = AudioManager.setSpeakerphoneOn(enabled);
+              if (result && typeof result.then === 'function') {
+                await result;
+              }
+              console.log('[WebRTCMedia] ✅ Speaker mode set via AudioManager:', enabled);
+              return;
+            }
+          } catch (e) {
+            // AudioManager not available, continue
+          }
+          
+          // No speaker control methods available
+          console.warn('[WebRTCMedia] ⚠️ No speaker control methods available');
+          console.log('[WebRTCMedia] Available WebRTCModule methods:', Object.keys(WebRTCModule));
+          console.warn('[WebRTCMedia] 💡 To enable speaker control, install: npm install react-native-incall-manager');
+          console.warn('[WebRTCMedia] ⚠️ Speaker state updated in UI only (hardware control unavailable)');
+        } catch (error) {
+          console.error('[WebRTCMedia] ❌ Failed to set speaker mode (Android):', error);
+          throw error;
+        }
+      } else if (Platform.OS === 'ios') {
+        // For iOS, try multiple methods to control speaker
+        try {
+          // Method 1: Try react-native-incall-manager (recommended solution)
+          try {
+            const InCallManager = require('react-native-incall-manager').default;
+            if (InCallManager) {
+              InCallManager.setSpeakerphoneOn(enabled);
+              console.log('[WebRTCMedia] ✅ Speaker mode set via react-native-incall-manager (iOS):', enabled);
+              return;
+            }
+          } catch (e) {
+            // react-native-incall-manager not installed, continue
+          }
+          
+          // Method 2: Try setAudioOutput in WebRTCModule
+          if (typeof WebRTCModule.setAudioOutput === 'function') {
+            const result = WebRTCModule.setAudioOutput(enabled ? 'speaker' : 'earpiece');
+            if (result && typeof result.then === 'function') {
+              await result;
+            }
+            console.log('[WebRTCMedia] ✅ Speaker mode set via setAudioOutput (iOS):', enabled);
+            return;
+          }
+          
+          // Method 3: Try switchAudioOutput
+          if (typeof WebRTCModule.switchAudioOutput === 'function') {
+            const result = WebRTCModule.switchAudioOutput(enabled ? 'speaker' : 'earpiece');
+            if (result && typeof result.then === 'function') {
+              await result;
+            }
+            console.log('[WebRTCMedia] ✅ Speaker mode set via switchAudioOutput (iOS):', enabled);
+            return;
+          }
+          
+          // Method 4: Try RTCAudioSession if available
+          try {
+            const { RTCAudioSession } = require('react-native-webrtc');
+            if (RTCAudioSession && typeof RTCAudioSession.setSpeakerphoneOn === 'function') {
+              const result = RTCAudioSession.setSpeakerphoneOn(enabled);
+              if (result && typeof result.then === 'function') {
+                await result;
+              }
+              console.log('[WebRTCMedia] ✅ Speaker mode set via RTCAudioSession (iOS):', enabled);
+              return;
+            }
+          } catch (e) {
+            // RTCAudioSession not available, continue
+          }
+          
+          // No speaker control methods available
+          console.warn('[WebRTCMedia] ⚠️ No speaker control methods available on iOS');
+          console.log('[WebRTCMedia] Available WebRTCModule methods:', Object.keys(WebRTCModule));
+          console.warn('[WebRTCMedia] 💡 To enable speaker control, install: npm install react-native-incall-manager');
+          console.warn('[WebRTCMedia] ⚠️ Speaker state updated in UI only (hardware control unavailable)');
+        } catch (error) {
+          console.error('[WebRTCMedia] ❌ Failed to set speaker mode (iOS):', error);
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error('[WebRTCMedia] ❌ Failed to set speaker mode:', error);
+      throw error;
+    }
+  }
+
+  async toggleSpeaker(currentState: boolean): Promise<boolean> {
+    const newState = !currentState;
+    await this.setSpeakerOn(newState);
+    return newState;
   }
 }
 

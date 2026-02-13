@@ -19,15 +19,27 @@ interface UserProfile {
   status?: string;
 }
 
+/** Auth user settings from verify-otp (user + user_setting) */
+export interface AuthUserSettings {
+  is_register?: boolean;
+  janma_tithi?: string;
+  linga?: string;
+  parichayapatra?: string;
+  upayogakarta_nama?: string;
+  praman_patrika?: string;
+  ekatma_chinha?: string;
+  dhwani?: string | null;
+  durasamparka_gopaniya?: boolean;
+  desha_suchaka_koda?: string;
+}
+
 interface AuthState {
   // Auth data
   token: string | null;
   uniqueId: string | null;
-  
-  // User profile
   profile: UserProfile | null;
-  
-  // App state
+  /** User settings from verify-otp (is_register, janma_tithi, linga, etc.) */
+  userSettings: AuthUserSettings | null;
   isAppReady: boolean;
   isAuthenticated: boolean;
 }
@@ -36,6 +48,7 @@ const initialState: AuthState = {
   token: null,
   uniqueId: null,
   profile: null,
+  userSettings: null,
   isAppReady: false,
   isAuthenticated: false,
 };
@@ -51,9 +64,12 @@ const authSlice = createSlice({
     setUniqueId: (state, action: PayloadAction<string>) => {
       state.uniqueId = action.payload;
     },
-    setAuthData: (state, action: PayloadAction<{ token: string; uniqueId: string }>) => {
+    setAuthData: (state, action: PayloadAction<{ token: string; uniqueId: string; userSettings?: AuthUserSettings | null }>) => {
       state.token = action.payload.token;
       state.uniqueId = action.payload.uniqueId;
+      if (action.payload.userSettings !== undefined) {
+        state.userSettings = action.payload.userSettings;
+      }
       state.isAuthenticated = true;
     },
     setUserProfile: (state, action: PayloadAction<UserProfile>) => {
@@ -73,6 +89,7 @@ const authSlice = createSlice({
       state.token = null;
       state.uniqueId = null;
       state.profile = null;
+      state.userSettings = null;
       state.isAppReady = false;
       state.isAuthenticated = false;
     },

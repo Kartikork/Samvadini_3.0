@@ -61,11 +61,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUserId })
         {/* Media */}
         {hasMedia && (
           <View style={styles.mediaContainer}>
-            {message.sandesha_prakara === 'image' ? (
+            {message.sandesha_prakara === 'image' || message.sandesha_prakara === 'gif' || message.sandesha_prakara === 'sticker' ? (
               <Image
                 source={{ uri: message.vishayah }}
                 style={styles.mediaImage}
-                resizeMode="cover"
+                resizeMode={message.sandesha_prakara === 'gif' ? 'contain' : 'cover'}
               />
             ) : message.sandesha_prakara === 'video' ? (
               <View style={styles.videoPlaceholder}>
