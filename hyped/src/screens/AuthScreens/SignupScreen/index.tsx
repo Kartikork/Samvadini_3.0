@@ -33,7 +33,7 @@ import { Footer } from '../../../components/Footer';
 import { FormInput } from '../../../components/shared';
 import { useAppSelector, useAppDispatch } from '../../../state/hooks';
 import { setUserCountryCode } from '../../../state/countrySlice';
-import { getSignupTexts } from './signupTranslations';
+import { getAppTranslations } from '../../../translations';
 import { userAPI } from '../../../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -146,7 +146,7 @@ export default function SignupScreen() {
 
   const screenHeight = Dimensions.get('window').height;
   const dynamicMarginTop = screenHeight * 0.1;
-  const t = useMemo(() => getSignupTexts(lang), [lang]);
+  const t = useMemo(() => getAppTranslations(lang), [lang]);
 
   const GENDER_OPTIONS = useMemo(
     () => [

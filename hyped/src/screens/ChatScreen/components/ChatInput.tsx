@@ -6,6 +6,8 @@ import {
   StyleSheet,
   Platform,
   ActivityIndicator,
+  Keyboard,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -13,10 +15,12 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { SocketService } from '../../../services/SocketService';
 import { OutgoingMessageManager } from '../../../services/OutgoingMessageManager';
 import { useAppSelector } from '../../../state/hooks';
+import PickerModal from '../../../components/EmojiGifStickerPicker/PickerModal';
+import ActionButtons from './ActionButtons';
 
 interface ChatInputProps {
   chatId: string;
-  onMessageSent?: () => void; // Callback after message is sent successfully
+  onMessageSent?: () => void;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
@@ -27,6 +31,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
   const inputRef = useRef<TextInput>(null);
   const isTypingRef = useRef(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerHeight, setPickerHeight] = useState(0);
+  const [showActions, setShowActions] = useState(false);
 
   /**
    * Handle text change
@@ -103,16 +110,50 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
    * Handle media attachment
    */
   const handleAttachment = () => {
-    // TODO: Implement media picker
-    console.log('[ChatInput] Attachment button pressed');
+    // Toggle attachment action sheet
+    Keyboard.dismiss();
+    setShowActions(prev => !prev);
   };
 
   /**
    * Handle emoji picker
    */
   const handleEmojiPicker = () => {
-    // TODO: Implement emoji picker
-    console.log('[ChatInput] Emoji picker pressed');
+    // Dismiss keyboard and open picker sized like keyboard
+    Keyboard.dismiss();
+    const defaultPickerHeight = Math.min(Math.floor(Dimensions.get('window').height * 0.45), 360);
+    setPickerHeight(defaultPickerHeight);
+    setPickerVisible(true);
+  };
+
+  const handleEmojiSelected = (emoji: string) => {
+    // Append emoji to input and focus input
+    setText((t) => `${t}${emoji}`);
+    // Close picker then focus input so user can continue typing
+    setPickerVisible(false);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 50);
+  };
+
+  const handleGifSelected = async (gif: any) => {
+    // gif is an object { id, url, thumb }
+    try {
+      await OutgoingMessageManager.sendMediaMessage(chatId, gif.url, 'gif');
+      // notify parent to refresh
+      setTimeout(() => onMessageSent?.(), 10);
+    } catch (e) {
+      console.error('[ChatInput] send gif error', e);
+    }
+  };
+
+  const handleStickerSelected = async (sticker: any) => {
+    try {
+      await OutgoingMessageManager.sendMediaMessage(chatId, sticker.url, 'sticker');
+      setTimeout(() => onMessageSent?.(), 10);
+    } catch (e) {
+      console.error('[ChatInput] send sticker error', e);
+    }
   };
 
   /**
@@ -141,58 +182,66 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatId, onMessageSent }) => {
   const hasText = text.trim().length > 0;
 
   return (
-    <View style={[styles.container, { paddingBottom: 8 + insets.bottom }]}>
-      {/* Emoji picker button (left side) */}
-      <TouchableOpacity
-        style={styles.iconButton}
-        onPress={handleEmojiPicker}
-        disabled={isSending}
-      >
-        <Icon name="smile-o" size={24} color="#666666" />
-      </TouchableOpacity>
+   <>
+   <View style={styles.container}>
+  <View style={styles.inputWrapper}>
+    {/* Emoji */}
+    <TouchableOpacity
+      style={styles.innerIcon}
+      onPress={handleEmojiPicker}
+      disabled={isSending}
+    >
+      <Icon name="smile-o" size={22} color="#666" />
+    </TouchableOpacity>
 
-      {/* Text input */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          ref={inputRef}
-          style={styles.input}
-          placeholder="Type a message..."
-          placeholderTextColor="#999999"
-          value={text}
-          onChangeText={handleTextChange}
-          multiline
-          maxLength={4096}
-          editable={!isSending}
-        />
-      </View>
+    {/* Text Input */}
+    <TextInput
+      ref={inputRef}
+      style={styles.input}
+      placeholder="Type a message..."
+      placeholderTextColor="#999"
+      value={text}
+      onChangeText={handleTextChange}
+      multiline
+      maxLength={4096}
+      editable={!isSending}
+    />
 
-      {/* Attachment button (+ icon) */}
-      <TouchableOpacity
-        style={styles.iconButton}
-        onPress={handleAttachment}
-        disabled={isSending}
-      >
-        <MaterialIcons name="add" size={24} color="#666666" />
-      </TouchableOpacity>
+    {/* Plus */}
+    <TouchableOpacity
+      style={styles.innerIcon}
+      onPress={handleAttachment}
+      disabled={isSending}
+    >
+      <MaterialIcons name="add" size={22} color="#666" />
+    </TouchableOpacity>
+  </View>
 
-      {/* Conditional button: Send (when text) or Mic (when no text) */}
-      <TouchableOpacity
-        style={[
-          styles.actionButton,
-          hasText && styles.actionButtonActive,
-        ]}
-        onPress={hasText ? handleSend : handleVoiceRecord}
-        disabled={hasText ? !canSend : isSending}
-      >
-        {isSending ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : hasText ? (
-          <MaterialIcons name="send" size={20} color="#FFFFFF" />
-        ) : (
-          <MaterialIcons name="mic" size={20} color="#666666" />
-        )}
-      </TouchableOpacity>
-    </View>
+  {/* Send / Mic Button */}
+  <TouchableOpacity
+    style={[
+      styles.actionButton,
+      hasText && styles.actionButtonActive,
+    ]}
+    onPress={hasText ? handleSend : handleVoiceRecord}
+    disabled={hasText ? !canSend : isSending}
+  >
+    {isSending ? (
+      <ActivityIndicator size="small" color="#FFFFFF" />
+    ) : hasText ? (
+      <MaterialIcons name="send" size={20} color="#FFFFFF" />
+    ) : (
+      <MaterialIcons name="mic" size={20} color="#666666" />
+    )}
+  </TouchableOpacity>
+</View>
+
+  {showActions && (
+    <ActionButtons
+      onClose={() => setShowActions(false)}
+    />
+  )}
+  </>
   );
 };
 
@@ -206,6 +255,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E5E5',
   },
+  inputWrapper: {
+ flex: 1,
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#F0F0F0',
+  borderRadius: 24,
+  paddingHorizontal: 8,
+  paddingVertical: 6,
+  marginRight: 8,
+  },
+  innerIcon: {
+  padding: 6,
+},
   iconButton: {
     width: 40,
     height: 40,
@@ -222,18 +284,20 @@ const styles = StyleSheet.create({
     maxHeight: 120,
   },
   input: {
-    fontSize: 16,
-    color: '#000000',
-    maxHeight: 100,
+    flex: 1,
+  fontSize: 15,
+  maxHeight: 120,
+  paddingHorizontal: 6,
+  paddingVertical: 6,
+  color: '#000',
   },
   actionButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 4,
+  width: 44,
+  height: 44,
+  borderRadius: 22,
+  backgroundColor: '#E0E0E0',
+  justifyContent: 'center',
+  alignItems: 'center',
   },
   actionButtonActive: {
     backgroundColor: '#007AFF',
@@ -241,4 +305,3 @@ const styles = StyleSheet.create({
 });
 
 export default React.memo(ChatInput);
-

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -16,17 +16,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { noImage } from '../../assets';
 import BottomNavigation from '../../components/BottomNavigation';
 import { SearchBar } from '../ChatListScreen/components/SearchBar';
+import { env } from '../../config/env';
+import { useAppSelector } from '../../state/hooks';
+import { getAppTranslations } from '../../translations';
 
-export function JobScreen() {
+const JobScreen = () => {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [lang, setLang] = useState('en');
+  const lang = useAppSelector(state => state.language.lang);
+  const translations = useMemo(() => getAppTranslations(lang), [lang]);
   const [activeTab, setActiveTab] = useState('Jobs');
   const [jobItems, setJobItems] = useState();
   const [internshipItems, setInternshipItems] = useState();
   const [apprenticeshipItems, setApprenticeshipItems] = useState();
-  const [translations, setTranslations] = useState({});
 
   const navigateToJobDetail = item => {
     navigation.navigate('JobsDetailsScreen', { item });
@@ -86,19 +89,19 @@ export function JobScreen() {
       let endpoint = '';
       switch (category) {
         case 'Jobs':
-          endpoint = 'api/category/get-linkdin-data';
+          endpoint = '/category/get-linkdin-data';
           break;
         case 'Internships':
-          endpoint = 'api/category/get-internships';
+          endpoint = '/category/get-internships';
           break;
         case 'Apprenticeship':
-          endpoint = '/api/category/get-nats-data';
+          endpoint = '/category/get-nats-data';
           break;
         default:
           break;
       }
 
-      const response = await axios.post(`https://qasamvadini.aicte-india.org/${endpoint}`, postData);
+      const response = await axios.post(`${env.API_BASE_URL}${endpoint}`, postData);
 
       if (response.status == '200') {
         switch (category) {
@@ -314,7 +317,7 @@ export function JobScreen() {
           value={searchQuery}
           onChangeText={handleSearch}
           onClear={() => setSearchQuery('')}
-          placeholder="Search here..."
+          placeholder={translations['search'] || "Search here..."}
         />
         <View style={styles.tabHeade}>
           <ScrollView
@@ -473,3 +476,5 @@ const styles = StyleSheet.create({
     // height: hp('7.5%'),
   },
 });
+
+export default JobScreen;

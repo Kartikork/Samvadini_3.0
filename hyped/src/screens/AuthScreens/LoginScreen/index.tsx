@@ -44,8 +44,6 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppDispatch } from '../../../state/hooks';
 import { setAuthData } from '../../../state/authSlice';
-
-// Services
 import { AppBootstrap } from '../../../services/AppBootstrap';
 
 // Components - all memoized
@@ -234,9 +232,21 @@ function LoginScreen() {
       // Store auth data
       const { token, user, user_setting, isRegister } = response;
       const uniqueId = user.ekatma_chinha ?? '';
+      const userSettings = {
+        is_register: user_setting?.is_register,
+        janma_tithi: user_setting?.janma_tithi,
+        linga: user_setting?.linga,
+        parichayapatra: user_setting?.parichayapatra ?? user?.parichayapatra,
+        upayogakarta_nama: user_setting?.upayogakarta_nama ?? user?.upayogakarta_nama,
+        praman_patrika: user_setting?.praman_patrika ?? user?.praman_patrika,
+        ekatma_chinha: user.ekatma_chinha ?? user_setting?.ekatma_chinha,
+        dhwani: user_setting?.dhwani ?? null,
+        durasamparka_gopaniya: user_setting?.durasamparka_gopaniya,
+        desha_suchaka_koda: user_setting?.desha_suchaka_koda,
+      };
 
       // Save auth data to Redux (Redux Persist auto-saves to AsyncStorage)
-      dispatch(setAuthData({ token, uniqueId }));
+      dispatch(setAuthData({ token, uniqueId, userSettings }));
 
       // Save display name for other flows (optional - not critical)
       const displayName = user?.praman_patrika ?? user?.upayogakarta_nama;

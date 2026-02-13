@@ -1,31 +1,55 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 interface CallControlsProps {
   isMuted: boolean;
+  isSpeakerOn: boolean;
   isVideoOn: boolean;
   onToggleMute: () => void;
   onToggleVideo: () => void;
+  onToggleSpeaker: () => void;
   onEnd: () => void;
 }
 
 export default function CallControls({
   isMuted,
   isVideoOn,
+  isSpeakerOn,
   onToggleMute,
   onToggleVideo,
+  onToggleSpeaker,
   onEnd,
 }: CallControlsProps) {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.controlButton} onPress={onToggleMute}>
-        <Text style={styles.controlText}>{isMuted ? 'Unmute' : 'Mute'}</Text>
+        <MaterialIcons
+          name={isMuted ? 'mic-off' : 'mic'}
+          size={24}
+          color="#fff"
+        />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.controlButton} onPress={onToggleSpeaker}>
+        <MaterialIcons
+          name={isSpeakerOn ? 'volume-up' : 'volume-off'}
+          size={24}
+          color="#fff"
+        />
       </TouchableOpacity>
       <TouchableOpacity style={styles.controlButton} onPress={onToggleVideo}>
-        <Text style={styles.controlText}>{isVideoOn ? 'Video Off' : 'Video On'}</Text>
+        <MaterialIcons
+          name={isVideoOn ? 'videocam' : 'videocam-off'}
+          size={24}
+          color="#fff"
+        />
       </TouchableOpacity>
       <TouchableOpacity style={[styles.controlButton, styles.endButton]} onPress={onEnd}>
-        <Text style={styles.endText}>End</Text>
+        <MaterialIcons
+          name="call-end"
+          size={24}
+          color="#fff"
+        />
       </TouchableOpacity>
     </View>
   );
@@ -34,15 +58,16 @@ export default function CallControls({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-evenly',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 10,
   },
   controlButton: {
     backgroundColor: '#1E1E1E',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 100,
+     marginHorizontal: 12,
   },
   controlText: {
     color: '#FFFFFF',

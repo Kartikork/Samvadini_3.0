@@ -20,17 +20,14 @@ import {
   Linking,
   Alert,
   Text,
-  ImageBackground,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+  } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { getAppTranslations } from '../../translations';
 import { Footer } from '../../components/Footer';
 import TextToVoiceIconWrapper from '../../components/TextToVoiceIconWrapper';
 import GlobalDashboard from '../../components/GlobalDashboard';
 import { useAppSelector } from '../../state/hooks';
-import { getDashboardTexts } from './translations';
 import styles from './DashboardStyles';
 import {
   addContact,
@@ -92,14 +89,13 @@ const NavigationCard = memo(function NavigationCard({
 export function DashboardScreen({ navigation }: { navigation: any }) {
   const lang = useAppSelector(state => state.language.lang);
   const isIndia = useAppSelector(state => state.country.isIndia);
+  const UserName = useAppSelector(state => state.auth.userSettings?.praman_patrika);
   const textToVoiceRef = useRef(null);
-  const [userNames, setUserName] = useState<string | null>(null);
-  const [isUserNameLoaded, setIsUserNameLoaded] = useState(false);
 
-  const dashboardTexts = useMemo(() => getDashboardTexts(lang), [lang]);
+  const dashboardTexts = getAppTranslations(lang);
   const welcomeText = useMemo(
-    () => `${dashboardTexts.welcome}${userNames ? `, ${userNames}` : ''}`,
-    [dashboardTexts.welcome, userNames],
+    () => `${dashboardTexts.welcome}${UserName ? `, ${UserName}` : ''}`,
+    [dashboardTexts.welcome, UserName],
   );
 
   const navigateToCallHistory = useCallback(
@@ -126,28 +122,14 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
     () => navigation.navigate('DailyPlanner'),
     [navigation],
   );
-  const navigateToHomeScreen = useCallback(
-    () => navigation.navigate('HomeScreen', {}),
+  const navigateToEventManagementScreen = useCallback(
+    () => navigation.navigate('EventListScreen', { navigation }),
     [navigation],
   );
   const navigateToJobsScreen = useCallback(
     () => navigation.navigate('JobScreen'),
     [navigation],
   );
-
-  useEffect(() => {
-    const fetchUserName = async () => {
-      try {
-        const name = await AsyncStorage.getItem('userName');
-        setUserName(name);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsUserNameLoaded(true);
-      }
-    };
-    fetchUserName();
-  }, []);
 
   useEffect(() => {
     const backAction = () => {
@@ -166,7 +148,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
   }
 
   return (
-    <SafeAreaView style={styles.safeAreaView}>
+    <SafeAreaView style={styles.safeAreaView} edges={['left', 'right', 'bottom']}>
       <View style={styles.flexContainer}>
         <View style={styles.container}>
           <View style={styles.scrollView}>
@@ -200,9 +182,9 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                 <View style={styles.addContactIcon}>
                   <TextToVoiceIconWrapper
                     text={[
-                      dashboardTexts.addContact,
-                      dashboardTexts.addGroup,
-                      dashboardTexts.temporaryId,
+                      dashboardTexts.AddContact,
+                      dashboardTexts.AddGroup,
+                      dashboardTexts.TemporaryId,
                     ]}
                     lang={lang}
                     autoplay={false}
@@ -218,7 +200,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={addContact} />
                   </View>
                   <Text style={styles.qucikText} numberOfLines={1}>
-                    {dashboardTexts.addContact}
+                    {dashboardTexts.AddContact}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -229,7 +211,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={addGroup} />
                   </View>
                   <Text style={styles.qucikText} numberOfLines={1}>
-                    {dashboardTexts.addGroup}
+                    {dashboardTexts.AddGroup}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -240,7 +222,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={temporaryId} />
                   </View>
                   <Text style={styles.qucikText} numberOfLines={1}>
-                    {dashboardTexts.temporaryId}
+                    {dashboardTexts.TemporaryId}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -262,7 +244,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                   >
                     <TouchableOpacity
                       style={styles.gameZoneButton}
-                      onPress={() => navigation.navigate('lingoweb')}
+                      onPress={() => navigation.navigate('LRNScreen')}
                     >
                       <Image source={learnIcon} />
                       <Image
@@ -314,11 +296,11 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     style={[styles.cardText, { marginLeft: 10, flexShrink: 1 }]}
                     numberOfLines={1}
                   >
-                    {dashboardTexts.dailyPlanner}
+                    {dashboardTexts.DailyPlanner}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={navigateToHomeScreen}
+                  onPress={navigateToEventManagementScreen}
                   style={styles.eventButton}
                 >
                   <Icon name="calendar-outline" size={26} color="#fff" />
@@ -326,7 +308,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     style={[styles.cardText, { marginLeft: 10, flexShrink: 1 }]}
                     numberOfLines={1}
                   >
-                    {dashboardTexts.evMang}
+                    {dashboardTexts.EvMang}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -335,9 +317,9 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                 <View style={styles.addPlanIcon}>
                   <TextToVoiceIconWrapper
                     text={[
-                      dashboardTexts.addPlan,
-                      dashboardTexts.addReminder,
-                      dashboardTexts.addEmergency,
+                      dashboardTexts.AddPlan,
+                      dashboardTexts.AddReminder,
+                      dashboardTexts.AddEmergency,
                     ]}
                     lang={lang}
                     autoplay={false}
@@ -353,7 +335,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={addPlanner} />
                   </View>
                   <Text style={styles.addPlanText} numberOfLines={1}>
-                    {dashboardTexts.addPlan}
+                    {dashboardTexts.AddPlan}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -364,7 +346,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={addReminder} />
                   </View>
                   <Text style={styles.addReminderText} numberOfLines={1}>
-                    {dashboardTexts.addReminder}
+                    {dashboardTexts.AddReminder}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -375,7 +357,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                     <Image source={addEmergency} />
                   </View>
                   <Text style={styles.emergencyText} numberOfLines={1}>
-                    {dashboardTexts.addEmergency}
+                    {dashboardTexts.AddEmergency}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -482,7 +464,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
                   </View>
                 </View>
               </View>
-              <View style={[styles.bottomContainer, { marginBottom: 12 }]}>
+              <View style={styles.bottomContainer}>
                 <View style={styles.banking} />
               </View>
             </ScrollView>
