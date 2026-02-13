@@ -28,10 +28,22 @@ import ContactDesignScreen from '../screens/ContactDesignScreen';
 import NewContactFormScreen from '../screens/NewContactFormScreen';
 import CreateNewGroupScreen from '../screens/CreateNewGroup';
 import CallScreen from '../screens/CallScreen';
-import SnakeLaddersGame from '../screens/LanguageGameScreen/SnakeLaddersGame';
+import SnakeLaddersGame from '../screens/LanguageGameScreen/GAMER/SnakeLaddersGame/SnakeLaddersGame.js';
 const MemoryGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MemoryGame'));
-const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameIntroScreen'));
-const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeGameScreen'));
+const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameIntroScreen.js'));
+const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameScreen.js'));
+const BubbleShooterGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/BubbleShooter/BubbleShooterGame.js'));
+const CarGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/cargame/CarGame'));
+const BalloonShootingGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/BalloonShootingGame/BalloonShootingGame'));
+const TicTacToe = lazy(() => import('../screens/LanguageGameScreen/GAMER/TicTacToe'));
+const NumberSortIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/NumberSortIntroScreen'));
+const SortGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/SortGameScreen'));
+const DrumGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/DrumGame/Game'));
+const Carrom = lazy(() => import('../screens/LanguageGameScreen/GAMER/CarromGame/CarromGame.js'));
+const chess = lazy(() => import('../screens/LanguageGameScreen/GAMER/Chess/chess.js'));
+const pong = lazy(() => import('../screens/LanguageGameScreen/GAMER/pong/footballNet.js'));
+const homescreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/HomeScreen.js'));
+const roomscreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/RoomScreen.js'));
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
 
@@ -149,6 +161,13 @@ export type RootStackParamList = {
   MemoryGame: undefined;
   SnakeGameIntroScreen: undefined;
   SnakeGame: undefined;
+  BubbleShooterGame: undefined;
+  CarGame: undefined;
+  BalloonShootingGame: undefined;
+  TicTacToe: undefined;
+  NumberSortIntroScreen: undefined;
+  SortGameScreen: undefined;
+  DrumGame: undefined;
   LRNScreen: undefined;
   DailyPlanner: undefined;
   AddPlan: undefined;
@@ -202,7 +221,7 @@ export default function MainNavigator() {
           component={SplashScreen}
           options={{ animation: 'none' }}
         />
-       
+
         <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
         <Stack.Screen
           name="Login"
@@ -357,6 +376,8 @@ export default function MainNavigator() {
           options={commonHeaderOptions}
         />
 
+       
+        {/* Call Screen - No header, full screen */}
         <Stack.Screen
           name="Call"
           component={CallScreen}
@@ -367,10 +388,37 @@ export default function MainNavigator() {
           }}
         />
 
+        {/* TODO: Add GroupChat screen when needed */}
 
+
+        <Stack.Screen
+          name="pong"
+          component={pong}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="chess"
+          component={chess}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="homescreen"
+          component={homescreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="roomscreen"
+          component={roomscreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
         <Stack.Screen
           name="SnakeLaddersGame"
           component={SnakeLaddersGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="Carrom"
+          component={Carrom}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
 
@@ -391,6 +439,48 @@ export default function MainNavigator() {
           component={SnakeGameScreen}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
+
+        <Stack.Screen
+          name="BubbleShooterGame"
+          component={BubbleShooterGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="CarGame"
+          component={CarGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="BalloonShootingGame"
+          component={BalloonShootingGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="TicTacToe"
+          component={TicTacToe}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="NumberSortIntroScreen"
+          component={NumberSortIntroScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="SortGameScreen"
+          component={SortGameScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="DrumGame"
+          component={DrumGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
 
         {/* TODO: Add these screens
         <Stack.Screen name="GroupChat" component={GroupChatScreen} />
