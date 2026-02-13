@@ -1,4 +1,3 @@
-import { Clipboard } from 'react-native';
 import { axiosConn } from '../../../storage/helper/Config';
 import { updateChatMessage } from '../../../storage/sqllite/chat/ChatMessageSchema';
 import { SocketService } from '../../../services/SocketService';
@@ -8,7 +7,13 @@ type LocalMessage = {
   [key: string]: any;
 };
 
-type MessageUpdateType = 'pin' | 'unPin' | 'star' | 'unStar';
+type MessageUpdateType =
+  | 'pin'
+  | 'unPin'
+  | 'star'
+  | 'unStar'
+  | 'delete'
+  | 'deleteEveryone';
 
 interface PinUpdateParams {
   type: MessageUpdateType;
@@ -17,108 +22,113 @@ interface PinUpdateParams {
   setMessages: React.Dispatch<React.SetStateAction<LocalMessage[]>>;
 }
 
-/**
- * Optimistically update pin / unPin locally and propagate to
- * SQLite + server (socket + REST).
- *
- * This helper is reusable across ChatScreen, GroupChatScreen, etc.
- */
-export async function updateMessagesPinState({
+// central update builder
+const getUpdatesByType = (type: MessageUpdateType) => {
+  switch (type) {
+    case 'pin':
+      return { sthapitam_sandesham: 1 };
+
+    case 'unPin':
+      return { sthapitam_sandesham: 0 };
+
+    case 'star':
+      return { kimTaritaSandesha: 1 };
+
+    case 'unStar':
+      return { kimTaritaSandesha: 0 };
+
+    case 'delete':
+      return { samvada_spashtam: 1 }; // delete for me
+
+    case 'deleteEveryone':
+      return { nirastah: 1 }; // delete for everyone
+
+    default:
+      return {};
+  }
+};
+
+export async function updateMessagesActionState({
   type,
   chatId,
   selectedMessages,
   setMessages,
 }: PinUpdateParams): Promise<void> {
-  if (!chatId || !selectedMessages?.length) {
-    return;
-  }
-console.log('selectedMessages in updateMessagesPinState', selectedMessages,type,chatId,setMessages);
-  // Check internet connectivity before hitting server
+  if (!chatId || !selectedMessages?.length) return;
+
   const isInterNetAvailable = await SocketService.checkInternetConnection();
-  if (!isInterNetAvailable) {
-    return;
-  }
+  if (!isInterNetAvailable) return;
 
   const refrenceIds = selectedMessages
     .map(m => m?.refrenceId)
     .filter(Boolean) as string[];
 
-  if (!refrenceIds.length) {
-    return;
-  }
+  if (!refrenceIds.length) return;
 
-  // Optimistic local state update
+  const updates = getUpdatesByType(type);
+
+  // Optimistic UI Update
   setMessages(prevMessages => {
     let hasChanges = false;
+
     const updated = prevMessages.map(msg => {
       if (refrenceIds.includes(msg.refrenceId)) {
         hasChanges = true;
-
-        if (type === 'pin' || type === 'unPin') {
-          return {
-            ...msg,
-            sthapitam_sandesham: type === 'pin' ? 1 : 0,
-          };
-        }
-
-        if (type === 'star' || type === 'unStar') {
-          return {
-            ...msg,
-            kimTaritaSandesha: type === 'star' ? 1 : 0,
-          };
-        }
+        return { ...msg, ...updates };
       }
       return msg;
     });
+
     return hasChanges ? updated : prevMessages;
   });
+  console.log(
+    {
+      refrenceIds,
+      type,
+      updates,
+    },
+    '000000000000000000000000000000000000000000000000000000000000000',
+  );
 
-  // Persist to SQLite
-  const payloadForDb = {
-    refrenceIds,
-    type,
-    updates: {},
-  };
-  await updateChatMessage(payloadForDb);
+  // SQLite update
+  try {
+    await updateChatMessage({
+      refrenceIds,
+      type,
+      updates,
+    });
+  } catch (err) {
+    console.error('SQLite update failed:', err);
+  }
 
-  // Build common payload for socket + REST
-  const baseUpdates =
-    type === 'pin'
-      ? { sthapitam_sandesham: 1 }
-      : type === 'unPin'
-      ? { sthapitam_sandesham: 0 }
-      : type === 'star'
-      ? { kimTaritaSandesha: 1 }
-      : { kimTaritaSandesha: 0 };
+  // star / unstar / delete (local delete) → no backend call
+  if (type === 'star' || type === 'unStar') {
+    return;
+  }
 
-  const formData = {
+  const payload = {
     refrenceIds,
     type,
     samvada_chinha: chatId,
-    updates: baseUpdates,
+    updates,
     timeStamp: new Date().toISOString(),
   };
+  console.log(
+    payload,
+    '2222222222222222222222222222222222222222222222222222222222222222222',
+  );
 
   try {
-    // Socket update for real‑time clients
-    SocketService.sendMessageUpdate({
-      samvada_chinha: chatId,
-      refrenceIds,
-      type,
-      updates: baseUpdates,
-    });
+    // realtime sync
+    SocketService.sendMessageUpdate(payload);
 
-    // REST API update for backend persistence / audit
-    await axiosConn('post', 'chat/update-message', formData);
+    // backend persistence
+    await axiosConn('post', 'chat/update-message', payload);
   } catch (error) {
-    console.error('[messageActions] Error updating pin state:', error);
+    console.error('[messageActions] Update failed:', error);
   }
 }
 
-/**
- * Copy selected messages' text to clipboard.
- * Reusable helper – call from any screen.
- */
 export function copyMessagesToClipboard(messages: LocalMessage[]): void {
   if (!messages || messages.length === 0) return;
 
@@ -131,4 +141,3 @@ export function copyMessagesToClipboard(messages: LocalMessage[]): void {
     Clipboard.setString(text);
   }
 }
-

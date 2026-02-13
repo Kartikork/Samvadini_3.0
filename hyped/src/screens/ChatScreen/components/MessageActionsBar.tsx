@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  Alert,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -12,6 +13,7 @@ export type MessageActionType =
   | 'star'
   | 'copy'
   | 'delete'
+  | 'deleteEveryone'
   | 'reply'
   | 'forward'
   | 'info'
@@ -30,11 +32,6 @@ interface MessageActionsBarProps {
   onActionPress: (action: MessageActionType) => void;
 }
 
-/**
- * Reusable actions + reactions bar for messages.
- * - Single selection: shows reactions + actions (WhatsApp-like)
- * - Multi selection: shows only actions
- */
 const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
   selectedCount,
   hasPinnedMessages = false,
@@ -80,7 +77,34 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
           <ActionIcon
             name="delete-outline"
             label="Delete"
-            onPress={() => onActionPress('delete')}
+            onPress={() => {
+              Alert.alert(
+                'Delete message?',
+                selectedCount === 1
+                  ? 'Do you want to delete this message?'
+                  : 'Do you want to delete the selected messages?',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete for me',
+                    style: 'default',
+                    onPress: () => {
+                      onActionPress('delete');
+                      setMenuVisible(false);
+                    },
+                  },
+                  {
+                    text: 'Delete for everyone',
+                    style: 'destructive',
+                    onPress: () => {
+                      onActionPress('deleteEveryone');
+                      setMenuVisible(false);
+                    },
+                  },
+                ],
+                { cancelable: true },
+              );
+            }}
           />
 
           {/* Copy */}

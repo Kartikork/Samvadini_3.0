@@ -35,9 +35,8 @@ import MessageActionsBar, {
 import MessageReactionPicker from './components/MessageReactionPicker';
 import { useMessageSelectionWithReactions } from './hooks/useMessageSelectionWithReactions';
 import {
-  updateMessagesPinState,
+  updateMessagesActionState,
   copyMessagesToClipboard,
-  deleteMessages,
 } from './helpers/messageActions';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
@@ -110,9 +109,7 @@ const ChatScreen: React.FC = () => {
 
   const hasStarredMessages = useMemo(
     () =>
-      selectedMessages.some(
-        m => Number((m as any).kimTaritaSandesha) === 1,
-      ),
+      selectedMessages.some(m => Number((m as any).kimTaritaSandesha) === 1),
     [selectedMessages],
   );
 
@@ -341,7 +338,7 @@ const ChatScreen: React.FC = () => {
         // Clear selection immediately for better UX (like WhatsApp)
         clearSelection();
 
-        await updateMessagesPinState({
+        await updateMessagesActionState({
           type:
             action === 'pin'
               ? 'pin'
@@ -366,51 +363,17 @@ const ChatScreen: React.FC = () => {
         return;
       }
 
-      if (action === 'delete') {
-        if (!chatId || selectedMessages.length === 0) {
-          return;
-        }
+      if (action === 'delete' || action === 'deleteEveryone') {
+        if (!chatId || selectedMessages.length === 0) return;
+        const toUpdate = selectedMessages as any;
+        clearSelection();
 
-        Alert.alert(
-          'Delete message?',
-          selectedMessages.length === 1
-            ? 'Do you want to delete this message?'
-            : 'Do you want to delete the selected messages?',
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-            {
-              text: 'Delete for me',
-              style: 'default',
-              onPress: () => {
-                // Clear selection immediately
-                clearSelection();
-                deleteMessages({
-                  type: 'delete',
-                  chatId,
-                  selectedMessages: selectedMessages as any,
-                  setMessages: setMessages as any,
-                });
-              },
-            },
-            {
-              text: 'Delete for everyone',
-              style: 'destructive',
-              onPress: () => {
-                clearSelection();
-                deleteMessages({
-                  type: 'deleteEveryone',
-                  chatId,
-                  selectedMessages: selectedMessages as any,
-                  setMessages: setMessages as any,
-                });
-              },
-            },
-          ],
-          { cancelable: true },
-        );
+        await updateMessagesActionState({
+          type: action === 'delete' ? 'delete' : 'deleteEveryone',
+          chatId,
+          selectedMessages: toUpdate,
+          setMessages: setMessages as any,
+        });
 
         return;
       }
