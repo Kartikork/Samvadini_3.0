@@ -426,11 +426,7 @@ export default function MainNavigator() {
           component={SnakeLaddersGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
-        <Stack.Screen
-          name="Carrom"
-          component={Carrom}
-          options={{ animation: 'slide_from_right', headerShown: false }}
-        />
+        
 
         <Stack.Screen
           name="MemoryGame"
