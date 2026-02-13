@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MessageStatusIcon from './MessageStatusIcon';
+import MessageReplyPreview from './MessageReplyPreview';
 
 interface ChatMessage {
   anuvadata_id: number;
@@ -69,6 +70,26 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   const bubbleRef = useRef<View | null>(null);
 
+  // Parse reply metadata (pratisandeshah)
+  let replyMeta: {
+    lastRefrenceId: string;
+    lastSenderId: string;
+    lastType: string;
+    lastContent: string;
+    lastUkti?: string;
+  } | null = null;
+
+  if (message.pratisandeshah) {
+    try {
+      const parsed = JSON.parse(message.pratisandeshah);
+      if (parsed && parsed.lastRefrenceId) {
+        replyMeta = parsed;
+      }
+    } catch (e) {
+      // ignore malformed JSON
+    }
+  }
+
   useEffect(() => {
     if (!onMeasureMessage) return;
     if (!isSelectionMode || !isSelected) return;
@@ -117,12 +138,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </View>
         ) : (
           <>
-            {message.reply_to && (
-              <View style={styles.replyContainer}>
-                <View style={styles.replyLine} />
-                <Text style={styles.replyText} numberOfLines={1}>
-                  Reply to previous message
-                </Text>
+            {replyMeta && (
+              <View style={styles.replyWrapper}>
+                <MessageReplyPreview
+                  title={
+                    replyMeta.lastUkti
+                      ? replyMeta.lastUkti
+                      : replyMeta.lastSenderId === currentUserId
+                      ? 'You'
+                      : 'Replied message'
+                  }
+                  message={replyMeta.lastContent}
+                  accentColor="#007AFF"
+                  backgroundColor={isOutgoing ? 'rgba(255,255,255,0.9)' : '#FFFFFF'}
+                />
               </View>
             )}
 
@@ -234,23 +263,8 @@ function createStyles(isOutgoing: boolean, isHighlighted: boolean) {
         },
       }),
     },
-    replyContainer: {
-      flexDirection: 'row',
+    replyWrapper: {
       marginBottom: 6,
-      paddingLeft: 8,
-      opacity: 0.8,
-    },
-    replyLine: {
-      width: 3,
-      backgroundColor: isOutgoing ? '#FFFFFF' : '#007AFF',
-      borderRadius: 2,
-      marginRight: 8,
-    },
-    replyText: {
-      fontSize: 13,
-      color: isOutgoing ? '#FFFFFF' : '#666666',
-      fontStyle: 'italic',
-      flex: 1,
     },
     mediaContainer: {
       marginBottom: 4,

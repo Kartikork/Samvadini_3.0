@@ -73,6 +73,7 @@ const ChatScreen: React.FC = () => {
   const currentUserId = useAppSelector(state => state.auth.uniqueId) ?? null;
   const [isTyping, setIsTyping] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+  const [replyMessage, setReplyMessage] = useState<ChatMessage | null>(null);
 
   // Message selection + reaction overlay (shared hook)
   const {
@@ -328,6 +329,14 @@ const ChatScreen: React.FC = () => {
 
   const handleMessageAction = useCallback(
     async (action: MessageActionType) => {
+      if (action === 'reply') {
+        if (selectedMessages.length === 1) {
+          setReplyMessage(selectedMessages[0] as ChatMessage);
+        }
+        clearSelection();
+        return;
+      }
+
       if (
         action === 'pin' ||
         action === 'unpin' ||
@@ -405,8 +414,8 @@ const ChatScreen: React.FC = () => {
             currentUserId={currentUserId}
             isSelected={selectedMessageIds.includes(message.refrenceId)}
             isSelectionMode={isSelectionMode}
-            onPressMessage={toggleMessageSelection}
-            onLongPressMessage={handleMessageLongPress}
+            onPressMessage={m => toggleMessageSelection(m as ChatMessage)}
+            onLongPressMessage={m => handleMessageLongPress(m as ChatMessage)}
             onMeasureMessage={handleMeasureMessage}
           />
         </>
@@ -571,6 +580,8 @@ const ChatScreen: React.FC = () => {
           <ChatInput
             chatId={chatId}
             onMessageSent={appendLatestMessageFromDb}
+            replyMessage={replyMessage ?? undefined}
+            onCancelReply={() => setReplyMessage(null)}
           />
 
           {/* Full reaction picker (over message) */}
