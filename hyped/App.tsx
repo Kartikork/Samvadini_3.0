@@ -27,6 +27,8 @@ const LoadingView = () => (
   </View>
 );
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -40,19 +42,21 @@ function App() {
   }, []);
 
   return (
-    <Provider store={store}>
-      <PersistGate loading={<LoadingView />} persistor={persistor}>
-        <SafeAreaProvider>
-          <StatusBar
-            barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-            translucent={false}
-          />
-          <MainNavigator />
-          <CallOverlay />
-          <Toast />
-        </SafeAreaProvider>
-      </PersistGate>
-    </Provider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Provider store={store}>
+        <PersistGate loading={<LoadingView />} persistor={persistor}>
+          <SafeAreaProvider>
+            <StatusBar
+              barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+              translucent={false}
+            />
+            <MainNavigator />
+            <CallOverlay />
+            <Toast />
+          </SafeAreaProvider>
+        </PersistGate>
+      </Provider>
+    </GestureHandlerRootView>
   );
 }
 

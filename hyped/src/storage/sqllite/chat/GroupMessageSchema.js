@@ -3,7 +3,7 @@ import { downloadFile } from '../../helper/Helper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getEncryptionKey } from './Participants';
 import { decryptMessage } from '../../../helper/Encryption';
-import { socketService } from '../../../services/socketService';
+import { SocketService } from '../../../services/SocketService';
 import { getRandomLayout } from '../../../helper/MessageLayout';
 
 SQLite.enablePromise(true);
@@ -474,7 +474,7 @@ export const insertOrUpdateBulkGroupMessages = async (records) => {
 
   function handleSuccess(data) {
     try {
-      socketService.emit('message_inserted', {
+      SocketService.emit('message_inserted', {
         ...data,
         vishayah: data.vishayahValue,
         sandesha_prakara: data.sandesha_prakara || 'text',

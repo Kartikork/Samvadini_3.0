@@ -1,20 +1,10 @@
-/**
- * ChatScreen - Main Chat UI Component
- *
- * ARCHITECTURE (Compatible with Existing Flow):
- * - Uses existing SQLite schema (ChatMessageSchema)
- * - Uses existing SocketService
- * - Works alongside ChatListScreen
- * - Does NOT break existing flow
- *
- * PERFORMANCE:
- * - Virtualized list (FlashList)
- * - Memoized components
- * - Instant rendering from DB
- * - Optimistic updates
- */
-
-import React, { useEffect, useCallback, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useCallback,
+  useRef,
+  useState,
+  useMemo,
+} from 'react';
 import {
   View,
   Text,
@@ -37,9 +27,16 @@ import TypingIndicator from './components/TypingIndicator';
 import DateSeparator from './components/DateSeparator';
 import ChatHeader from '../../components/ChatHeader';
 import { useChatById } from '../ChatListScreen/hooks/useChatListData';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../../config/constants';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
+import MessageActionsBar, {
+  MessageActionType,
+} from './components/MessageActionsBar';
+import MessageReactionPicker from './components/MessageReactionPicker';
+import { useMessageSelectionWithReactions } from './hooks/useMessageSelectionWithReactions';
+import {
+  updateMessagesActionState,
+  copyMessagesToClipboard,
+} from './helpers/messageActions';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -69,19 +66,45 @@ const ChatScreen: React.FC = () => {
   useHardwareBackHandler('ChatList');
   // Chat ID from Redux (primary) or route params (fallback)
   const chatId = activeChat.chatId ?? route.params.chatId;
-
-  // Sync Redux when opened from deep link (useChatById loads from DB)
   const chatFromDb = useChatById(chatId);
-
-  // Local state
-  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
-  // Use Redux auth.uniqueId as the single source of truth for current user
   const currentUserId = useAppSelector(state => state.auth.uniqueId) ?? null;
   const [isTyping, setIsTyping] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+
+  // Message selection + reaction overlay (shared hook)
+  const {
+    selectedMessageIds,
+    isSelectionMode,
+    toggleMessageSelection,
+    handleMessageLongPress,
+    clearSelection,
+    isReactionPickerVisible,
+    reactionPickerPosition,
+    reactionTargetMessageId,
+    isSelfTargetMessage,
+    handleMeasureMessage,
+    closeReactionPicker,
+  } = useMessageSelectionWithReactions<ChatMessage>(messages);
+
+  const selectedMessages = useMemo(
+    () => messages.filter(m => selectedMessageIds.includes(m.refrenceId)),
+    [messages, selectedMessageIds],
+  );
+
+  const hasPinnedMessages = useMemo(
+    () =>
+      selectedMessages.some(m => Number((m as any).sthapitam_sandesham) === 1),
+    [selectedMessages],
+  );
+
+  const hasStarredMessages = useMemo(
+    () =>
+      selectedMessages.some(m => Number((m as any).kimTaritaSandesha) === 1),
+    [selectedMessages],
+  );
 
   // Refs
   const flashListRef = useRef<FlashListRef<ChatMessage> | null>(null);
@@ -91,18 +114,12 @@ const ChatScreen: React.FC = () => {
     minimumViewTime: 500,
   });
 
-  /**
-   * Ensure chatId is in Redux when on Chat screen (for deep link / direct navigation)
-   */
   useEffect(() => {
     if (chatId && activeChat.chatId !== chatId) {
       dispatch(activeChatActions.setActiveChatId(chatId));
     }
   }, [chatId, activeChat.chatId, dispatch]);
 
-  /**
-   * Sync full chat data from DB when opened from deep link (activeChat has chatId but no username)
-   */
   useEffect(() => {
     if (
       chatId &&
@@ -121,39 +138,21 @@ const ChatScreen: React.FC = () => {
     }
   }, [chatId, activeChat.chatId, activeChat.username, chatFromDb, dispatch]);
 
-  /**
-   * Clear active chat when leaving screen
-   */
   useEffect(() => {
     return () => {
       dispatch(activeChatActions.clearActiveChat());
     };
   }, [dispatch]);
 
-  /**
-   * Get current user ID
-   */
-
-  /**
-   * Load initial messages from existing DB
-   */
   useEffect(() => {
     if (chatId) {
       loadMessages();
     }
   }, [chatId]);
 
-  /**
-   * Load messages from existing SQLite schema
-   */
   const loadMessages = async () => {
-    setIsLoading(true);
     try {
-      // Use existing fetchChatMessages function
-      // Initial load: last 20 messages from DB (latest -> oldest)
       const loadedMessages = await fetchChatMessages(chatId, 20, 0);
-
-      // Transform to include is_outgoing flag
       const transformedMessages = loadedMessages.map((msg: ChatMessage) => ({
         ...msg,
         is_outgoing: currentUserId
@@ -174,15 +173,10 @@ const ChatScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('[ChatScreen] Load messages error:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  /**
-   * Load more messages (pagination)
-   */
-  const loadMoreMessages = async () => {
+  const loadMoreMessages = useCallback(async () => {
     if (isLoadingMore || !hasMoreMessages) return;
 
     setIsLoadingMore(true);
@@ -214,12 +208,8 @@ const ChatScreen: React.FC = () => {
     } finally {
       setIsLoadingMore(false);
     }
-  };
+  }, [isLoadingMore, hasMoreMessages, messages.length, chatId, currentUserId]);
 
-  /**
-   * Append latest message from DB after socket + MessageHandler have processed it
-   * Avoids reloading full list and ensures chat updates while open
-   */
   const appendLatestMessageFromDb = useCallback(async () => {
     try {
       const latest = await fetchChatMessages(chatId, 1, 0);
@@ -248,9 +238,6 @@ const ChatScreen: React.FC = () => {
     }
   }, [chatId, currentUserId]);
 
-  /**
-   * Listen for new messages from existing SocketService
-   */
   useEffect(() => {
     if (!chatId) return;
 
@@ -260,10 +247,6 @@ const ChatScreen: React.FC = () => {
 
       // Only handle messages for this chat
       if (incomingChatId !== chatId) return;
-
-      console.log('[ChatScreen] New message received for this chat');
-
-      // Give MessageHandler time to decrypt + insert into DB
       setTimeout(() => {
         appendLatestMessageFromDb();
       }, 300);
@@ -276,6 +259,48 @@ const ChatScreen: React.FC = () => {
       SocketService.off('new_message', handleNewMessage);
     };
   }, [chatId, appendLatestMessageFromDb]);
+
+  /**
+   * Global message update (pin/star/edit/reaction): patch local state so UI updates instantly
+   * when the other user (or another device) updates a message. DB is already updated by SocketService.
+   */
+  useEffect(() => {
+    if (!chatId) return;
+
+    const handleMessageUpdated = (payload: any) => {
+      const updatedChatId = payload?.samvada_chinha;
+      const refrenceIds = payload?.refrenceIds;
+      let updates = payload?.updates;
+      const type = payload?.type;
+
+      if (updatedChatId !== chatId || !refrenceIds?.length) return;
+
+      if (!updates || typeof updates !== 'object') {
+        if (!type) return;
+        updates =
+          type === 'pin'
+            ? { sthapitam_sandesham: 1 }
+            : type === 'unPin'
+            ? { sthapitam_sandesham: 0 }
+            : type === 'star'
+            ? { kimTaritaSandesha: 1 }
+            : type === 'unStar'
+            ? { kimTaritaSandesha: 0 }
+            : {};
+      }
+
+      setMessages(prev =>
+        prev.map(m =>
+          refrenceIds.includes(m.refrenceId) ? { ...m, ...updates } : m,
+        ),
+      );
+    };
+
+    SocketService.on('message_updated', handleMessageUpdated);
+    return () => {
+      SocketService.off('message_updated', handleMessageUpdated);
+    };
+  }, [chatId]);
 
   /**
    * Handle viewable items changed (for read receipts)
@@ -301,9 +326,63 @@ const ChatScreen: React.FC = () => {
     [messages, currentUserId, chatId],
   );
 
-  /**
-   * Render message item
-   */
+  const handleMessageAction = useCallback(
+    async (action: MessageActionType) => {
+      if (
+        action === 'pin' ||
+        action === 'unpin' ||
+        action === 'star' ||
+        action === 'unstar'
+      ) {
+        if (!chatId || selectedMessages.length === 0) return;
+
+        // Clear selection immediately for better UX (like WhatsApp)
+        clearSelection();
+
+        await updateMessagesActionState({
+          type:
+            action === 'pin'
+              ? 'pin'
+              : action === 'unpin'
+              ? 'unPin'
+              : action === 'star'
+              ? 'star'
+              : 'unStar',
+          chatId,
+          selectedMessages,
+          setMessages: setMessages as any,
+        });
+
+        return;
+      }
+
+      if (action === 'copy') {
+        copyMessagesToClipboard(selectedMessages as any);
+        clearSelection();
+        return;
+      }
+
+      if (action === 'delete' || action === 'deleteEveryone') {
+        if (!chatId || selectedMessages.length === 0) return;
+        const toUpdate = selectedMessages as any;
+        clearSelection();
+
+        await updateMessagesActionState({
+          type: action === 'delete' ? 'delete' : 'deleteEveryone',
+          chatId,
+          selectedMessages: toUpdate,
+          setMessages: setMessages as any,
+        });
+
+        return;
+      }
+
+      // For now, clear selection after other actions as well
+      clearSelection();
+    },
+    [chatId, selectedMessages, clearSelection],
+  );
+
   const renderMessage = useCallback(
     ({ item: message, index }: { item: ChatMessage; index: number }) => {
       if (!message) return null;
@@ -321,24 +400,33 @@ const ChatScreen: React.FC = () => {
               ).getTime()}
             />
           )}
-          <MessageBubble message={message} currentUserId={currentUserId} />
+          <MessageBubble
+            message={message}
+            currentUserId={currentUserId}
+            isSelected={selectedMessageIds.includes(message.refrenceId)}
+            isSelectionMode={isSelectionMode}
+            onPressMessage={toggleMessageSelection}
+            onLongPressMessage={handleMessageLongPress}
+            onMeasureMessage={handleMeasureMessage}
+          />
         </>
       );
     },
-    [messages, currentUserId],
+    [
+      messages,
+      currentUserId,
+      selectedMessageIds,
+      isSelectionMode,
+      toggleMessageSelection,
+      handleMessageLongPress,
+      handleMeasureMessage,
+    ],
   );
 
-  /**
-   * Get item type for FlashList optimization
-   */
   const getItemType = useCallback((item: ChatMessage) => {
     if (!item) return 'text';
     return item.sandesha_prakara || 'text';
   }, []);
-
-  /**
-   * When user scrolls to TOP, load older messages from DB
-   */
 
   const handleMenuPress = useCallback(() => {
     // TODO: Open chat options (view contact, mute, etc.)
@@ -359,10 +447,6 @@ const ChatScreen: React.FC = () => {
     [hasMoreMessages, isLoadingMore, loadMoreMessages],
   );
 
-  /**
-   * List header (shows loading indicator when loading more)
-   * Note: we avoid full-screen loading; only small header on pagination
-   */
   const renderListHeader = () => {
     if (!isLoadingMore) return null;
 
@@ -373,25 +457,16 @@ const ChatScreen: React.FC = () => {
     );
   };
 
-  /**
-   * List footer (shows typing indicator)
-   */
   const renderListFooter = () => {
     if (!isTyping) return null;
     return <TypingIndicator />;
   };
 
-  /**
-   * Key extractor
-   */
   const keyExtractor = useCallback(
     (item: ChatMessage) => item.refrenceId || item.anuvadata_id.toString(),
     [],
   );
 
-  /**
-   * Auto-scroll to bottom when needed (initial load + new messages)
-   */
   useEffect(() => {
     if (!shouldScrollToBottom) return;
     if (!flashListRef.current) return;
@@ -416,6 +491,18 @@ const ChatScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Selection bar (overlays header) */}
+      {isSelectionMode && (
+        <MessageActionsBar
+          selectedMessages={selectedMessages}
+          selectedCount={selectedMessageIds.length}
+          hasPinnedMessages={hasPinnedMessages}
+          hasStarredMessages={hasStarredMessages}
+          onCloseSelection={clearSelection}
+          onActionPress={handleMessageAction}
+        />
+      )}
+
       <ChatHeader
         chatId={chatId}
         showCallButton
@@ -485,15 +572,24 @@ const ChatScreen: React.FC = () => {
             chatId={chatId}
             onMessageSent={appendLatestMessageFromDb}
           />
+
+          {/* Full reaction picker (over message) */}
+          <MessageReactionPicker
+            visible={isReactionPickerVisible}
+            onClose={closeReactionPicker}
+            onSelectReaction={emoji => {
+              if (!reactionTargetMessageId) return;
+              // TODO: Persist selected emoji reaction for reactionTargetMessageId
+            }}
+            messagePosition={reactionPickerPosition || undefined}
+            isSelfMessage={isSelfTargetMessage}
+          />
         </View>
       </KeyboardAvoidingView>
     </View>
   );
 };
 
-/**
- * Determine if date separator should be shown
- */
 function shouldShowDateSeparator(
   currentMessage: ChatMessage,
   previousMessage?: ChatMessage,

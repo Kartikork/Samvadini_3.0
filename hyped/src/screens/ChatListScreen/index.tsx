@@ -72,8 +72,8 @@ import { SocketService } from '../../services/SocketService';
 // Message handler for saving incoming messages
 import { handleIncomingMessage } from '../../services/MessageHandler';
 import { GradientBackground } from '../../components/GradientBackground';
-import BottomNavigation from '../../components/BottomNavigation';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
+import BottomNavigation from '../../components/BottomNavigation';
 
 // ============================================
 // LAZY LOADED COMPONENTS (Event-based)
@@ -103,9 +103,12 @@ type ChatListScreenNavigationProp = NativeStackNavigationProp<
   'ChatList'
 >;
 
-// Enable LayoutAnimation on Android
+// LayoutAnimation on Android: setLayoutAnimationEnabledExperimental is a no-op in the New Architecture (Fabric).
+// Skip the call to avoid the console warning when fabric is enabled.
+const isFabric = typeof (globalThis as any).__turboModuleProxy === 'object';
 if (
   Platform.OS === 'android' &&
+  !isFabric &&
   UIManager.setLayoutAnimationEnabledExperimental
 ) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -680,7 +683,7 @@ export default function ChatListScreen() {
           </View>
         )}
       </View>
-      <BottomNavigation activeScreen="Listing" />
+      <BottomNavigation navigation={navigation} activeScreen="ChatList" />
     </>
   );
 }

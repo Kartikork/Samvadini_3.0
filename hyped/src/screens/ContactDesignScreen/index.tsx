@@ -1,17 +1,4 @@
-/**
- * ContactDesignScreen
- * 
- * Contact selection and management screen
- */
-
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  memo,
-  useRef,
-} from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -26,7 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-toast-message';
-import { useNavigation } from '@react-navigation/native';   
+import { useNavigation } from '@react-navigation/native';
 import {
   getContacts,
   filterContacts,
@@ -37,6 +24,7 @@ import { getImageUrlWithSas } from '../../config/env';
 import { getAppTranslations } from '../../translations';
 import { useAppSelector } from '../../state/hooks';
 import { SearchBar as ChatListSearchBar } from '../ChatListScreen/components/SearchBar';
+import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 
 const SearchBarWrapper = ({
   value,
@@ -63,20 +51,16 @@ const SearchBarWrapper = ({
 
 const ContactDesignScreen = () => {
   const navigation = useNavigation();
-
+  useHardwareBackHandler('ChatList');
   const lang = useAppSelector(state => state.language.lang);
   const uniqueId = useAppSelector(state => state.auth.uniqueId);
   const t = getAppTranslations(lang);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const loadContacts = useCallback(async () => {
     try {
-      setIsLoading(true);
       const list = await getContacts();
       setContacts(list || []);
     } catch (error) {
@@ -86,8 +70,6 @@ const ContactDesignScreen = () => {
         text1: 'Error',
         text2: 'Failed to load contacts.',
       });
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -158,8 +140,9 @@ const ContactDesignScreen = () => {
 
   const renderContactToInvite = useCallback(
     (contact: any) => {
-      const displayName =
-        (contact.praman_patrika || '').replace(/\n/g, '').trim();
+      const displayName = (contact.praman_patrika || '')
+        .replace(/\n/g, '')
+        .trim();
 
       return (
         <View style={styles.inviteItem}>
@@ -182,9 +165,9 @@ const ContactDesignScreen = () => {
                   const message =
                     (t as any)?.shareInviteMessage || defaultMessage;
                   const separator = Platform.OS === 'ios' ? '&' : '?';
-                  const smsUrl = `sms:${contact.durasamparka_sankhya}${separator}body=${encodeURIComponent(
-                    message,
-                  )}`;
+                  const smsUrl = `sms:${
+                    contact.durasamparka_sankhya
+                  }${separator}body=${encodeURIComponent(message)}`;
 
                   const canOpen = await Linking.canOpenURL(smsUrl);
                   if (!canOpen) {
@@ -205,8 +188,7 @@ const ContactDesignScreen = () => {
               <Text
                 style={[
                   styles.inviteButtonText,
-                  contact?.nimantrana_prasthitah === 1 &&
-                    styles.sentButtonText,
+                  contact?.nimantrana_prasthitah === 1 && styles.sentButtonText,
                 ]}
               >
                 {contact?.nimantrana_prasthitah === 1
@@ -227,94 +209,80 @@ const ContactDesignScreen = () => {
         style={styles.shareHeaderButton}
         onPress={handleInviteShare}
       >
-        <Text style={styles.shareHeaderButtonText}>
-          Invite Via Link
-        </Text>
+        <Text style={styles.shareHeaderButtonText}>Invite Via Link</Text>
       </TouchableOpacity>
     ),
     [handleInviteShare],
   );
 
   return (
-    <>
-      {isProcessing && (
-        <View style={styles.loaderOverlay}>
-          <Text>Loading...</Text>
-        </View>
-      )}
-
-      <View style={styles.mainContainer}>
-        <View style={styles.container}>
-          <View style={{ marginVertical: 10 }}>
-            <SearchBarWrapper
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder={t.contactSearch}
-            />
-          </View>
-
-          <VirtualizedList
-            style={{ flex: 1 }}
-            ListHeaderComponent={() => (
-              <>
-                {searchQuery === '' && (
-                  <View style={styles.actionButtons}>
-                    <ActionButton
-                      iconName="person-add-outline"
-                      text={t.AddContact}
-                      onPress={() =>
-                        (navigation as any).navigate('NewContactForm')
-                      }
-                    />
-                    <ActionButton
-                      iconName="people-outline"
-                      text={t.newGroup}
-                      onPress={() =>
-                        (navigation as any).navigate('CreateNewGroup')
-                      }
-                    />
-                    <ActionButton
-                      iconName="time-outline"
-                      text={t.GenerateNewTemporaryID}
-                      onPress={() =>
-                        (navigation as any).navigate('PrivateRoom')
-                      }
-                    />
-                    <ActionButton
-                      iconName="megaphone-outline"
-                      text={t.AddEmergencyContact}
-                      onPress={() =>
-                        (navigation as any).navigate('EmergencyContactScreen')
-                      }
-                    />
-                  </View>
-                )}
-                <ContactSection
-                  title={t.contactsOnSamvadini}
-                  contacts={contactsOnSamvadini || []}
-                  renderContact={renderContactOnSamvadini}
-                  isSyncing={isSyncing}
-                  showSyncButton={true}
-                  handleSync={handleSync}
-                />
-                <ContactSection
-                  title={t.inviteToSamvadini}
-                  contacts={contactsToInvite || []}
-                  renderContact={renderContactToInvite}
-                  isSyncing={isSyncing}
-                  showSyncButton={false}
-                  headerRight={shareHeaderButton}
-                />
-              </>
-            )}
-            data={[]}
-            renderItem={() => null}
-            getItem={(data, index) => data[index]}
-            getItemCount={data => data.length}
+    <View style={styles.mainContainer}>
+      <View style={styles.container}>
+        <View style={{ marginVertical: 10 }}>
+          <SearchBarWrapper
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder={t.contactSearch}
           />
         </View>
-                 </View>
-    </>
+
+        <VirtualizedList
+          style={{ flex: 1 }}
+          ListHeaderComponent={() => (
+            <>
+              {searchQuery === '' && (
+                <View style={styles.actionButtons}>
+                  <ActionButton
+                    iconName="person-add-outline"
+                    text={t.AddContact}
+                    onPress={() =>
+                      (navigation as any).navigate('NewContactForm')
+                    }
+                  />
+                  <ActionButton
+                    iconName="people-outline"
+                    text={t.newGroup}
+                    onPress={() => (navigation as any).navigate('CreateGroup')}
+                  />
+                  <ActionButton
+                    iconName="time-outline"
+                    text={t.GenerateNewTemporaryID}
+                    onPress={() => (navigation as any).navigate('PrivateRoom')}
+                  />
+                  <ActionButton
+                    iconName="megaphone-outline"
+                    text={t.AddEmergencyContact}
+                    onPress={() =>
+                      (navigation as any).navigate('EmergencyContactScreen')
+                    }
+                  />
+                </View>
+              )}
+              <ContactSection
+                title={t.contactsOnSamvadini}
+                contacts={contactsOnSamvadini || []}
+                renderContact={renderContactOnSamvadini}
+                isSyncing={isSyncing}
+                showSyncButton={true}
+                handleSync={handleSync}
+              />
+              <ContactSection
+                title={t.inviteToSamvadini}
+                contacts={contactsToInvite || []}
+                renderContact={renderContactToInvite}
+                isSyncing={isSyncing}
+                showSyncButton={false}
+                headerRight={shareHeaderButton}
+              />
+            </>
+          )}
+          data={[]}
+          renderItem={() => null}
+          getItem={(data, index) => data[index]}
+          getItemCount={data => data.length}
+        />
+      </View>
+    </View>
   );
 };
 
@@ -369,7 +337,12 @@ const ContactSection = ({
             onPress={handleSync}
             disabled={isSyncing}
           >
-            <Icon name="sync" size={24} color="#4fc6b2" style={styles.syncIcon} />
+            <Icon
+              name="sync"
+              size={24}
+              color="#4fc6b2"
+              style={styles.syncIcon}
+            />
           </TouchableOpacity>
         ) : (
           headerRight || null
@@ -412,9 +385,7 @@ const ContactCard = memo(({ contact }: { contact: any }) => {
         <Text style={styles.contactName} numberOfLines={1}>
           {name?.length > 22 ? name.slice(0, 22) + '...' : name}
         </Text>
-        <Text style={styles.contactNumber}>
-          {contact.durasamparka_sankhya}
-        </Text>
+        <Text style={styles.contactNumber}>{contact.durasamparka_sankhya}</Text>
       </View>
     </View>
   );

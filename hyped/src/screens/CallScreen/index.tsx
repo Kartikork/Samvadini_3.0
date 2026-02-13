@@ -187,96 +187,106 @@ export default function CallScreen() {
     );
   }
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
+ 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  videoContainer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000'
+  },
+  remoteVideo: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
+  },
+  localVideo: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 120,
+    height: 160,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#fff',
+    backgroundColor: '#000',
+  },
+  audioOverlay: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 24,
+    paddingHorizontal: 24,
+  },
+  audioOverlayVideo: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  title: {
+    color: '#000000',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  subtitle: {
+    color: '#000000',
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  status: {
+    color: '#000000',
+    fontSize: 14,
+  },
+  controlsWrapper: {
+    marginTop: 'auto',
+    paddingBottom: 40,
+    alignItems: 'center',
+  },
+  controlsContainer: {
+    width: '75%',
+    borderRadius: 40,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileImage: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 120,
+    height: 120,
+    borderRadius: 100,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+    transform: [
+      { translateX: -48 },
+      { translateY: -48 },
+    ],
+    shadowColor: '#333',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 50,
 
-    },
-    videoContainer: {
-      flex: 1,
-      position: 'relative',
-    },
-    remoteVideo: {
-      flex: 1,
-      backgroundColor: '#000000',
-    },
-    localVideo: {
-      position: 'absolute',
-      top: 20,
-      right: 20,
-      width: 120,
-      height: 160,
-      borderRadius: 8,
-      backgroundColor: '#000000',
-      borderWidth: 2,
-      borderColor: '#FFFFFF',
-    },
-    audioOverlay: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'flex-start',
-      paddingTop: 24,
-      paddingHorizontal: 24,
-    },
-    audioOverlayVideo: {
-      backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    },
-    title: {
-      color: '#000000',
-      fontSize: 18,
-      fontWeight: '700',
-      marginBottom: 10,
-    },
-    subtitle: {
-      color: '#000000',
-      fontSize: 13,
-      marginBottom: 12,
-    },
-    status: {
-      color: '#000000',
-      fontSize: 14,
-    },
-    controlsWrapper: {
-      marginTop: 'auto',
-      paddingBottom: 40,
-      alignItems: 'center',
-    },
-    controlsContainer: {
-      width: '75%',
-      borderRadius: 40,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    profileImage: {
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      width: 120,
-      height: 120,
-      borderRadius: 100,
-      backgroundColor: '#333',
-      justifyContent: 'center',
-      alignItems: 'center',
-      transform: [
-        { translateX: -48 },
-        { translateY: -48 },
-      ],
-      shadowColor: '#333',
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 1,
-      shadowRadius: 50,
+    // Android glow
+    elevation: 10,
+  },
+  profileText: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: '600',
+  },
+  callHeader: {
+  position: 'absolute',
+  top: 32,
+  left: 0,
+  right: 0,
+  alignItems: 'center',
+  zIndex: 20,
+  paddingVertical: 6,
+  backgroundColor: 'rgba(0,0,0,0.25)',
+},
 
-      // Android glow
-      elevation: 10,
-    },
-    profileText: {
-      color: '#fff',
-      fontSize: 32,
-      fontWeight: '600',
-    },
 
-  });
-
+});
 
