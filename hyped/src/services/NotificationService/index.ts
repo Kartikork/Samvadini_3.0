@@ -12,6 +12,7 @@ import type { IncomingCallPayload, PendingCallAction } from '../../types/call';
 import { buildPersistedCall, normalizeCallType, normalizeTimestamp } from '../../utils/call';
 import { chatAPI } from '../../api';
 import { store } from '../../state/store';
+import { RingtoneService } from '../RingtoneService';
 
 const CHANNEL_ID = 'incoming_calls';
 const ACTION_ACCEPT = 'CALL_ACCEPT';
@@ -195,6 +196,8 @@ class NotificationServiceClass {
 
     if (normalizedData.type === 'call_cancelled' || normalizedData.type === 'call_ended' || normalizedData.type === 'call_timeout') {
       console.log('[NotificationService] Call termination notification:', normalizedData.type);
+      // Stop ringtone immediately on call termination
+      await RingtoneService.stopRingtone();
       const callId = normalizedData.callId ? String(normalizedData.callId) : null;
       if (callId) {
         await this.clearCallNotification(callId);
@@ -213,6 +216,9 @@ class NotificationServiceClass {
     const persisted = buildPersistedCall(payload);
     await PersistenceService.saveActiveCall(persisted);
     console.log('[NotificationService] ✅ Call persisted to AsyncStorage');
+
+    // Start ringtone for incoming call
+    await RingtoneService.startRingtone(payload.callType);
 
     await this.showIncomingCallNotification(persisted);
     console.log('[NotificationService] 🔔 Notification displayed');
@@ -258,6 +264,9 @@ class NotificationServiceClass {
     await this.clearCallNotification(payload.callId);
 
     console.log('[NotificationService] ✅ Action persisted');
+
+    // Stop ringtone when user accepts or rejects
+    await RingtoneService.stopRingtone();
     
     // Always save the action - AppLifecycleService will handle it during cold start
     // For foreground cases (app already running), also call the handler immediately
@@ -293,9 +302,14 @@ class NotificationServiceClass {
         channelId: CHANNEL_ID,
         category: AndroidCategory.CALL,
         importance: AndroidImportance.HIGH,
+        asForegroundService: true,  // Keep alive in background/killed state for ringtone
         pressAction: { 
           id: 'default',
           launchActivity: 'default',  // Launch app when notification body is tapped
+        },
+        fullScreenAction: {
+          id: 'default',
+          launchActivity: 'default',  // Wake up screen and show notification on lock screen
         },
         actions: [
           {
@@ -363,6 +377,8 @@ class NotificationServiceClass {
         name: 'Incoming Calls',
         importance: AndroidImportance.HIGH,
         sound: 'default',
+        vibration: true,
+        vibrationPattern: [1000, 500, 1000, 500],
       });
     }
   }

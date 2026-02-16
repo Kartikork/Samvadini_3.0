@@ -22,6 +22,7 @@ import { WebRTCService } from '../WebRTCService';
 import { WebRTCMediaService } from '../WebRTCMediaService';
 import { NotificationService } from '../NotificationService';
 import { AppLifecycleService } from '../AppLifecycleService';
+import { RingtoneService } from '../RingtoneService';
 import type { CallState, IncomingCallPayload, PendingCallAction, PersistedCall } from '../../types/call';
 import { buildPersistedCall, isCallExpired } from '../../utils/call';
 
@@ -354,6 +355,9 @@ class CallManagerClass {
       callerId: call.callerId,
     });
 
+    // Stop ringtone when accepting call
+    await RingtoneService.stopRingtone();
+
     const connected = await WebRTCService.ensureConnected();
     console.log('[CallManager] 🔌 WebRTC signaling connection:', connected ? 'CONNECTED' : 'NOT CONNECTED');
     if (!connected) {
@@ -411,6 +415,8 @@ class CallManagerClass {
         console.log('[CallManager] 🔌 WebRTC connection state changed:', state);
         if (state === 'connected') {
           console.log('[CallManager] ✅ WebRTC connection established!');
+          // Start in-call audio management (proximity sensor, audio routing, etc.)
+          RingtoneService.startInCallAudio(call.callType).catch(() => undefined);
           this.transition('CONNECTED');
           store.dispatch(callActions.setConnected());
           this.startDurationTimer();
@@ -428,6 +434,9 @@ class CallManagerClass {
     if (!call) return;
 
     if (this.state === 'ENDED' || this.state === 'ENDING') return;
+
+    // Stop ringtone when rejecting call
+    await RingtoneService.stopRingtone();
 
     await WebRTCService.ensureConnected();
     await WebRTCService.sendCallReject(call.callId, 'declined');
@@ -489,7 +498,14 @@ class CallManagerClass {
   public async toggleSpeaker(): Promise<void> {
     const current = store.getState().call.isSpeakerOn;
     try {
-      const newSpeakerState = await WebRTCMediaService.toggleSpeaker(current);
+      const newSpeakerState = !current;
+      
+      // Update audio routing via RingtoneService (InCallManager)
+      await RingtoneService.setSpeaker(newSpeakerState);
+      
+      // Also update WebRTC if needed
+      await WebRTCMediaService.toggleSpeaker(current);
+      
       store.dispatch(callActions.setSpeaker(newSpeakerState));
       console.log('[CallManager] 🔊 Speaker toggled:', newSpeakerState ? 'ON' : 'OFF');
     } catch (error) {
@@ -531,6 +547,10 @@ class CallManagerClass {
               console.log('[CallManager] 🔌 WebRTC connection state changed:', state);
               if (state === 'connected') {
                 console.log('[CallManager] ✅ WebRTC connection established!');
+                // Start in-call audio management for outgoing call
+                if (this.currentCall) {
+                  RingtoneService.startInCallAudio(this.currentCall.callType).catch(() => undefined);
+                }
                 this.transition('CONNECTED');
                 store.dispatch(callActions.setConnected());
                 this.startDurationTimer();
@@ -592,13 +612,17 @@ class CallManagerClass {
     this.endCallInternal(payload.reason || 'ended');
   };
 
-  private handleCallTimeout = (payload: any): void => {
+  private handleCallTimeout = async (payload: any): Promise<void> => {
     if (this.currentCall?.callId !== payload.callId) return;
+    // Stop ringtone on timeout
+    await RingtoneService.stopRingtone();
     this.failCall('timeout');
   };
 
-  private handleCallCancelled = (payload: any): void => {
+  private handleCallCancelled = async (payload: any): Promise<void> => {
     if (this.currentCall?.callId !== payload.callId) return;
+    // Stop ringtone when caller cancels
+    await RingtoneService.stopRingtone();
     this.endCallInternal('cancelled');
   };
 
@@ -793,6 +817,9 @@ class CallManagerClass {
   }
 
   private async failCall(reason: string): Promise<void> {
+    // Stop ringtone on call failure
+    await RingtoneService.stopRingtone();
+
     if (reason === 'expired' || reason === 'timeout') {
       if (this.currentCall) {
         NotificationService.showMissedCallNotification({
@@ -824,6 +851,9 @@ class CallManagerClass {
   }
 
   private async cleanupAfterCall(): Promise<void> {
+    // Stop ringtone service (handles both ringtone and in-call audio)
+    await RingtoneService.stopInCallAudio();
+
     // Cleanup WebRTC media
     try {
       await WebRTCMediaService.endCall();

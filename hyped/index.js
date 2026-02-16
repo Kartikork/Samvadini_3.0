@@ -5,6 +5,7 @@
 import { AppRegistry, Platform } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import notifee, { EventType, AndroidImportance } from '@notifee/react-native';
+import InCallManager from 'react-native-incall-manager';
 import App from './App';
 import { name as appName } from './app.json';
 import { PersistenceService } from './src/services/PersistenceService';
@@ -18,6 +19,8 @@ if (Platform.OS === 'android') {
     name: 'Incoming Calls',
     importance: AndroidImportance.HIGH,
     sound: 'default',
+    vibration: true,
+    vibrationPattern: [1000, 500, 1000, 500],
   }).catch(err => {
     console.warn('[Setup] Failed to create notification channel:', err);
   });
@@ -49,6 +52,21 @@ messaging().setBackgroundMessageHandler(async remoteMessage => {
     await PersistenceService.saveActiveCall(callData);
     console.log('[Background] ✅ Call data saved');
     
+    // Start ringtone using InCallManager (works in headless JS / background)
+    try {
+      console.log('[Background] 🔔 Starting ringtone via InCallManager...');
+      InCallManager.start({ media: 'audio', auto: false, ringback: '' });
+      InCallManager.startRingtone(
+        '_DEFAULT_',            // Use phone's default ringtone
+        [1000, 500, 1000, 500], // Vibration pattern
+        'default',              // iOS category
+        30                      // Max duration in seconds
+      );
+      console.log('[Background] ✅ Ringtone started');
+    } catch (ringErr) {
+      console.warn('[Background] ⚠️ Failed to start ringtone (will rely on notification sound):', ringErr);
+    }
+    
     // Show notification with Accept/Reject actions
     await notifee.displayNotification({
       id: callData.callId,
@@ -66,9 +84,14 @@ messaging().setBackgroundMessageHandler(async remoteMessage => {
         channelId: 'incoming_calls',
         category: 'call',
         importance: 4,
+        asForegroundService: true,  // Keep process alive for ringtone in background/killed
         pressAction: { 
           id: 'default',
           launchActivity: 'default',
+        },
+        fullScreenAction: {
+          id: 'default',
+          launchActivity: 'default',  // Wake screen and show on lock screen
         },
         actions: [
           {
@@ -97,6 +120,16 @@ messaging().setBackgroundMessageHandler(async remoteMessage => {
   // Handle call termination
   if (data.type === 'call_cancelled' || data.type === 'call_ended' || data.type === 'call_timeout') {
     console.log('[Background] Call termination:', data.type);
+    
+    // Stop ringtone immediately
+    try {
+      InCallManager.stopRingtone();
+      InCallManager.stop();
+      console.log('[Background] 🔕 Ringtone stopped');
+    } catch (ringErr) {
+      console.warn('[Background] ⚠️ Failed to stop ringtone:', ringErr);
+    }
+    
     if (data.callId) {
       await notifee.cancelNotification(String(data.callId));
     }
@@ -158,6 +191,13 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
     // Save the action
     if (finalActionId === 'CALL_ACCEPT' || finalActionId === 'accept') {
       console.log('[Background] ✅ Saving ACCEPT action for:', callId);
+      
+      // Stop ringtone on accept
+      try {
+        InCallManager.stopRingtone();
+        InCallManager.stop();
+      } catch (e) { /* ignore */ }
+      
       await PersistenceService.savePendingAction('accept');
       await PersistenceService.saveActiveCall(callData);
       console.log('[Background] ✅ Accept action + call data saved, app will launch and connect');
@@ -166,6 +206,13 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
       await notifee.cancelNotification(callId);
     } else if (finalActionId === 'CALL_REJECT' || finalActionId === 'reject') {
       console.log('[Background] ❌ Saving REJECT action for:', callId);
+      
+      // Stop ringtone on reject
+      try {
+        InCallManager.stopRingtone();
+        InCallManager.stop();
+      } catch (e) { /* ignore */ }
+      
       await PersistenceService.savePendingAction('reject');
       
       // Clear notification and call data
