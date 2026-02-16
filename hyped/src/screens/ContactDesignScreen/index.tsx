@@ -417,7 +417,7 @@ const ContactCard = memo(
               data = await createNewChat(uniqueId, user.ekatma_chinha);
             }
           } else {
-            data = user.chatId;
+            data = { chatId: user.chatId };
           }
 
           if (uniqueId === user.ekatma_chinha) {
