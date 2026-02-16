@@ -30,6 +30,8 @@ import { userAPI } from '../../api';
 import { SocketService } from '../SocketService';
 import { ChatManager } from '../ChatManager';
 import { CallManager } from '../CallManager';
+import { AppLifecycleService } from '../AppLifecycleService';
+import { NotificationService } from '../NotificationService';
 import { env } from '../../config/env';
 
 // SQLite Table Creation Imports
@@ -45,6 +47,7 @@ import { messageCreateTable } from '../../storage/sqllite/chat/ChatMessageSchema
 import { GroupmessageCreateTable } from '../../storage/sqllite/chat/GroupMessageSchema';
 import { CreateStatusTable, CreateStatusVisibilityTable } from '../../storage/sqllite/chat/StatusSchema';
 import { testAddColumn } from '../../storage/sqllite/alterTable';
+import { syncContacts, upsertContactsAfterLogin } from '../../utils/contacts';
 
 export type BootstrapPhase = 
   | 'idle'
@@ -144,6 +147,8 @@ class AppBootstrapClass {
       }).catch(err => {
         console.warn('[AppBootstrap] Socket init error (will retry):', err);
       });
+      
+      CallManager.initialize(uniqueId);
 
       // Step 3: Initialize ChatManager (loads DB, renders UI, syncs in background)
       this.setPhase('initializing_services');
@@ -151,10 +156,27 @@ class AppBootstrapClass {
       
       await ChatManager.initialize(uniqueId, false); // false = incremental sync
 
-      // Initialize CallManager in background
-      CallManager.initialize(uniqueId).catch(err => {
+      // Initialize CallManager (needed for cold start call recovery)
+      try {
+        await CallManager.initialize(uniqueId);
+      } catch (err) {
         console.warn('[AppBootstrap] CallManager init error:', err);
-      });
+      }
+
+      try {
+        await AppLifecycleService.initialize();
+      } catch (err) {
+        console.warn('[AppBootstrap] AppLifecycle init error:', err);
+      }
+
+      // Fire-and-forget contact sync on app launch (logged-in user)
+      try {
+        syncContacts().catch(err => {
+          console.warn('[AppBootstrap] Contact sync (launch) error:', err);
+        });
+      } catch (err) {
+        console.warn('[AppBootstrap] Failed to start contact sync on launch:', err);
+      }
 
       // Step 4: UI Ready!
       this.setPhase('ready');
@@ -213,14 +235,41 @@ class AppBootstrapClass {
       // Phase 3: PARALLEL - Initialize ChatManager + CallManager
       this.setPhase('initializing_services');
       console.log('[AppBootstrap] Phase 3: Initializing managers (parallel)...');
-      
-      const [chatResult] = await Promise.allSettled([
+         // Register FCM token with backend (only during signup/login)
+         try {
+          console.log('[AppBootstrap] Registering FCM token with backend...');
+          await NotificationService.registerFcmTokenWithBackend(uniqueId);
+        } catch (err) {
+          console.warn('[AppBootstrap] FCM token registration error:', err);
+          // Don't fail bootstrap if token registration fails
+        }
+      const [chatResult, callResult] = await Promise.allSettled([
         ChatManager.initialize(uniqueId),
-        // CallManager.initialize(uniqueId),
+        CallManager.initialize(uniqueId),
       ]);
 
       if (chatResult.status === 'rejected') {
         console.error('[AppBootstrap] ChatManager init failed:', chatResult.reason);
+      }
+      if (callResult.status === 'rejected') {
+        console.warn('[AppBootstrap] CallManager init failed:', callResult.reason);
+      }
+
+   
+
+      try {
+        await AppLifecycleService.initialize();
+      } catch (err) {
+        console.warn('[AppBootstrap] AppLifecycle init error:', err);
+      }
+
+      // Fire-and-forget contact upsert after signup/login
+      try {
+        upsertContactsAfterLogin().catch(err => {
+          console.warn('[AppBootstrap] upsertContactsAfterLogin error:', err);
+        });
+      } catch (err) {
+        console.warn('[AppBootstrap] Failed to start upsertContactsAfterLogin after signup/login:', err);
       }
 
       // Phase 4: Connect Socket

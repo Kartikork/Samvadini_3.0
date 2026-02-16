@@ -17,6 +17,7 @@
 import { Socket, Channel } from 'phoenix';
 import NetInfo from '@react-native-community/netinfo';
 import { env } from '../../config/env';
+import { updateChatMessage } from '../../storage/sqllite/chat/ChatMessageSchema';
 
 // Event types for type safety
 export type SocketEvent =
@@ -273,6 +274,40 @@ class SocketServiceClass {
       });
       this.emit('request_accepted', payload);
     });
+
+    // ─────────────────────────────────────────────────────────────
+    // GLOBAL MESSAGE UPDATE (pin/star/edit/reaction) – store immediately, emit app-wide
+    // Works from any screen: DB is updated so data is correct when user opens chat
+    // ─────────────────────────────────────────────────────────────
+    const handleMessageUpdated = async (payload: any) => {
+      const chatId = payload?.samvada_chinha;
+      const refrenceIds = payload?.refrenceIds;
+      const type = payload?.type;
+      const updates = payload?.updates ?? {};
+
+      if (!refrenceIds || !Array.isArray(refrenceIds) || refrenceIds.length === 0 || !type) {
+        console.warn('[SocketService] message_updated ignored: missing refrenceIds or type', { payload });
+        return;
+      }
+
+      console.log('[SocketService] 📌 message_updated received:', {
+        chatId,
+        refrenceIds: refrenceIds.length,
+        type,
+        timestamp: new Date().toISOString(),
+      });
+
+      try {
+        await updateChatMessage({ refrenceIds, type, updates });
+      } catch (err) {
+        console.error('[SocketService] Failed to persist message update:', err);
+      }
+
+      this.emit('message_updated', payload);
+    };
+
+    this.channel.on('message_updated', handleMessageUpdated);
+    this.channel.on('update_broadcast_message', handleMessageUpdated);
   }
 
   private startHeartbeat(): void {

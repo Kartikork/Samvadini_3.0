@@ -4,14 +4,16 @@
  * RESPONSIBILITIES:
  * - Validate outgoing messages
  * - Insert into existing SQLite chat table (ChatMessageSchema)
- * - Call chat/send-message API with plaintext first
- * - Encrypt message before sending via socket
+ * - Encrypt message before sending
+ * - Send encrypted message via socket first (for real-time delivery)
+ * - Send encrypted message to API (for persistence/confirmation)
  * - Queue + retry when offline or socket fails
  *
  * IMPORTANT:
  * - Local DB is the source of truth
  * - UI should render from DB, not from this manager directly
- * - Flow: DB insert → API call (plaintext) → Encrypt → Socket send
+ * - Flow: DB insert → Encrypt → Socket send (encrypted) → API call (encrypted)
+ * - Only encrypted messages are sent - no plaintext fallback
  */
 
 import { SocketService } from '../SocketService';
@@ -58,15 +60,15 @@ class OutgoingMessageManagerClass {
   /**
    * Public API: Send a text message
    *
-   * FLOW (matching old SendMessageApi.js):
+   * FLOW:
    * 1. Validate input + auth
-   * 2. Create message metadata (refrenceId, timestamps) - matching old chatScreen.js payload
+   * 2. Create message metadata (refrenceId, timestamps)
    * 3. Insert into local DB (SOURCE OF TRUTH)
-   * 4. Call chat/send-message API with plaintext
-   * 5. Get other participant's public key
-   * 6. Encrypt message
-   * 7. Send encrypted message via socket
-   * 8. If fails/offline, enqueue for retry
+   * 4. Get other participant's public key (required - no plaintext fallback)
+   * 5. Encrypt message (required - no plaintext fallback)
+   * 6. Send encrypted message via socket FIRST (for real-time delivery)
+   * 7. Send encrypted message to API (for persistence/confirmation)
+   * 8. If socket fails/offline, enqueue for retry
    */
   public async sendTextMessage(
     chatId: string,
@@ -163,28 +165,14 @@ class OutgoingMessageManagerClass {
       // Even if DB insert fails, we can still try sending, but UI might not show it correctly
     }
 
-    // 4. Call chat/send-message API with plaintext (matching old SendMessageApi.js line 47-48)
-    // try {
-    //   await chatAPI.sendMessagePlaintext(basePayload);
-    //   console.log('[OutgoingMessageManager] Plaintext message sent to API:', {
-    //     chatId,
-    //     refrenceId,
-    //   });
-    // } catch (error) {
-    //   console.error('[OutgoingMessageManager] Error calling chat/send-message API:', error);
-    //   // Continue even if API call fails - encryption and socket send can still proceed
-    // }
-
-    // 5. Get other participant's public key
+    // 4. Get other participant's public key (required for encryption)
     const otherParticipant = await getOtherParticipantPublicKey(chatId, currentUserId);
     if (!otherParticipant || !otherParticipant.publicKey) {
-      console.warn('[OutgoingMessageManager] No public key found for other participant, sending plaintext');
-      // Send plaintext if no encryption key available
-      await this.sendViaSocket(basePayload);
+      console.error('[OutgoingMessageManager] No public key found for other participant. Cannot send message without encryption.');
       return;
     }
 
-    // 6. Encrypt message (matching old SendMessageApi.js line 54)
+    // 5. Encrypt message (required - no plaintext fallback)
     let encryptedPayload;
     try {
       const encryptedBody = await encryptMessage(basePayload.vishayah, otherParticipant.publicKey);
@@ -195,15 +183,14 @@ class OutgoingMessageManagerClass {
       };
       console.log('[OutgoingMessageManager] Message encrypted successfully');
     } catch (error) {
-      console.error('[OutgoingMessageManager] Encryption failed, sending plaintext as fallback:', error);
-      encryptedPayload = {
-        ...basePayload,
-        samvada_spashtam: blockedIds,
-        vishayah: basePayload.vishayah, // Keep original
-      };
+      console.error('[OutgoingMessageManager] Encryption failed. Cannot send message without encryption:', error);
+      return;
     }
 
-    // 7. Send encrypted message to API (matching old SendMessageApi.js sendToApi - line 151)
+    // 6. Send encrypted message via socket FIRST (for real-time delivery)
+    await this.sendViaSocket(encryptedPayload);
+
+    // 7. Send encrypted message to API (for persistence/confirmation)
     try {
       // Add IP address if available (optional - can be added later with NetworkInfo)
       const encryptedPayloadWithIP = {
@@ -218,10 +205,119 @@ class OutgoingMessageManagerClass {
       });
     } catch (error) {
       console.error('[OutgoingMessageManager] Error sending encrypted message to API:', error);
-      // Continue even if API call fails - socket send can still proceed
+      // Continue even if API call fails - socket send already succeeded
+    }
+  }
+
+  /**
+   * Public API: Send media message (images, gifs, stickers)
+   * type should be something like 'image', 'image/gif', 'sticker', 'gif'
+   */
+  public async sendMediaMessage(
+    chatId: string,
+    mediaUrl: string,
+    type: string,
+    options?: {
+      replyMessage?: any;
+      blockedIds?: string[];
+      disappearTime?: { disappear_at: string | null; is_disappearing: boolean };
+    }
+  ): Promise<void> {
+    if (!mediaUrl) return;
+
+    // 1. Auth / validation
+    const { auth } = store.getState();
+    const currentUserId = auth.uniqueId;
+    if (!currentUserId) {
+      console.warn('[OutgoingMessageManager] Cannot send media message, no current user id');
+      return;
     }
 
-    // 8. Send encrypted message via socket
+    if (!chatId) {
+      console.warn('[OutgoingMessageManager] Cannot send media message, no chatId');
+      return;
+    }
+
+    // metadata
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const refrenceId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Reply message (pratisandeshah)
+    const pratisandeshah = options?.replyMessage
+      ? JSON.stringify({
+          lastRefrenceId: options.replyMessage.refrenceId,
+          lastSenderId: options.replyMessage.pathakah_chinha,
+          lastType: options.replyMessage.sandesha_prakara,
+          lastContent: options.replyMessage.vishayah,
+          lastUkti: options.replyMessage.ukti || '',
+        })
+      : '';
+
+    const basePayload = {
+      samvada_chinha: chatId,
+      pathakah_chinha: currentUserId,
+      vishayah: mediaUrl,
+      sandesha_prakara: type,
+      anuvadata_sandesham: false,
+      pratisandeshah,
+      refrenceId,
+      samvada_spashtam: null,
+      kimFwdSandesha: false,
+      preritam_tithih: nowIso,
+      nirastah: false,
+      avastha: 'sent',
+      disappear_at: options?.disappearTime?.disappear_at || null,
+      is_disappearing: options?.disappearTime?.is_disappearing || false,
+      ukti: '',
+      kimTaritaSandesha: false,
+      sthapitam_sandesham: null,
+      sampaditam: false,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      prasaranamId: '',
+    };
+
+    try {
+      await insertChatMessage(basePayload);
+      console.log('[OutgoingMessageManager] Inserted outgoing media message into DB:', { chatId, refrenceId });
+    } catch (error) {
+      console.error('[OutgoingMessageManager] Failed to insert media message into DB:', error);
+    }
+
+    // Encryption + send similar to text
+    const otherParticipant = await getOtherParticipantPublicKey(chatId, currentUserId);
+    if (!otherParticipant || !otherParticipant.publicKey) {
+      console.warn('[OutgoingMessageManager] No public key found for other participant, sending plaintext media');
+      await this.sendViaSocket(basePayload);
+      return;
+    }
+
+    let encryptedPayload;
+    try {
+      const encryptedBody = await encryptMessage(basePayload.vishayah, otherParticipant.publicKey);
+      encryptedPayload = {
+        ...basePayload,
+        samvada_spashtam: options?.blockedIds || null,
+        vishayah: encryptedBody,
+      };
+      console.log('[OutgoingMessageManager] Media message encrypted successfully');
+    } catch (error) {
+      console.error('[OutgoingMessageManager] Media encryption failed, sending plaintext as fallback:', error);
+      encryptedPayload = {
+        ...basePayload,
+        samvada_spashtam: options?.blockedIds || null,
+        vishayah: basePayload.vishayah,
+      };
+    }
+
+    try {
+      await chatAPI.sendEncryptedMessage({ ...encryptedPayload, ip_address: 'Unknown' });
+      console.log('[OutgoingMessageManager] Encrypted media message sent to API:', { chatId, refrenceId });
+    } catch (error) {
+      console.error('[OutgoingMessageManager] Error sending encrypted media to API:', error);
+    }
+
     await this.sendViaSocket(encryptedPayload);
   }
 

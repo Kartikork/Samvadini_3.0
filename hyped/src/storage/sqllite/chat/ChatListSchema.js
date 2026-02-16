@@ -568,7 +568,7 @@ export const getAllChatLists = async (uniqueId) => {
             GROUP BY samvada_chinha
           )
           SELECT
-            tcq.*,
+            tcq.*,tf2.durasamparka_sankhya as contact_number,
             tcb.status,
             tcb_other.status AS other_status,
             tcb.ekatma_chinha,

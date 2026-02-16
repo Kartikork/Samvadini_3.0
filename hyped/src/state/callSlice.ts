@@ -13,27 +13,9 @@
  */
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export type CallState = 
-  | 'IDLE'
-  | 'DIALING'
-  | 'RINGING'
-  | 'CONNECTING'
-  | 'CONNECTED'
-  | 'HOLD'
-  | 'RECONNECTING'
-  | 'ENDING'
-  | 'ENDED'
-  | 'ERROR';
+import type { CallState, CallType } from '../types/call';
 
 export type CallDirection = 'outgoing' | 'incoming';
-export type CallType = 'audio' | 'video';
-
-interface PeerInfo {
-  id: string;
-  name: string;
-  photo?: string;
-}
 
 interface CallSliceState {
   // Call state machine
@@ -42,8 +24,9 @@ interface CallSliceState {
   // Call metadata
   callId: string | null;
   direction: CallDirection | null;
-  type: CallType | null;
-  peerInfo: PeerInfo | null;
+  callType: CallType | null;
+  callerId: string | null;
+  callerName: string | null;
   
   // Timing
   startedAt: number | null;
@@ -64,8 +47,9 @@ const initialState: CallSliceState = {
   state: 'IDLE',
   callId: null,
   direction: null,
-  type: null,
-  peerInfo: null,
+  callType: null,
+  callerId: null,
+  callerName: null,
   startedAt: null,
   connectedAt: null,
   endedAt: null,
@@ -83,41 +67,46 @@ export const callSlice = createSlice({
     // State transitions (called by CallManager only)
     setState: (state, action: PayloadAction<CallState>) => {
       console.log(`[CallSlice] State transition: ${state.state} → ${action.payload}`);
-      state.state = action.payload;
       
-      // Clear error on state change
-      if (action.payload !== 'ERROR') {
-        state.error = null;
-      }
-      
-      // Reset on IDLE
+      // If transitioning to IDLE, reset to initial state
       if (action.payload === 'IDLE') {
         return initialState;
       }
+
+      // Otherwise, update state
+      state.state = action.payload;
+
+      if (action.payload !== 'FAILED') {
+        state.error = null;
+      }
     },
 
-    // Initialize call
-    initializeCall: (state, action: PayloadAction<{
+    setCallInfo: (state, action: PayloadAction<{
       callId: string;
       direction: CallDirection;
-      type: CallType;
-      peerInfo: PeerInfo;
+      callType: CallType;
+      callerId: string;
+      callerName?: string;
+      startedAt?: number;
     }>) => {
       state.callId = action.payload.callId;
       state.direction = action.payload.direction;
-      state.type = action.payload.type;
-      state.peerInfo = action.payload.peerInfo;
-      state.startedAt = Date.now();
-      state.isVideoOn = action.payload.type === 'video';
+      state.callType = action.payload.callType;
+      state.callerId = action.payload.callerId;
+      state.callerName = action.payload.callerName || 'Unknown';
+      // Don't set startedAt here - it should be set when CONNECTED
+      state.startedAt = null;
+      state.isVideoOn = action.payload.callType === 'video';
     },
 
-    // Connected
     setConnected: (state) => {
       state.state = 'CONNECTED';
       state.connectedAt = Date.now();
+      // Start timer from when call connects, not when initiated
+      state.startedAt = Date.now();
+      state.duration = 0; // Reset duration
     },
 
-    // Ended
     setEnded: (state, action: PayloadAction<{ reason?: string }>) => {
       state.state = 'ENDED';
       state.endedAt = Date.now();
@@ -126,7 +115,10 @@ export const callSlice = createSlice({
       }
     },
 
-    // Media controls
+    setDuration: (state, action: PayloadAction<number>) => {
+      state.duration = action.payload;
+    },
+
     setMuted: (state, action: PayloadAction<boolean>) => {
       state.isMuted = action.payload;
     },
@@ -139,18 +131,11 @@ export const callSlice = createSlice({
       state.isVideoOn = action.payload;
     },
 
-    // Duration (updated by timer)
-    setDuration: (state, action: PayloadAction<number>) => {
-      state.duration = action.payload;
-    },
-
-    // Error
     setError: (state, action: PayloadAction<string>) => {
-      state.state = 'ERROR';
+      state.state = 'FAILED';
       state.error = action.payload;
     },
 
-    // Reset
     reset: () => initialState,
   },
 });

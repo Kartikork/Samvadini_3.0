@@ -45,6 +45,12 @@ export interface UserSettings {
   upayogakarta_nama?: string;      // unique username
   praman_patrika?: string;          // display name
   parichayapatra?: string;          // profile photo URL
+  janma_tithi?: string;             // date of birth
+  linga?: string;                   // gender
+  ekatma_chinha?: string;           // unique ID
+  dhwani?: string | null;           // language
+  durasamparka_gopaniya?: boolean;  // hide phone number
+  desha_suchaka_koda?: string;      // country dial code
 }
 
 export interface RefreshTokenRequest {
@@ -64,6 +70,8 @@ export interface User {
   upayogakarta_nama?: string;       // username
   praman_patrika?: string;          // display name
   parichayapatra?: string;          // avatar/profile photo
+  desha_suchaka_koda?: string;     // country dial code
+  dhwani?: string | null;          // language
   sthiti?: string;                  // status
   isOnline?: boolean;
   lastSeen?: string;
@@ -214,12 +222,6 @@ export const authAPI = {
    * Delete account
    */
   deleteAccount: () => api.delete<{ success: boolean }>('/auth/account'),
-
-  /**
-   * Register FCM token for push notifications
-   */
-  registerToken: (data: { ekatma_chinha: string; token: string }) =>
-    api.post<{ success: boolean }>('/chat/register-token', data),
 };
 
 export const userAPI = {
@@ -366,6 +368,12 @@ export const chatAPI = {
    */
   sendEncryptedMessage: (data: any) =>
     api.post<{ success: boolean }>('/chat/send-message', data),
+
+  /**
+   * Register FCM token for push notifications
+   */
+  registerToken: (data: { ekatma_chinha: string; token: string }) =>
+    api.post<{ message: string; status: 'success' }>('/chat/register-token', data),
 };
 
 export const groupAPI = {

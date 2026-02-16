@@ -1,26 +1,16 @@
-/**
- * useChatListData Hook
- * 
- * PERFORMANCE:
- * - Fetches data from DB (source of truth)
- * - Only fetches for visible chat IDs
- * - Memoizes results to prevent unnecessary re-renders
- * 
- * ARCHITECTURE:
- * Selector (IDs) → Hook (DB fetch) → Component
- */
-
 import { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '../../../state/hooks';
 import { getAllChatLists } from '../../../storage/sqllite/chat/ChatListSchema';
 
 export interface ChatListItem {
   samvada_chinha: string;
+  pathakah_chinha: string;
   samvada_chinha_id: number;
   samvada_nama: string;
   prakara: 'Chat' | 'Group' | 'Broadcast' | 'SelfChat';
   contact_name: string;
   contact_photo?: string;
+  contact_uniqueId?: string;
   lastMessage?: string;
   lastMessageUrl?: string;
   lastMessageType?: string;
@@ -38,24 +28,21 @@ export interface ChatListItem {
   samuha_chitram?: string;
   isDeleted?: boolean;
   status?: string;
+  prayoktaramnishkasaya?: string | string[];
+  hidePhoneNumber?: number | boolean;
+  contact_number?: string | number | null;
 }
 
-/**
- * Fetch chat list data from DB for given IDs
- * 
- * @param chatIds - Array of chat IDs to fetch
- * @param activeTab - Current active tab (for filtering logic)
- * @returns { chats, loading }
- */
 export function useChatListData(chatIds: string[], activeTab: string) {
   const { uniqueId } = useAppSelector(state => state.auth);
-  const selectedCategory = useAppSelector(state => state.chatList.selectedCategory);
+  const selectedCategory = useAppSelector(
+    state => state.chatList.selectedCategory,
+  );
   const lastUpdateTime = useAppSelector(state => state.chatList.lastUpdateTime);
-  
+
   const [chats, setChats] = useState<ChatListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Dependency string for optimization (avoid array reference changes)
   const chatIdsKey = chatIds.join(',');
 
   useEffect(() => {
@@ -69,22 +56,12 @@ export function useChatListData(chatIds: string[], activeTab: string) {
 
     const loadChats = async () => {
       setLoading(true);
-      
+
       try {
-        // ⏱️ Start timing DB fetch
-        const dbStartTime = Date.now();
-        
-        // Fetch all chats from DB (SQLite)
         const allChats = await getAllChatLists(uniqueId);
-        
-        const dbEndTime = Date.now();
-        console.log(`⏱️ [useChatListData] DB fetch took: ${dbEndTime - dbStartTime}ms, Total records: ${allChats?.length || 0}`);
-        
+
         if (!isMounted) return;
 
-        // ⏱️ Start timing filtering
-        const filterStartTime = Date.now();
-        
         // Filter based on active tab
         let filtered = allChats;
 
@@ -92,41 +69,49 @@ export function useChatListData(chatIds: string[], activeTab: string) {
           case 'all':
             filtered = allChats.filter(c => c.samvadaspashtah === 0);
             break;
-          
+
           case 'requests':
             filtered = allChats.filter(c => c.is_request === 1);
             break;
-          
+
           case 'private':
-            filtered = allChats.filter(c => c.is_private_room === 1 && c.samvadaspashtah === 0);
+            filtered = allChats.filter(
+              c => c.is_private_room === 1 && c.samvadaspashtah === 0,
+            );
             break;
-          
+
           case 'emergency':
-            filtered = allChats.filter(c => c.is_emergency === 1 && c.samvadaspashtah === 0);
+            filtered = allChats.filter(
+              c => c.is_emergency === 1 && c.samvadaspashtah === 0,
+            );
             break;
-          
+
           case 'groups':
-            filtered = allChats.filter(c => c.prakara === 'Group' && c.samvadaspashtah === 0);
+            filtered = allChats.filter(
+              c => c.prakara === 'Group' && c.samvadaspashtah === 0,
+            );
             break;
-          
+
           case 'categories':
             if (selectedCategory && selectedCategory !== 'All') {
               filtered = allChats.filter(
-                c => c.vargah === selectedCategory && c.samvadaspashtah === 0
+                c => c.vargah === selectedCategory && c.samvadaspashtah === 0,
               );
             } else {
               filtered = allChats.filter(c => c.samvadaspashtah === 0);
             }
             break;
-          
+
           case 'unread':
-            filtered = allChats.filter(c => c.unread_count > 0 && c.samvadaspashtah === 0);
+            filtered = allChats.filter(
+              c => c.unread_count > 0 && c.samvadaspashtah === 0,
+            );
             break;
-          
+
           case 'archived':
             filtered = allChats.filter(c => c.samvadaspashtah === 1);
             break;
-          
+
           default:
             filtered = allChats.filter(c => c.samvadaspashtah === 0);
         }
@@ -142,10 +127,6 @@ export function useChatListData(chatIds: string[], activeTab: string) {
           // Then by last message date
           return (b.lastMessageDate || 0) - (a.lastMessageDate || 0);
         });
-
-        const filterEndTime = Date.now();
-        console.log(`⏱️ [useChatListData] Filter & Sort took: ${filterEndTime - filterStartTime}ms, Filtered records: ${filtered.length}, Tab: ${activeTab}`);
-        console.log(`⏱️ [useChatListData] TOTAL processing time: ${filterEndTime - dbStartTime}ms`);
 
         setChats(filtered);
       } catch (error) {
@@ -173,15 +154,10 @@ export function useChatListData(chatIds: string[], activeTab: string) {
   return { chats: memoizedChats, loading };
 }
 
-/**
- * Fetch archived chats separately
- * 
- * @returns { archivedChats, loading }
- */
 export function useArchivedChats() {
   const { uniqueId } = useAppSelector(state => state.auth);
   const lastUpdateTime = useAppSelector(state => state.chatList.lastUpdateTime);
-  
+
   const [archivedChats, setArchivedChats] = useState<ChatListItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -195,16 +171,10 @@ export function useArchivedChats() {
 
     const loadArchived = async () => {
       setLoading(true);
-      
+
       try {
-        // ⏱️ Start timing DB fetch
-        const dbStartTime = Date.now();
-        
         const allChats = await getAllChatLists(uniqueId);
-        
-        const dbEndTime = Date.now();
-        console.log(`⏱️ [useArchivedChats] DB fetch took: ${dbEndTime - dbStartTime}ms, Total records: ${allChats?.length || 0}`);
-        
+
         if (!isMounted) return;
 
         // Filter archived chats
@@ -212,12 +182,12 @@ export function useArchivedChats() {
           .filter(c => c.samvadaspashtah === 1)
           .sort((a, b) => (b.lastMessageDate || 0) - (a.lastMessageDate || 0));
 
-        const filterEndTime = Date.now();
-        console.log(`⏱️ [useArchivedChats] Filter & Sort took: ${filterEndTime - dbEndTime}ms`);
-        console.log('[useArchivedChats] 📦 Loaded archived chats:', archived.length);
         setArchivedChats(archived);
       } catch (error) {
-        console.error('[useArchivedChats] ❌ Error loading archived chats:', error);
+        console.error(
+          '[useArchivedChats] ❌ Error loading archived chats:',
+          error,
+        );
         if (isMounted) {
           setArchivedChats([]);
         }
@@ -233,15 +203,11 @@ export function useArchivedChats() {
     return () => {
       isMounted = false;
     };
-  }, [uniqueId, lastUpdateTime]); // Refresh when lastUpdateTime changes
+  }, [uniqueId, lastUpdateTime]);
 
   return { archivedChats, loading };
 }
 
-/**
- * Get single chat by ID
- * Used by ChatListItem component
- */
 export function useChatById(chatId: string) {
   const [chat, setChat] = useState<ChatListItem | null>(null);
   const { uniqueId } = useAppSelector(state => state.auth);
@@ -256,14 +222,8 @@ export function useChatById(chatId: string) {
 
     const loadChat = async () => {
       try {
-        // ⏱️ Start timing DB fetch
-        const dbStartTime = Date.now();
-        
         const allChats = await getAllChatLists(uniqueId);
-        
-        const dbEndTime = Date.now();
-        console.log(`⏱️ [useChatById] DB fetch took: ${dbEndTime - dbStartTime}ms for chatId: ${chatId}`);
-        
+
         if (isMounted) {
           const found = allChats.find(c => c.samvada_chinha === chatId);
           setChat(found || null);
@@ -283,4 +243,3 @@ export function useChatById(chatId: string) {
 
   return chat;
 }
-

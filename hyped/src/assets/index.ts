@@ -1,6 +1,6 @@
 /**
  * Assets Index
- * 
+ *
  * Centralized exports for all assets
  * Makes importing assets easier throughout the app
  */
@@ -9,9 +9,9 @@
 export { default as splashScreen } from './images/Splash_screen.png';
 export { default as anuvadiniLogo } from './images/Dashboard/anuvadini-logo.png';
 export { default as makeInIndia } from './images/MakeInIndia.png';
-export { default as hypedLogo } from './images/header/hypedLogo.png';  
-export { default as sos} from './images/header/sos-icon.png';
-export { default as bossBabyIndianFigure} from './images/header/baby_indian_figure.png';
+export { default as hypedLogo } from './images/header/hypedLogo.png';
+export { default as sos } from './images/header/sos-icon.png';
+export { default as bossBabyIndianFigure } from './images/header/baby_indian_figure.png';
 export { default as ellipsCallBottom } from './images/ellips_call_bottom.png';
 export { default as ellipsCallTop } from './images/ellips_call_top.png';
 export { default as languageIcon } from './images/header/anuvadini-icon.jpg';
@@ -32,8 +32,12 @@ export { default as womenIcon } from './images/Dashboard/women1.png';
 export { default as farmerIcon } from './images/Dashboard/farmerIcn.png';
 export { default as langBg } from './images/Dashboard/languages-bg.png';
 export { default as gameBg } from './images/Dashboard/gamebg.png';
-// dashboard images end
-
+export { default as noImage } from './images/no-image.png';
+export { default as callBackgroung } from './images/calls/call-bg.png';
+export { default as priorityIcon } from './images/priority.png';
+export { default as userIcon } from './images/user-icon.png';
+export { default as groupIcons } from './images/groupIcons.png';
+export { default as educationGroupIcons } from './images/event/education.jpg';
 
 // Icons
 // Example: export { default as homeIcon } from './icons/home.png';

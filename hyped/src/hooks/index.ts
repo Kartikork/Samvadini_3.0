@@ -10,7 +10,5 @@ export { useCountdown } from './useCountdown';
 export { useSocketMessages, useChatMessages } from './useSocketMessages';
 
 export { useUnreadChatsCount } from './useUnreadChatsCount';
-
-
-
-
+export { useMediaPermission } from './useMediaPermission';
+export type { MediaPermissionType } from './useMediaPermission';
