@@ -10,6 +10,7 @@ import {
   Platform,
   Text,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-toast-message';
@@ -58,6 +59,7 @@ const ContactDesignScreen = () => {
   const lang = useAppSelector(state => state.language.lang);
   const uniqueId = useAppSelector(state => state.auth.uniqueId);
   const t = getAppTranslations(lang);
+  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -110,7 +112,7 @@ const ContactDesignScreen = () => {
   }, [loadContacts]);
 
   const filteredContacts = useMemo(
-    () => filterContacts(contacts || [], searchQuery, uniqueId),
+    () => filterContacts(contacts || [], searchQuery, uniqueId ?? undefined),
     [contacts, searchQuery, uniqueId],
   );
 
@@ -244,6 +246,7 @@ const ContactDesignScreen = () => {
 
         <VirtualizedList
           style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
           ListHeaderComponent={() => (
             <>
               {searchQuery === '' && (
@@ -258,7 +261,7 @@ const ContactDesignScreen = () => {
                   <ActionButton
                     iconName="people-outline"
                     text={t.newGroup}
-                    onPress={() => (navigation as any).navigate('CreateGroup')}
+                    onPress={() => (navigation as any).navigate('CreateNewGroup')}
                   />
                   <ActionButton
                     iconName="time-outline"
@@ -404,7 +407,7 @@ const ContactCard = memo(
     const initial = name ? name[0] : '?';
 
     const handleChatPress = useCallback(
-      async user => {
+    async (user: any) => {
         if (isButtonDisabled) return;
         setButtonDisabled(true);
         setGlobalLoading(true);

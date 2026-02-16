@@ -73,15 +73,19 @@ export const filterContactsByDemographics = (
     gender,
   }: { vayahMin?: number; vayahMax?: number; gender?: string } = {},
 ) => {
-  if (!contacts) return [];
+  if (!contacts?.length) return [];
 
   const getAgeFromDOB = (dob?: string | null) => {
     if (!dob) return null;
     const birthDate = new Date(dob);
+    if (isNaN(birthDate.getTime())) return null;
+
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
     return age;
   };
 
@@ -89,28 +93,22 @@ export const filterContactsByDemographics = (
     const contactAge = getAgeFromDOB(contact?.janma_tithi);
     const contactGender = contact?.linga?.toLowerCase();
 
-    const inAgeRange =
+    // Age match: null age fails age filter
+    const ageMatch =
       contactAge !== null &&
-      (!isNaN(vayahMin as any) || !isNaN(vayahMax as any)) &&
-      ((vayahMin == null && vayahMax == null) ||
-        (vayahMin != null &&
-          vayahMax == null &&
-          contactAge >= Number(vayahMin)) ||
-        (vayahMin == null &&
-          vayahMax != null &&
-          contactAge <= Number(vayahMax)) ||
-        (vayahMin != null &&
-          vayahMax != null &&
-          contactAge >= Number(vayahMin) &&
-          contactAge <= Number(vayahMax)));
+      (vayahMin == null || contactAge >= vayahMin) &&
+      (vayahMax == null || contactAge <= vayahMax);
 
-    const genderMatch = gender && contactGender === gender.toLowerCase();
+    // Gender match: if no gender provided, it's a match
+    const genderMatch = !gender || contactGender === gender.toLowerCase();
 
-    // require both gender and age match if provided
-    if (gender && (vayahMin != null || vayahMax != null))
-      return inAgeRange && genderMatch;
+    // Apply combined logic
+    if (gender && (vayahMin != null || vayahMax != null)) {
+      return ageMatch && genderMatch;
+    }
+
     if (gender) return genderMatch;
-    if (vayahMin != null || vayahMax != null) return inAgeRange;
+    if (vayahMin != null || vayahMax != null) return ageMatch;
     return true;
   });
 };
