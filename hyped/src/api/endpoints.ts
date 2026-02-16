@@ -50,6 +50,7 @@ export interface UserSettings {
   ekatma_chinha?: string;           // unique ID
   dhwani?: string | null;           // language
   durasamparka_gopaniya?: boolean;  // hide phone number
+  durasamparka_sankhya?: string;    // phone number
   desha_suchaka_koda?: string;      // country dial code
 }
 

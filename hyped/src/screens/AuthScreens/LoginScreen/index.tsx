@@ -236,6 +236,7 @@ function LoginScreen() {
         is_register: user_setting?.is_register,
         janma_tithi: user_setting?.janma_tithi,
         linga: user_setting?.linga,
+        durasamparka_sankhya: (user_setting as any)?.durasamparka_sankhya ?? (user as any)?.durasamparka_sankhya,
         parichayapatra: user_setting?.parichayapatra ?? user?.parichayapatra,
         upayogakarta_nama: user_setting?.upayogakarta_nama ?? user?.upayogakarta_nama,
         praman_patrika: user_setting?.praman_patrika ?? user?.praman_patrika,
