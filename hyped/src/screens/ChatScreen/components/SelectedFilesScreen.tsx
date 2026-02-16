@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Dimensions,
   Platform,
   BackHandler,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -17,18 +17,51 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import ImageCropPicker from 'react-native-image-crop-picker';
 import { useNavigation, useRoute } from '@react-navigation/native';
-
-const { width } = Dimensions.get('window');
+import { useAppSelector } from '../../../state/hooks';
+import axios from 'axios';
+import { env } from '../../../config';
+import { generateUID } from '../../../helper/DateFormate';
+import { insertChatMessage } from '../../../storage/sqllite/chat/ChatMessageSchema';
 
 type SelectedFilesRouteParams = {
   assets?: any[];
   onComplete?: (files: any[], caption: string) => void;
 };
 
+interface CheckboxProps {
+  checked: boolean;
+  onPress: () => void;
+  label: string;
+}
+
+const Checkbox: React.FC<CheckboxProps> = React.memo(
+  ({ checked, onPress, label }) => {
+    return (
+      <TouchableOpacity
+        accessible
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked }}
+        onPress={onPress}
+        style={styles.checkboxRowItem}
+      >
+        <View
+          style={[styles.checkboxBox, checked && styles.checkboxBoxChecked]}
+        >
+          {checked && <Text style={styles.checkboxMark}>✓</Text>}
+        </View>
+        <Text style={styles.checkboxLabel}>{label}</Text>
+      </TouchableOpacity>
+    );
+  },
+);
+
 const SelectedFilesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const uniqueId = useAppSelector(state => state.auth.uniqueId);
+  const activeChatId = useAppSelector(state => state.activeChat.chatId);
   const route = useRoute<any>();
-  const { assets = [], onComplete } = (route.params || {}) as SelectedFilesRouteParams;
+  const { assets = [], onComplete } = (route.params ||
+    {}) as SelectedFilesRouteParams;
 
   const [caption, setCaption] = useState('');
   const [captions, setCaptions] = useState<Record<string, string>>({});
@@ -45,7 +78,9 @@ const SelectedFilesScreen: React.FC = () => {
       tinyBase64: img?.tinyBase64 || img?.base64 || null,
     })),
   );
-  const [fileOptions, setFileOptions] = useState<Record<string, { scan: boolean; compress: boolean }>>({});
+  const [fileOptions, setFileOptions] = useState<
+    Record<string, { scan: boolean; compress: boolean }>
+  >({});
   const [isSending, setIsSending] = useState(false);
 
   // Handle Android hardware back button
@@ -82,7 +117,10 @@ const SelectedFilesScreen: React.FC = () => {
       }
 
       const initialOptions = (assets || []).reduce(
-        (acc: Record<string, { scan: boolean; compress: boolean }>, img: any) => {
+        (
+          acc: Record<string, { scan: boolean; compress: boolean }>,
+          img: any,
+        ) => {
           const key = img?.uri;
           if (key) {
             acc[key] = {
@@ -250,7 +288,12 @@ const SelectedFilesScreen: React.FC = () => {
         const newImg = updatedImages.find(
           i => i.uri !== oldKey && i.type === oldImg.type,
         );
-        if (oldKey && newImg?.uri && next[oldKey] !== undefined && next[newImg.uri] === undefined) {
+        if (
+          oldKey &&
+          newImg?.uri &&
+          next[oldKey] !== undefined &&
+          next[newImg.uri] === undefined
+        ) {
           next[newImg.uri] = next[oldKey] || '';
           delete next[oldKey];
         }
@@ -259,7 +302,11 @@ const SelectedFilesScreen: React.FC = () => {
     });
   };
 
-  const persistOptionOnAssets = (uri: string | undefined, key: 'scan' | 'compress', value: boolean) => {
+  const persistOptionOnAssets = (
+    uri: string | undefined,
+    key: 'scan' | 'compress',
+    value: boolean,
+  ) => {
     if (!uri) return;
 
     setImages(prev =>
@@ -277,7 +324,10 @@ const SelectedFilesScreen: React.FC = () => {
     );
   };
 
-  const toggleFileOption = (uri: string | undefined, key: 'scan' | 'compress') => {
+  const toggleFileOption = (
+    uri: string | undefined,
+    key: 'scan' | 'compress',
+  ) => {
     if (!uri) return;
     setFileOptions(prev => {
       const current = prev[uri] || { scan: false, compress: false };
@@ -293,54 +343,111 @@ const SelectedFilesScreen: React.FC = () => {
     });
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (isSending) return;
-    setIsSending(true);
 
-    const imagesWithCaptions = (images || []).map(img => {
-      const options = img?.uri
-        ? fileOptions[img.uri] || {
-            scan: !!img?.scan,
-            compress: !!img?.compress,
-          }
-        : { scan: false, compress: false };
-      return {
-        ...img,
-        ukti: captions[img?.uri] || '',
-        scan: !!options.scan,
-        compress: !!options.compress,
-        tinyBase64: img?.tinyBase64 || img?.base64 || null,
+    try {
+      setIsSending(true);
+
+      const imagesWithCaptions = (images || []).map(img => {
+        const options = img?.uri
+          ? fileOptions[img.uri] || {
+              scan: !!img?.scan,
+              compress: !!img?.compress,
+            }
+          : { scan: false, compress: false };
+
+        return {
+          ...img,
+          ukti: captions[img?.uri] || '',
+          scan: !!options.scan,
+          compress: !!options.compress,
+          tinyBase64: img?.tinyBase64 || img?.base64 || null,
+        };
+      });
+      const id = generateUID();
+      const LocalMediaPayload = {
+        samvada_chinha: activeChatId,
+        pathakah_chinha: uniqueId,
+        vishayah: imagesWithCaptions,
+        sandesha_prakara: imagesWithCaptions[0]?.type || 'image',
+        anuvadata_sandesham: false,
+        refrenceId: id,
+        pratisandeshah: '',
+        kimFwdSandesha: false,
+        preritam_tithih: new Date().toISOString(),
+        ukti: '',
+        avastha: 'sent',
+        sthapitam_sandesham: 0,
+        nirastah: false,
+        samvada_spashtam: null,
+        updatedAt: new Date().toISOString(),
       };
-    });
-    // If a callback was provided, pass data back to previous screen
-    if (onComplete) {
-      onComplete(imagesWithCaptions, caption);
+
+      await insertChatMessage(LocalMediaPayload);
+      const formData = new FormData();
+
+      // Global flags
+      formData.append('compress', 'false');
+      formData.append('scan', 'true');
+      formData.append('TypeGroup', 'false');
+
+      // Message fields
+      formData.append('samvada_chinha', activeChatId);
+      formData.append('pathakah_chinha', uniqueId);
+      formData.append('vishayah', imagesWithCaptions || '');
+      formData.append(
+        'sandesha_prakara',
+        imagesWithCaptions[0]?.type || 'image',
+      );
+      formData.append('anuvadata_sandesham', 'false');
+      formData.append('refrenceId', id);
+      formData.append('pratisandeshah', '');
+      formData.append('kimFwdSandesha', 'false');
+      formData.append('preritam_tithih', new Date().toISOString());
+      formData.append('ukti', '');
+      formData.append('avastha', 'sent');
+      formData.append('sthapitam_sandesham', '0');
+      formData.append('nirastah', 'false');
+      formData.append('samvada_spashtam', '');
+      formData.append('updatedAt', new Date().toISOString());
+
+      // Attach files
+      imagesWithCaptions.forEach((img, index) => {
+        if (!img?.uri) return;
+
+        formData.append('file', {
+          uri: img.uri,
+          type: img.type || 'image/jpeg',
+          name: img.fileName || `file-${Date.now()}-${index}.jpg`,
+        });
+      });
+
+      const response = await axios.post(
+        `${env.API_BASE_URL}/chat/process-media`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      );
+
+      console.log('Upload success:', response.data);
+
+      // Callback to previous screen
+      if (onComplete) {
+        onComplete(imagesWithCaptions, caption);
+      }
+
+      navigation.goBack();
+    } catch (error) {
+      console.error('Send media error:', error);
+      Alert.alert('Error', 'Failed to send media');
+    } finally {
+      setIsSending(false);
     }
-
-    navigation.goBack();
   };
-
-  const Checkbox = ({
-    checked,
-    onPress,
-    label,
-  }: {
-    checked: boolean;
-    onPress: () => void;
-    label: string;
-  }) => (
-    <TouchableOpacity
-      accessible
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked }}
-      onPress={onPress}
-      style={styles.checkboxRowItem}>
-      <View style={[styles.checkboxBox, checked && styles.checkboxBoxChecked]}>
-        {checked && <Text style={styles.checkboxMark}>✓</Text>}
-      </View>
-      <Text style={styles.checkboxLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -353,9 +460,7 @@ const SelectedFilesScreen: React.FC = () => {
         <View style={styles.headerIconsRight}>
           {selectedImages?.length > 0 && (
             <>
-              <TouchableOpacity
-                onPress={handleCrop}
-                style={styles.cropButton}>
+              <TouchableOpacity onPress={handleCrop} style={styles.cropButton}>
                 <Icon name="crop" size={20} color="#fff" />
               </TouchableOpacity>
             </>
@@ -379,9 +484,7 @@ const SelectedFilesScreen: React.FC = () => {
       {/* Thumbnails + delete */}
       <View style={styles.thumbnailSection}>
         {selectedImages.length > 0 && (
-          <TouchableOpacity
-            onPress={handleDelete}
-            style={styles.deleteButton}>
+          <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
             <Icon name="delete" size={30} color="#fff" />
           </TouchableOpacity>
         )}
@@ -394,7 +497,8 @@ const SelectedFilesScreen: React.FC = () => {
               style={[
                 styles.thumbnailWrapper,
                 selectedImage === image && styles.selectedThumbnail,
-              ]}>
+              ]}
+            >
               <Image
                 source={{ uri: image.uri }}
                 style={styles.thumbnail}
@@ -424,9 +528,7 @@ const SelectedFilesScreen: React.FC = () => {
             />
             <Checkbox
               checked={!!fileOptions[selectedImage.uri]?.compress}
-              onPress={() =>
-                toggleFileOption(selectedImage.uri, 'compress')
-              }
+              onPress={() => toggleFileOption(selectedImage.uri, 'compress')}
               label="Compress"
             />
           </>
@@ -457,13 +559,11 @@ const SelectedFilesScreen: React.FC = () => {
           />
           <TouchableOpacity onPress={handleSend} disabled={isSending}>
             <LinearGradient
-              style={[
-                styles.sendButton,
-                isSending && styles.disabledButton,
-              ]}
+              style={[styles.sendButton, isSending && styles.disabledButton]}
               colors={['#6462AC', '#028BD3']}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}>
+              end={{ x: 1, y: 0 }}
+            >
               <Ionicons name="send" size={20} color="#fff" />
             </LinearGradient>
           </TouchableOpacity>
@@ -606,4 +706,3 @@ const styles = StyleSheet.create({
 });
 
 export default SelectedFilesScreen;
-
