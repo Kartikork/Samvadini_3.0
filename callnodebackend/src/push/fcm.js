@@ -158,16 +158,31 @@ class FCMService {
         android: {
           priority: 'high',
           ttl: 60000, // 60 seconds
+          notification: payload.notification ? {
+            title: payload.notification.title,
+            body: payload.notification.body,
+            channelId: 'incoming_calls',
+            priority: 'high',
+            sound: 'default',
+          } : undefined,
         },
         apns: {
           headers: {
-            'apns-priority': '10',
-            'apns-expiration': String(Math.floor(Date.now() / 1000) + 60),
+            'apns-priority': '10', // High priority for immediate delivery
+            'apns-expiration': String(Math.floor(Date.now() / 1000) + 60), // 60 seconds TTL
+            'apns-push-type': 'alert', // Alert type for foreground notifications
           },
           payload: {
             aps: {
-              contentAvailable: true,
+              alert: payload.notification ? {
+                title: payload.notification.title,
+                body: payload.notification.body,
+              } : undefined,
+              badge: 1,
               sound: 'default',
+              contentAvailable: true, // Enable background processing
+              mutableContent: true, // Allow notification service extension
+              category: 'CALL_INVITATION', // For CallKit integration
             },
           },
         },
@@ -205,6 +220,10 @@ class FCMService {
         callerAvatar: callData.callerAvatar || '',
         callType: callData.callType,
         timestamp: String(Date.now()),
+      },
+      notification: {
+        title: `${callData.callerName || 'Unknown'} is calling`,
+        body: callData.callType === 'video' ? 'Incoming video call' : 'Incoming audio call',
       },
     };
     return await this.sendPushNotification(userId, payload);

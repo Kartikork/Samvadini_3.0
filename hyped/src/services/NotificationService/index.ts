@@ -320,6 +320,15 @@ class NotificationServiceClass {
       },
       ios: {
         sound: 'default',
+        critical: true,  // Critical alerts bypass Do Not Disturb
+        criticalVolume: 1.0,  // Maximum volume for critical alerts
+        categoryId: 'CALL_INVITATION',  // Category for action buttons
+        attachments: [],
+        foregroundPresentationOptions: {
+          alert: true,
+          badge: true,
+          sound: true,
+        },
       },
     });
   }
@@ -364,6 +373,29 @@ class NotificationServiceClass {
         importance: AndroidImportance.HIGH,
         sound: 'default',
       });
+    }
+    
+    // Set up iOS notification categories with actions
+    if (Platform.OS === 'ios') {
+      await notifee.setNotificationCategories([
+        {
+          id: 'CALL_INVITATION',
+          actions: [
+            {
+              id: ACTION_ACCEPT,
+              title: 'Accept',
+              foreground: true,  // Open app when tapped
+            },
+            {
+              id: ACTION_REJECT,
+              title: 'Decline',
+              foreground: false,  // Handle in background
+              destructive: true,  // Red button
+            },
+          ],
+        },
+      ]);
+      console.log('[NotificationService] ✅ iOS notification categories configured');
     }
   }
 

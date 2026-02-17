@@ -40,6 +40,47 @@ function getWebRTCModule(): any {
     return null;
   }
 }
+
+// Helper function to configure iOS audio session
+async function configureIOSAudioSession(): Promise<void> {
+  if (Platform.OS !== 'ios') {
+    return;
+  }
+
+  try {
+    console.log('[WebRTCMedia] 🔧 Configuring iOS audio session...');
+    
+    const WebRTCModule = getWebRTCModule();
+    
+    // Try to configure audio session via WebRTCModule if available
+    if (WebRTCModule && typeof WebRTCModule.configureAudioSession === 'function') {
+      await WebRTCModule.configureAudioSession();
+      console.log('[WebRTCMedia] ✅ iOS audio session configured via WebRTCModule');
+      return;
+    }
+
+    // Try react-native-incall-manager for audio session configuration
+    try {
+      const InCallManager = require('react-native-incall-manager');
+      const manager = InCallManager.default || InCallManager;
+      
+      if (manager && typeof manager.start === 'function') {
+        // Start InCallManager with audio session configuration
+        manager.start({ media: 'audio', ringback: '' });
+        console.log('[WebRTCMedia] ✅ iOS audio session configured via InCallManager');
+        return;
+      }
+    } catch (e) {
+      console.log('[WebRTCMedia] InCallManager not available for audio session config');
+    }
+
+    console.log('[WebRTCMedia] ⚠️ No explicit audio session configuration available - relying on WebRTC defaults');
+  } catch (error) {
+    console.error('[WebRTCMedia] ❌ Failed to configure iOS audio session:', error);
+    // Don't throw - let WebRTC try with default configuration
+  }
+}
+
 import { WebRTCService } from '../WebRTCService';
 import { env } from '../../config/env';
 import type { CallType } from '../../types/call';
@@ -114,6 +155,11 @@ class WebRTCMediaServiceClass {
 
       // Get user media - reuse existing stream if available (from preview)
       if (!this.localStream) {
+        // Configure iOS audio session BEFORE requesting media
+        if (Platform.OS === 'ios') {
+          await configureIOSAudioSession();
+        }
+        
         const constraints = {
           audio: true,
           video: callType === 'video' ? { facingMode: 'user' } : false,
@@ -374,6 +420,21 @@ class WebRTCMediaServiceClass {
     this.targetUserId = null;
     this.currentUserId = null;
 
+    // Clean up iOS audio session
+    if (Platform.OS === 'ios') {
+      try {
+        const InCallManager = require('react-native-incall-manager');
+        const manager = InCallManager.default || InCallManager;
+        
+        if (manager && typeof manager.stop === 'function') {
+          manager.stop();
+          console.log('[WebRTCMedia] 🔇 iOS audio session stopped via InCallManager');
+        }
+      } catch (e) {
+        console.log('[WebRTCMedia] InCallManager not available for cleanup');
+      }
+    }
+
     // Notify handlers
     if (this.onLocalStream) {
       this.onLocalStream(null);
@@ -456,6 +517,12 @@ class WebRTCMediaServiceClass {
       }
 
       console.log('[WebRTCMedia] 🎬 Getting local media preview for:', callType);
+      
+      // Configure iOS audio session BEFORE requesting media
+      if (Platform.OS === 'ios') {
+        await configureIOSAudioSession();
+      }
+      
       const constraints = {
         audio: true,
         video: callType === 'video' ? { facingMode: 'user' } : false,

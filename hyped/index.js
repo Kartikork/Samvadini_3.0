@@ -3,11 +3,25 @@
  */
 
 import { AppRegistry, Platform } from 'react-native';
+import { getApp } from '@react-native-firebase/app';
 import messaging from '@react-native-firebase/messaging';
 import notifee, { EventType, AndroidImportance } from '@notifee/react-native';
 import App from './App';
 import { name as appName } from './app.json';
 import { PersistenceService } from './src/services/PersistenceService';
+
+// ========================================
+// FIREBASE INITIALIZATION CHECK
+// ========================================
+let firebaseInitialized = false;
+try {
+  getApp();
+  firebaseInitialized = true;
+  console.log('[Setup] Firebase is initialized');
+} catch (error) {
+  console.warn('[Setup] Firebase not initialized - Firebase features will be disabled');
+  console.warn('[Setup] To enable Firebase, add GoogleService-Info.plist (iOS) or google-services.json (Android)');
+}
 
 // ========================================
 // SETUP NOTIFICATION CHANNEL (Android)
@@ -28,7 +42,9 @@ if (Platform.OS === 'android') {
 // ========================================
 
 // Firebase background message handler (when app is killed)
-messaging().setBackgroundMessageHandler(async remoteMessage => {
+// Only register if Firebase is initialized
+if (firebaseInitialized) {
+  messaging().setBackgroundMessageHandler(async remoteMessage => {
   console.log('[Background] 📨 FCM message received while app killed:', remoteMessage.data?.type);
   
   const data = remoteMessage.data || {};
@@ -102,7 +118,10 @@ messaging().setBackgroundMessageHandler(async remoteMessage => {
     }
     await PersistenceService.clearCallData();
   }
-});
+  });
+} else {
+  console.log('[Setup] Skipping Firebase background message handler - Firebase not initialized');
+}
 
 // Notifee background event handler (when user taps notification while app is killed)
 notifee.onBackgroundEvent(async ({ type, detail }) => {

@@ -6,6 +6,7 @@ import {
   ImageStyle,
   ActivityIndicator,
   Text,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAppSelector } from '../../state/hooks';
@@ -13,6 +14,16 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/MainNavigator';
 import { splashScreen } from '../../assets';
 import { AppBootstrap } from '../../services/AppBootstrap';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  requestContactsPermission,
+  requestLocationPermission,
+  requestCameraPermission,
+  requestMicrophonePermission,
+  requestPhotoLibraryPermission,
+} from '../../utils/permissions';
+
+const PERMISSIONS_REQUESTED_KEY = 'permissions_requested';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -36,6 +47,31 @@ export default function SplashScreen() {
     return () => clearTimeout(timer);
   }, [token, uniqueId]);
 
+  const requestAllPermissions = async () => {
+    try {
+      console.log('[SplashScreen] 🔐 Requesting permissions...');
+      setInitStatus('Setting up permissions...');
+      
+      // Request all permissions sequentially
+      // iOS will show system dialogs, Android permissions were already configured
+      if (Platform.OS === 'ios') {
+        await requestContactsPermission();
+        await requestLocationPermission();
+        await requestCameraPermission();
+        await requestMicrophonePermission();
+        await requestPhotoLibraryPermission();
+      }
+      
+      // Mark permissions as requested
+      await AsyncStorage.setItem(PERMISSIONS_REQUESTED_KEY, 'true');
+      console.log('[SplashScreen] ✅ Permissions requested');
+    } catch (error) {
+      console.error('[SplashScreen] ❌ Error requesting permissions:', error);
+      // Continue anyway - user can grant permissions later when needed
+      await AsyncStorage.setItem(PERMISSIONS_REQUESTED_KEY, 'true');
+    }
+  };
+
   const initializeApp = async () => {
     try {
       setInitStatus('Checking authentication...');
@@ -51,11 +87,20 @@ export default function SplashScreen() {
         const result = await AppBootstrap.bootstrapOnAppLaunch();
         
         if (result.success) {
-          // Bootstrap successful - navigate to Home
-          console.log('[SplashScreen] Bootstrap successful - navigating to Home');
+          // Bootstrap successful - check and request permissions if needed
+          console.log('[SplashScreen] Bootstrap successful - checking permissions');
+          
+          // Check if permissions have been requested before
+          const permissionsRequested = await AsyncStorage.getItem(PERMISSIONS_REQUESTED_KEY);
+          
+          if (!permissionsRequested) {
+            // Request permissions automatically
+            await requestAllPermissions();
+          }
+          
           setInitStatus('Ready!');
           
-          // Small delay to show "Ready!" message
+          // Navigate to ChatList
           setTimeout(() => {
             navigation.replace('ChatList');
           }, 500);
