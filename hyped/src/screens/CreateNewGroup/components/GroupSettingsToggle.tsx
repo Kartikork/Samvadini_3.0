@@ -182,11 +182,9 @@ export default GroupSettingsToggle;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    // backgroundColor: '#fff',
+    // borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#EDF1F7',
   },
   sectionTitle: {
     fontSize: 16,

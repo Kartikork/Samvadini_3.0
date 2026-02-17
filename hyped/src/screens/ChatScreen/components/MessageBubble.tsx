@@ -233,9 +233,12 @@ function formatTimestamp(timestamp: number): string {
   return `${hours}:${minutes}`;
 }
 
-function createStyles(isOutgoing: boolean, isHighlighted: boolean) {
-  const outgoingBg = isHighlighted ? '#075E54' : '#007AFF';
+function createStyles(isOutgoing: boolean, isHighlighted: boolean,) {
+  const outgoingBg = isHighlighted ? '#075E54' : '#D0E6FB';
   const incomingBg = isHighlighted ? '#2A3942' : '#FFFFFF';
+   const outgoingBorder = isHighlighted ? '#128C7E' : '#90CAF9';
+  const incomingBorder = isHighlighted ? '#3A4B53' : '#E0E0E0';
+
 
   return StyleSheet.create({
     container: {
@@ -243,10 +246,14 @@ function createStyles(isOutgoing: boolean, isHighlighted: boolean) {
       paddingVertical: 4,
       flexDirection: 'row',
       justifyContent: isOutgoing ? 'flex-end' : 'flex-start',
-      backgroundColor: isHighlighted ? '#0B141A' : 'transparent',
+      backgroundColor: isHighlighted ? '#e5f4ff' : 'transparent',
+      marginBottom: 2,
     },
     bubble: {
       maxWidth: '75%',
+      borderWidth: 5,
+      // borderColor: '#7391AD',
+      borderColor: isOutgoing ? outgoingBorder : incomingBorder,
       borderRadius: 16,
       paddingHorizontal: 10,
       paddingVertical: 8,
@@ -299,7 +306,7 @@ function createStyles(isOutgoing: boolean, isHighlighted: boolean) {
     },
     messageText: {
       fontSize: 16,
-      color: isOutgoing ? '#FFFFFF' : '#000000',
+      color: isOutgoing ? '#000000' : '#000000',
       lineHeight: 22,
     },
     footer: {
@@ -318,7 +325,7 @@ function createStyles(isOutgoing: boolean, isHighlighted: boolean) {
     },
     timestamp: {
       fontSize: 11,
-      color: isOutgoing ? 'rgba(255,255,255,0.8)' : '#999999',
+      color: isOutgoing ? '#000000' : '#000000',
       marginLeft: 2,
     },
     deletedContainer: {

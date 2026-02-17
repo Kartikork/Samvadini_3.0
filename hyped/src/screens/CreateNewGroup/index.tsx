@@ -449,7 +449,7 @@ export default function CreateNewGroup() {
                   </View>
                 </View>
 
-                <View style={{ marginTop: 20 }} />
+                {/* <View style={{ marginTop: 20 }} /> */}
 
                 {isLoading && (
                   <ActivityIndicator size="large" color="#0000ff" />

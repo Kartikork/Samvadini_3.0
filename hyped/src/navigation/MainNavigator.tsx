@@ -23,6 +23,7 @@ import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
+import GroupChatScreen from '../screens/GroupChatScreen';
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
 import NewContactFormScreen from '../screens/NewContactFormScreen';
@@ -566,8 +567,14 @@ export default function MainNavigator() {
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
 
+        {/* Group Chat Screen */}
+        <Stack.Screen
+          name="GroupChat"
+          component={GroupChatScreen}
+          options={commonHeaderOptions}
+        />
+
         {/* TODO: Add these screens
-        <Stack.Screen name="GroupChat" component={GroupChatScreen} />
         <Stack.Screen name="Call" component={CallScreen} />
         <Stack.Screen name="IncomingCall" component={IncomingCallScreen} />
         */}
