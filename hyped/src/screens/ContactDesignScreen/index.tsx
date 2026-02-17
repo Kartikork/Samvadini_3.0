@@ -10,6 +10,7 @@ import {
   Platform,
   Text,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-toast-message';
@@ -25,7 +26,10 @@ import { getAppTranslations } from '../../translations';
 import { useAppSelector } from '../../state/hooks';
 import { SearchBar as ChatListSearchBar } from '../ChatListScreen/components/SearchBar';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
-
+import {
+  createSelfChat,
+  createNewChat,
+} from '../../helper/ChatInitiateHelper.js';
 const SearchBarWrapper = ({
   value,
   onChangeText,
@@ -55,9 +59,12 @@ const ContactDesignScreen = () => {
   const lang = useAppSelector(state => state.language.lang);
   const uniqueId = useAppSelector(state => state.auth.uniqueId);
   const t = getAppTranslations(lang);
+  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [globalLoading, setGlobalLoading] = useState(false);
+  const [isButtonDisabled, setButtonDisabled] = useState(false);
 
   const loadContacts = useCallback(async () => {
     try {
@@ -71,7 +78,13 @@ const ContactDesignScreen = () => {
         text2: 'Failed to load contacts.',
       });
     }
-  }, []);
+  }, [
+    uniqueId,
+    navigation,
+    isButtonDisabled,
+    setButtonDisabled,
+    setGlobalLoading,
+  ]);
 
   useEffect(() => {
     loadContacts();
@@ -99,7 +112,7 @@ const ContactDesignScreen = () => {
   }, [loadContacts]);
 
   const filteredContacts = useMemo(
-    () => filterContacts(contacts || [], searchQuery, uniqueId),
+    () => filterContacts(contacts || [], searchQuery, uniqueId ?? undefined),
     [contacts, searchQuery, uniqueId],
   );
 
@@ -134,6 +147,11 @@ const ContactDesignScreen = () => {
       <ContactCard
         key={contact.ekatma_chinha || contact.durasamparka_sankhya}
         contact={contact}
+        uniqueId={uniqueId}
+        navigation={navigation}
+        isButtonDisabled={isButtonDisabled}
+        setButtonDisabled={setButtonDisabled}
+        setGlobalLoading={setGlobalLoading}
       />
     );
   }, []);
@@ -228,6 +246,7 @@ const ContactDesignScreen = () => {
 
         <VirtualizedList
           style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
           ListHeaderComponent={() => (
             <>
               {searchQuery === '' && (
@@ -242,7 +261,7 @@ const ContactDesignScreen = () => {
                   <ActionButton
                     iconName="people-outline"
                     text={t.newGroup}
-                    onPress={() => (navigation as any).navigate('CreateGroup')}
+                    onPress={() => (navigation as any).navigate('CreateNewGroup')}
                   />
                   <ActionButton
                     iconName="time-outline"
@@ -367,29 +386,87 @@ const ContactSection = ({
   </View>
 );
 
-const ContactCard = memo(({ contact }: { contact: any }) => {
-  const photoUrl = getImageUrlWithSas(contact?.parichayapatra || undefined);
-  const name = contact?.praman_patrika || '';
-  const initial = name ? name[0] : '?';
+const ContactCard = memo(
+  ({
+    contact,
+    uniqueId,
+    navigation,
+    isButtonDisabled,
+    setButtonDisabled,
+    setGlobalLoading,
+  }: {
+    contact: any;
+    uniqueId: any;
+    navigation: any;
+    isButtonDisabled: boolean;
+    setButtonDisabled: (v: boolean) => void;
+    setGlobalLoading: (v: boolean) => void;
+  }) => {
+    const photoUrl = getImageUrlWithSas(contact?.parichayapatra || undefined);
+    const name = contact?.praman_patrika || '';
+    const initial = name ? name[0] : '?';
 
-  return (
-    <View style={styles.contactItem}>
-      <View style={styles.contactAvatar}>
-        {photoUrl ? (
-          <Image source={{ uri: photoUrl }} style={styles.avatar} />
-        ) : (
-          <Text style={styles.avatarText}>{initial}</Text>
-        )}
+    const handleChatPress = useCallback(
+    async (user: any) => {
+        if (isButtonDisabled) return;
+        setButtonDisabled(true);
+        setGlobalLoading(true);
+        try {
+          let data;
+          if (!user.chatId) {
+            if (uniqueId === user.ekatma_chinha) {
+              data = await createSelfChat(user);
+            } else {
+              data = await createNewChat(uniqueId, user.ekatma_chinha);
+            }
+          } else {
+            data = { chatId: user.chatId };
+          }
+
+          if (uniqueId === user.ekatma_chinha) {
+            navigation.navigate('BroadcastChatScreen', data);
+          } else {
+            navigation.navigate('Chat', data);
+          }
+        } catch (error) {
+          console.error('Error handling chat request:', error);
+        } finally {
+          setButtonDisabled(false);
+          setGlobalLoading(false);
+        }
+      },
+      [
+        isButtonDisabled,
+        navigation,
+        uniqueId,
+        setButtonDisabled,
+        setGlobalLoading,
+      ],
+    );
+
+    return (
+      <View style={styles.contactItem}>
+        <View style={styles.contactAvatar}>
+          {photoUrl ? (
+            <Image source={{ uri: photoUrl }} style={styles.avatar} />
+          ) : (
+            <Text style={styles.avatarText}>{initial}</Text>
+          )}
+        </View>
+        <TouchableOpacity onPress={() => handleChatPress(contact)}>
+          <View style={[styles.contactInfo, { marginLeft: 7 }]}>
+            <Text style={styles.contactName} numberOfLines={1}>
+              {name?.length > 22 ? name.slice(0, 22) + '...' : name}
+            </Text>
+            <Text style={styles.contactNumber}>
+              {contact.durasamparka_sankhya}
+            </Text>
+          </View>
+        </TouchableOpacity>
       </View>
-      <View style={[styles.contactInfo, { marginLeft: 7 }]}>
-        <Text style={styles.contactName} numberOfLines={1}>
-          {name?.length > 22 ? name.slice(0, 22) + '...' : name}
-        </Text>
-        <Text style={styles.contactNumber}>{contact.durasamparka_sankhya}</Text>
-      </View>
-    </View>
-  );
-});
+    );
+  },
+);
 
 ContactCard.displayName = 'ContactCard';
 
