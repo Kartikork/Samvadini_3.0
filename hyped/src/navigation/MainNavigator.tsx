@@ -30,6 +30,7 @@ import CreateNewGroupScreen from '../screens/CreateNewGroup';
 import CallScreen from '../screens/CallScreen';
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
+import FanHubWebView from '../screens/Fanhub';
 
 // Loader Component
 const ScreenLoader = () => {
@@ -156,6 +157,7 @@ export type RootStackParamList = {
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
   SelectedFiles: { assets: any[] } | undefined;
+  FanHub: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -318,6 +320,12 @@ export default function MainNavigator() {
         <Stack.Screen
           name="LanguageGameScreen"
           component={LanguageGameScreen}
+        />
+
+        <Stack.Screen
+          name="FanHub"
+          component={FanHubWebView}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen
