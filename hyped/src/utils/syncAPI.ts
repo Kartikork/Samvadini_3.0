@@ -339,6 +339,209 @@ class SyncAPI {
       console.error('[SyncAPI] Background sync error:', error);
     }
   }
+
+  // ────────────────────────────────────────────────────────────
+  // GROUP MANAGEMENT API METHODS
+  // ────────────────────────────────────────────────────────────
+
+  /**
+   * Create a new group
+   */
+  async createGroup(params: {
+    samvada_nama: string;
+    samuha_chitram?: string;
+    samuhavarnanam?: string;
+    members: string[];
+    creator: string;
+  }): Promise<any> {
+    console.log('[SyncAPI] Creating group:', params.samvada_nama);
+
+    try {
+      if (!await this.isConnected()) {
+        throw new Error('No network connection');
+      }
+
+      const response = await axiosConn('post', API_ENDPOINTS.CREATE_GROUP || '/api/create-group', params);
+      
+      if (response.data?.success && response.data?.data) {
+        console.log('[SyncAPI] Group created successfully');
+        return response.data.data;
+      }
+
+      throw new Error(response.data?.message || 'Failed to create group');
+    } catch (error: any) {
+      console.error('[SyncAPI] Create group error:', error?.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Add member to group
+   */
+  async addGroupMember(groupId: string, userId: string): Promise<void> {
+    console.log('[SyncAPI] Adding member to group:', { groupId, userId });
+
+    try {
+      if (!await this.isConnected()) {
+        throw new Error('No network connection');
+      }
+
+      const response = await axiosConn('post', API_ENDPOINTS.ADD_GROUP_MEMBER || '/api/add-member', {
+        samvada_chinha: groupId,
+        ekatma_chinha: userId,
+      });
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || 'Failed to add member');
+      }
+
+      console.log('[SyncAPI] Member added successfully');
+    } catch (error: any) {
+      console.error('[SyncAPI] Add member error:', error?.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove member from group
+   */
+  async removeGroupMember(groupId: string, userId: string): Promise<void> {
+    console.log('[SyncAPI] Removing member from group:', { groupId, userId });
+
+    try {
+      if (!await this.isConnected()) {
+        throw new Error('No network connection');
+      }
+
+      const response = await axiosConn('post', API_ENDPOINTS.REMOVE_GROUP_MEMBER || '/api/remove-member', {
+        samvada_chinha: groupId,
+        ekatma_chinha: userId,
+      });
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || 'Failed to remove member');
+      }
+
+      console.log('[SyncAPI] Member removed successfully');
+    } catch (error: any) {
+      console.error('[SyncAPI] Remove member error:', error?.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Promote member to admin
+   */
+  async promoteGroupMember(groupId: string, userId: string): Promise<void> {
+    console.log('[SyncAPI] Promoting member to admin:', { groupId, userId });
+
+    try {
+      if (!await this.isConnected()) {
+        throw new Error('No network connection');
+      }
+
+      const response = await axiosConn('post', API_ENDPOINTS.PROMOTE_GROUP_MEMBER || '/api/promote-member', {
+        samvada_chinha: groupId,
+        ekatma_chinha: userId,
+        bhumika: 'Admin',
+      });
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || 'Failed to promote member');
+      }
+
+      console.log('[SyncAPI] Member promoted successfully');
+    } catch (error: any) {
+      console.error('[SyncAPI] Promote member error:', error?.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Leave group
+   */
+  async leaveGroup(groupId: string): Promise<void> {
+    console.log('[SyncAPI] Leaving group:', groupId);
+
+    try {
+      if (!await this.isConnected()) {
+        throw new Error('No network connection');
+      }
+
+      const { uniqueId } = this.getAuthData();
+      if (!uniqueId) {
+        throw new Error('No user ID');
+      }
+
+      const response = await axiosConn('post', API_ENDPOINTS.LEAVE_GROUP || '/api/leave-group', {
+        samvada_chinha: groupId,
+        ekatma_chinha: uniqueId,
+      });
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || 'Failed to leave group');
+      }
+
+      console.log('[SyncAPI] Left group successfully');
+    } catch (error: any) {
+      console.error('[SyncAPI] Leave group error:', error?.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Update group name
+   */
+  async updateGroupName(groupId: string, name: string): Promise<void> {
+    console.log('[SyncAPI] Updating group name:', { groupId, name });
+
+    try {
+      if (!await this.isConnected()) {
+        throw new Error('No network connection');
+      }
+
+      const response = await axiosConn('post', API_ENDPOINTS.UPDATE_GROUP || '/api/update-group', {
+        samvada_chinha: groupId,
+        samvada_nama: name,
+      });
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || 'Failed to update group name');
+      }
+
+      console.log('[SyncAPI] Group name updated successfully');
+    } catch (error: any) {
+      console.error('[SyncAPI] Update group name error:', error?.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Update group avatar
+   */
+  async updateGroupAvatar(groupId: string, avatar: string): Promise<void> {
+    console.log('[SyncAPI] Updating group avatar:', { groupId });
+
+    try {
+      if (!await this.isConnected()) {
+        throw new Error('No network connection');
+      }
+
+      const response = await axiosConn('post', API_ENDPOINTS.UPDATE_GROUP || '/api/update-group', {
+        samvada_chinha: groupId,
+        samuha_chitram: avatar,
+      });
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || 'Failed to update group avatar');
+      }
+
+      console.log('[SyncAPI] Group avatar updated successfully');
+    } catch (error: any) {
+      console.error('[SyncAPI] Update group avatar error:', error?.message);
+      throw error;
+    }
+  }
 }
 
 export const syncAPI = new SyncAPI();
