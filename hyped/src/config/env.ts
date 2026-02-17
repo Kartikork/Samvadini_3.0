@@ -21,8 +21,8 @@ interface EnvConfig {
 
 const envConfigs: Record<Environment, EnvConfig> = {
   development: {
-    API_BASE_URL: 'https://qasamvadini.aicte-india.org/api', // Local development server
-    SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
+    // API_BASE_URL: 'https://qasamvadini.aicte-india.org/api', // Local development server
+    // SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
     Market_Place_API_URL: 'https://anuvadiniaiapi.aicte-india.org/form1/',
     // FCM_URL: 'https://samvadiniprod.aicte-india.org/',
     LRN_URL: 'https://lrn.aicte-india.org',
