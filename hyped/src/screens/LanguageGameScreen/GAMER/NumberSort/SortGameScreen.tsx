@@ -296,7 +296,7 @@ const SortGameScreen: React.FC = () => {
 
                 {isGameWon && (
                     <View style={styles.overlayContainer}>
-                        <Text style={styles.overlayText}>You Win!</Text>
+                        <Text style={styles.overlayText1}>You Win!</Text>
                         <Text style={[styles.overlayText, { fontSize: 20, marginTop: 40 }]}>{`Time: ${formatTime(time)}`}</Text>
                     </View>
                 )}
@@ -348,6 +348,15 @@ const styles = StyleSheet.create({
         color: 'white',
         position: 'absolute',
         bottom: '25%',
+        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowOffset: { width: -1, height: 1 },
+        textShadowRadius: 10
+    },
+    overlayText1: {
+        fontSize: 22,
+        color: 'white',
+        position: 'absolute',
+        bottom: '30%',
         textShadowColor: 'rgba(0, 0, 0, 0.75)',
         textShadowOffset: { width: -1, height: 1 },
         textShadowRadius: 10

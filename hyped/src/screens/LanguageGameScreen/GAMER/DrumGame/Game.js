@@ -2,38 +2,39 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, Button, Alert, Modal, BackHandler, AppState } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import DrumPad from '../DrumGame/DrumPad';
+// import TrackPlayer, { Capability } from 'react-native-track-player';
 
 const drumPads = [
   {
     id: 0,
-    // soundFile: require('../../screens/GAMER/Assets/snare-drum.mp3'),
+    soundFile: require('./snare-drum.mp3'),
     label: 'Kick',
-    imageFile: require('../DrumGame/drum1.png'),
+    imageFile: require('./drum1.png'),
   },
   {
     id: 1,
-    // soundFile: require('../../screens/GAMER/Assets/hand-drum.mp3'),
+    soundFile: require('./hand-drum.mp3'),
     label: 'Snare',
-    imageFile: require('../DrumGame/drum2.png'),
+    imageFile: require('./drum2.png'),
   },
   {
     id: 2,
-    // soundFile: require('../../screens/GAMER/Assets/kick-drum.mp3'),
+    soundFile: require('./kick-drum.mp3'),
     label: 'Hi-Hat',
-    imageFile: require('../DrumGame/drum3.png'),
+    imageFile: require('./drum3.png'),
   },
   {
     id: 3,
-    // soundFile: require('../../screens/GAMER/Assets/clap-drum.mp3'),
+    soundFile: require('./clap-drum.mp3'),
     label: 'Tom',
-    imageFile: require('../DrumGame/drum5.png'),
+    imageFile: require('./drum5.png'),
     customImageStyle: { height: 120, width: 120 },
   },
   {
     id: 4,
-    // soundFile: require('../../screens/GAMER/Assets/cymbal-drum.mp3'),
+    soundFile: require('./cymbal-drum.mp3'),
     label: 'Cymbal',
-    imageFile: require('../DrumGame/drum4.png'),
+    imageFile: require('./drum4.png'),
     customImageStyle: { height: 100, width: 100 },
   },
 ];
@@ -49,6 +50,23 @@ const Game = () => {
   const appState = useRef(AppState.currentState);
 
   const padTimeout = useRef(null);
+
+  // Initialize TrackPlayer
+  /*
+  useEffect(() => {
+    const setup = async () => {
+      try {
+        await TrackPlayer.setupPlayer();
+        await TrackPlayer.updateOptions({
+          capabilities: [Capability.Play],
+        });
+      } catch (e) {
+        console.log('TrackPlayer setup error:', e);
+      }
+    };
+    setup();
+  }, []);
+  */
 
   // Handle hardware back button
   useEffect(() => {

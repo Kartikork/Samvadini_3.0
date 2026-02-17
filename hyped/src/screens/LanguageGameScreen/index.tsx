@@ -95,7 +95,7 @@ const LanguageGamesScreen = ({ navigation }) => {
         section: 'Offline Games',
         items: [
           { icon: snakeladder, image: require('../../screens/LanguageGameScreen/GAMER/icons/snakeladder_icon.jpg'), title: 'Snake & Ladders', route: 'SnakeLaddersGame' },
-          { icon: carrom_icon, image: require('../../screens/LanguageGameScreen/GAMER/CarromGame/carrom_icon.png'), title: 'Carrom', route: 'Carrom' },
+          { icon: carrom_icon, image: require('../../screens/LanguageGameScreen/GAMER/CarromGame/carrom_icon.png'), title: 'CarromGame', route: 'CarromGame' },
           { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/Chess/chess.png'), title: 'Chess', route: 'chess' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/space_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/space_icon.png'), title: 'Space Exploration', route: 'PlanetSelectionScreen' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), title: 'Ludo', route: 'WelcomeScreen' },
