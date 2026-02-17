@@ -51,6 +51,8 @@ interface RegisteredContact {
   uniqueId: string;
   name: string;
   phoneNumber: string | number;
+  janma_tithi?: string | null;
+  linga?: string | null;
   image?: { uri: string } | null;
 }
 
@@ -172,6 +174,8 @@ export default function CreateNewGroup() {
       uniqueId: c.ekatma_chinha,
       name: c.praman_patrika || '',
       phoneNumber: c.durasamparka_sankhya,
+      janma_tithi: c.janma_tithi || null,
+      linga: c.linga || null,
       image: c.parichayapatra
         ? { uri: getImageUrlWithSas(c.parichayapatra) || '' }
         : null,
@@ -182,26 +186,30 @@ export default function CreateNewGroup() {
     let baseList = filterContacts(
       registeredContacts as any[],
       searchQuery,
-      currentUserId,
+      currentUserId ?? undefined,
     );
 
     const normalizedGender =
       gender && typeof gender === 'string'
         ? ['all', 'any'].includes(gender.toLowerCase().trim())
-          ? null
-          : gender
-        : null;
+          ? undefined
+          : gender.trim()
+        : undefined;
 
-    if ((ageGroup.min && ageGroup.max) || normalizedGender) {
+    const shouldApplyDemographic =
+      ageGroup.min || ageGroup.max || normalizedGender;
+
+    if (shouldApplyDemographic) {
       baseList = filterContactsByDemographics(baseList as any[], {
         vayahMin: ageGroup.min ? Number(ageGroup.min) : undefined,
         vayahMax: ageGroup.max ? Number(ageGroup.max) : undefined,
-        gender: normalizedGender || undefined,
+        gender: normalizedGender,
       });
     }
 
     return baseList as RegisteredContact[];
   }, [registeredContacts, searchQuery, currentUserId, ageGroup, gender]);
+  
 
   const handleContactSelect = useCallback(
     (contactId: string) => {
@@ -376,16 +384,14 @@ export default function CreateNewGroup() {
           ),
         );
       }
-
-      const uniqueId = await AsyncStorage.getItem('uniqueId');
-      if (!uniqueId) {
+      if (!currentUserId) {
         throw new Error(
           getTranslation('UserIdNotFound', 'User ID not found'),
         );
       }
 
       const postData = {
-        pathakah_chinha: uniqueId,
+        pathakah_chinha: currentUserId,
         samvada_nama: groupName,
         prakara: 'Group',
         bhagavah: selectedContacts.map(c => c.uniqueId),
@@ -398,16 +404,16 @@ export default function CreateNewGroup() {
         privacy_keys: privacyKeys,
         timeStamp: new Date().toISOString(),
       };
-
+console.log(postData,"postdataaaaaaaaaaaaaaaaa");
       const response = await axiosConn(
         'post',
         'chat/add-new-chat-request',
         postData,
       );
-
+console.log(response,"responseeeeeeeeeeeeeeeeee");
       if (response.status === 201 || response.status === 200) {
         const chatData = (response as any).data.data;
-        const localdata = await insertSingleChat(chatData, false, uniqueId);
+        const localdata = await insertSingleChat(chatData, false, currentUserId);
 
         dispatch(
           activeChatActions.setActiveChat({
