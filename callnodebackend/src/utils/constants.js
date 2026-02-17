@@ -77,7 +77,9 @@ export const PLATFORMS = {
 export const REDIS_KEYS = {
   USER_SESSION: 'session:user',
   USER_SOCKET: 'socket:user',
+  USER_SOCKETS: 'sockets:user',
   SOCKET_USER: 'user:socket',
+  USER_ACTIVE_CALL: 'active:call:user',
   CALL: 'call',
   CALL_TIMEOUT: 'timeout:call',
   FCM_TOKEN: 'fcm:token', // FCM token storage
@@ -99,6 +101,8 @@ export const ERROR_CODES = {
   CALLEE_BUSY: 'E104',
   CALL_EXPIRED: 'E105',
   CALLER_CANCELLED: 'E106',
+  CALLER_BUSY: 'E107',
+  CALL_SETUP_FAILED: 'E108',
   
   // Auth errors
   INVALID_TOKEN: 'E201',
@@ -108,6 +112,9 @@ export const ERROR_CODES = {
   // Validation errors
   INVALID_PAYLOAD: 'E301',
   MISSING_FIELD: 'E302',
+
+  // Unknown/system errors
+  UNKNOWN_ERROR: 'E500',
 };
 
 /**

@@ -25,7 +25,14 @@ class CallTimeoutManager {
 
       try {
         // Mark call as timed out in store
-        await callStore.timeoutCall(callId);
+        const updatedCall = await callStore.timeoutCall(callId);
+
+        // State already moved elsewhere (e.g. accepted/rejected/ended)
+        if (!updatedCall) {
+          logger.info('[CallTimeout] Timeout skipped due state transition', { callId });
+          this.clearTimeout(callId);
+          return;
+        }
 
         // Notify caller
         if (io) {

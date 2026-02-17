@@ -5,7 +5,7 @@
 
 import { callStore } from './callStore.js';
 import { canAcceptCall, canRejectCall, canEndCall, isValidCallType } from './callTypes.js';
-import { ERROR_CODES } from '../utils/constants.js';
+import { ERROR_CODES, LIMITS } from '../utils/constants.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -44,6 +44,27 @@ export const validateCallInitiate = async (callerId, calleeId, callType) => {
       code: ERROR_CODES.INVALID_PAYLOAD,
       message: 'Invalid call type',
     });
+  }
+
+  // Check active call collisions
+  if (errors.length === 0) {
+    const callerActiveCall = await callStore.getActiveCallForUser(callerId);
+    const callerActiveCount = callerActiveCall ? 1 : 0;
+    if (callerActiveCount >= LIMITS.MAX_CONCURRENT_CALLS) {
+      errors.push({
+        code: ERROR_CODES.CALLER_BUSY,
+        message: 'Caller is already in another call',
+      });
+    }
+
+    const calleeActiveCall = await callStore.getActiveCallForUser(calleeId);
+    const calleeActiveCount = calleeActiveCall ? 1 : 0;
+    if (calleeActiveCount >= LIMITS.MAX_CONCURRENT_CALLS) {
+      errors.push({
+        code: ERROR_CODES.CALLEE_BUSY,
+        message: 'Callee is already in another call',
+      });
+    }
   }
 
   return {
@@ -171,7 +192,7 @@ export const validateCallEnd = async (callId, userId) => {
 /**
  * Validate SDP/ICE payload
  */
-export const validateSignalingPayload = (payload) => {
+export const validateSignalingPayload = (payload, requiredFields = []) => {
   const errors = [];
 
   if (!payload || typeof payload !== 'object') {
@@ -181,18 +202,21 @@ export const validateSignalingPayload = (payload) => {
     });
   }
 
-  if (!payload.callId) {
-    errors.push({
-      code: ERROR_CODES.MISSING_FIELD,
-      message: 'Missing callId',
-    });
-  }
+  const required = Array.from(new Set(['callId', 'to', ...requiredFields]));
+  for (const field of required) {
+    const value = payload?.[field];
+    const missing =
+      value === undefined ||
+      value === null ||
+      (typeof value === 'string' && value.trim() === '');
 
-  if (!payload.to) {
-    errors.push({
-      code: ERROR_CODES.MISSING_FIELD,
-      message: 'Missing recipient (to)',
-    });
+    if (missing) {
+      errors.push({
+        code: ERROR_CODES.MISSING_FIELD,
+        message:
+          field === 'to' ? 'Missing recipient (to)' : `Missing ${field}`,
+      });
+    }
   }
 
   return {

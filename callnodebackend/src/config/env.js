@@ -13,6 +13,14 @@ const __dirname = path.dirname(__filename);
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+const parseBoolean = (value, defaultValue = false) => {
+  if (value === undefined || value === null || value === '') {
+    return defaultValue;
+  }
+
+  return ['1', 'true', 'yes', 'on'].includes(String(value).toLowerCase());
+};
+
 /**
  * Validate required environment variables
  */
@@ -64,6 +72,7 @@ export const config = {
     username: process.env.TURN_USERNAME,
     credential: process.env.TURN_CREDENTIAL,
     staticSecret: process.env.TURN_STATIC_SECRET,
+    turnServers: process.env.TURN_SERVERS || '',
   },
   
   // STUN Server
@@ -93,6 +102,16 @@ export const config = {
   socket: {
     pingTimeout: parseInt(process.env.SOCKET_PING_TIMEOUT, 10) || 60000,
     pingInterval: parseInt(process.env.SOCKET_PING_INTERVAL, 10) || 25000,
+    authRequired: parseBoolean(process.env.SOCKET_AUTH_REQUIRED, true),
+    redisAdapterEnabled: parseBoolean(
+      process.env.SOCKET_REDIS_ADAPTER_ENABLED,
+      true
+    ),
+    stickyCookieEnabled: parseBoolean(
+      process.env.SOCKET_STICKY_COOKIE_ENABLED,
+      true
+    ),
+    stickyCookieName: process.env.SOCKET_STICKY_COOKIE_NAME || 'io',
   },
 };
 

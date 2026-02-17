@@ -110,6 +110,22 @@ class RedisClient {
   }
 
   /**
+   * Set key only if it does not already exist
+   */
+  async setNX(key, value, ttl = null) {
+    const client = this.getClient();
+    const serialized = typeof value === 'object' ? JSON.stringify(value) : value;
+
+    const options = { NX: true };
+    if (ttl) {
+      options.EX = ttl;
+    }
+
+    const result = await client.set(key, serialized, options);
+    return result === 'OK';
+  }
+
+  /**
    * Get key
    */
   async get(key) {
@@ -222,6 +238,31 @@ class RedisClient {
   async decr(key) {
     const client = this.getClient();
     return await client.decr(key);
+  }
+
+  /**
+   * Set operations
+   */
+  async sAdd(key, ...members) {
+    const client = this.getClient();
+    if (!members || members.length === 0) return 0;
+    return await client.sAdd(key, ...members);
+  }
+
+  async sRem(key, ...members) {
+    const client = this.getClient();
+    if (!members || members.length === 0) return 0;
+    return await client.sRem(key, ...members);
+  }
+
+  async sMembers(key) {
+    const client = this.getClient();
+    return await client.sMembers(key);
+  }
+
+  async sCard(key) {
+    const client = this.getClient();
+    return await client.sCard(key);
   }
 }
 

@@ -4,7 +4,12 @@
  */
 
 import { redisClient } from '../redis/client.js';
-import { userSessionKey, userSocketKey, socketUserKey } from '../redis/keys.js';
+import {
+  userSessionKey,
+  userSocketKey,
+  userSocketsKey,
+  socketUserKey,
+} from '../redis/keys.js';
 import { fcmService } from '../push/fcm.js';
 import { SOCKET_EVENTS, ERROR_CODES, TTL } from '../utils/constants.js';
 import logger from '../utils/logger.js';
@@ -12,7 +17,58 @@ import logger from '../utils/logger.js';
 class RegistrationHandler {
   constructor(io) {
     this.io = io;
-    this.registeredUsers = new Map(); // userId -> Set of socketIds
+    this.registeredUsers = new Map(); // userId -> Set of socketIds (local process only)
+  }
+
+  async upsertSocketMappings(userId, socketId) {
+    await redisClient.set(socketUserKey(socketId), userId, TTL.USER_SESSION);
+    await redisClient.sAdd(userSocketsKey(userId), socketId);
+    await redisClient.expire(userSocketsKey(userId), TTL.USER_SESSION);
+
+    // Keep a single "primary socket" mapping for backward compatibility.
+    await redisClient.set(userSocketKey(userId), socketId, TTL.USER_SESSION);
+  }
+
+  async removeSocketMappings(
+    userId,
+    socketId,
+    { deleteSessionIfNoSockets = false, deleteFcmIfNoSockets = false } = {}
+  ) {
+    await redisClient.del(socketUserKey(socketId));
+    await redisClient.sRem(userSocketsKey(userId), socketId);
+
+    const remainingSockets = await redisClient.sMembers(userSocketsKey(userId));
+    const remainingCount = remainingSockets.length;
+
+    const currentPrimary = await redisClient.get(userSocketKey(userId));
+    if (remainingCount === 0) {
+      await redisClient.del(userSocketsKey(userId));
+      if (!currentPrimary || currentPrimary === socketId) {
+        await redisClient.del(userSocketKey(userId));
+      }
+
+      if (deleteSessionIfNoSockets) {
+        await redisClient.del(userSessionKey(userId));
+      }
+
+      if (deleteFcmIfNoSockets) {
+        await fcmService.unregisterToken(userId);
+      }
+
+      return 0;
+    }
+
+    // Keep socket set alive and primary mapping valid.
+    await redisClient.expire(userSocketsKey(userId), TTL.USER_SESSION);
+    if (!currentPrimary || currentPrimary === socketId) {
+      await redisClient.set(
+        userSocketKey(userId),
+        remainingSockets[0],
+        TTL.USER_SESSION
+      );
+    }
+
+    return remainingCount;
   }
 
   /**
@@ -20,7 +76,10 @@ class RegistrationHandler {
    */
   async handleRegister(socket, data) {
     try {
-      const { userId, deviceId, platform, fcmToken } = data;
+      const authUserId = socket.userId ? String(socket.userId) : null;
+      const requestedUserId = data?.userId ? String(data.userId) : null;
+      const userId = authUserId || requestedUserId;
+      const { deviceId, platform, fcmToken } = data || {};
 
       // Validate
       if (!userId) {
@@ -31,8 +90,20 @@ class RegistrationHandler {
         });
       }
 
+      if (authUserId && requestedUserId && authUserId !== requestedUserId) {
+        logger.warn('[Registration] User mismatch with auth token', {
+          socketId: socket.id,
+          authUserId,
+          requestedUserId,
+        });
+        return socket.emit(SOCKET_EVENTS.REGISTRATION_ERROR, {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: 'User mismatch with authenticated identity',
+        });
+      }
+
       // Check if already registered
-      if (socket.userId && socket.isRegistered) {
+      if (socket.userId === userId && socket.isRegistered) {
         logger.info('[Registration] Already registered', { userId, socketId: socket.id });
         return socket.emit(SOCKET_EVENTS.REGISTERED, {
           success: true,
@@ -49,30 +120,15 @@ class RegistrationHandler {
         registeredAt: Date.now(),
       };
 
-      await redisClient.set(
-        userSessionKey(userId),
-        sessionData,
-        TTL.USER_SESSION
-      );
+      await redisClient.set(userSessionKey(userId), sessionData, TTL.USER_SESSION);
 
-      // Store socket -> user mapping
-      await redisClient.set(
-        socketUserKey(socket.id),
-        userId,
-        TTL.USER_SESSION
-      );
-
-      // Store user -> socket mapping
-      await redisClient.set(
-        userSocketKey(userId),
-        socket.id,
-        TTL.USER_SESSION
-      );
+      // Store socket mappings in Redis (multi-socket safe)
+      await this.upsertSocketMappings(userId, socket.id);
 
       // Register FCM token if provided
       if (fcmToken) {
         await fcmService.registerToken(userId, fcmToken);
-        logger.info('[Registration] FCM token registered', { userId, hasToken: !!fcmToken });
+        logger.info('[Registration] FCM token registered', { userId, hasToken: true });
       } else {
         logger.warn('[Registration] No FCM token provided', { userId });
       }
@@ -107,7 +163,7 @@ class RegistrationHandler {
       });
     } catch (error) {
       logger.error('[Registration] Registration failed:', error);
-      
+
       socket.emit(SOCKET_EVENTS.REGISTRATION_ERROR, {
         code: ERROR_CODES.REGISTRATION_FAILED,
         message: 'Registration failed',
@@ -117,7 +173,6 @@ class RegistrationHandler {
 
   /**
    * Handle user unregistration (explicit logout)
-   * This deletes FCM token because user is intentionally logging out
    */
   async handleUnregister(socket) {
     try {
@@ -128,32 +183,26 @@ class RegistrationHandler {
         return;
       }
 
-      // Remove from Redis
-      await redisClient.del(userSessionKey(userId));
-      await redisClient.del(socketUserKey(socket.id));
-      await redisClient.del(userSocketKey(userId));
-
-      // Unregister FCM token (user is logging out, so delete token)
-      await fcmService.unregisterToken(userId);
+      const remaining = await this.removeSocketMappings(userId, socket.id, {
+        deleteSessionIfNoSockets: true,
+        deleteFcmIfNoSockets: true,
+      });
 
       // Remove from in-memory tracking
       if (this.registeredUsers.has(userId)) {
         this.registeredUsers.get(userId).delete(socket.id);
-        
         if (this.registeredUsers.get(userId).size === 0) {
           this.registeredUsers.delete(userId);
         }
       }
 
-      // Leave personal room
       socket.leave(userId);
-
-      // Mark socket as unregistered
       socket.isRegistered = false;
 
       logger.info('[Registration] User unregistered (explicit logout)', {
         userId,
         socketId: socket.id,
+        remainingSockets: remaining,
       });
     } catch (error) {
       logger.error('[Registration] Unregistration failed:', error);
@@ -162,8 +211,7 @@ class RegistrationHandler {
 
   /**
    * Handle socket disconnect cleanup (network drop, app killed, etc.)
-   * This does NOT delete FCM token because user might reconnect or app might be killed
-   * FCM token is needed to send push notifications when app is killed
+   * This does NOT delete FCM token because user might reconnect or app might be killed.
    */
   async handleDisconnectCleanup(socket) {
     try {
@@ -174,29 +222,26 @@ class RegistrationHandler {
         return;
       }
 
-      // Remove socket mappings from Redis (but keep FCM token!)
-      await redisClient.del(socketUserKey(socket.id));
-      await redisClient.del(userSocketKey(userId));
-      // Note: We keep userSessionKey for potential reconnection
+      const remaining = await this.removeSocketMappings(userId, socket.id, {
+        deleteSessionIfNoSockets: false,
+        deleteFcmIfNoSockets: false,
+      });
 
       // Remove from in-memory tracking
       if (this.registeredUsers.has(userId)) {
         this.registeredUsers.get(userId).delete(socket.id);
-        
         if (this.registeredUsers.get(userId).size === 0) {
           this.registeredUsers.delete(userId);
         }
       }
 
-      // Leave personal room
       socket.leave(userId);
-
-      // Mark socket as unregistered (but FCM token remains!)
       socket.isRegistered = false;
 
       logger.info('[Registration] Socket disconnected (FCM token preserved)', {
         userId,
         socketId: socket.id,
+        remainingSockets: remaining,
       });
     } catch (error) {
       logger.error('[Registration] Disconnect cleanup failed:', error);
@@ -205,7 +250,6 @@ class RegistrationHandler {
 
   /**
    * Handle socket disconnect
-   * Uses cleanup (preserves FCM token) instead of unregister (deletes FCM token)
    */
   async handleDisconnect(socket) {
     try {
@@ -214,7 +258,6 @@ class RegistrationHandler {
         userId: socket.userId,
       });
 
-      // Use cleanup (preserves FCM token for push notifications when app is killed)
       await this.handleDisconnectCleanup(socket);
     } catch (error) {
       logger.error('[Registration] Disconnect cleanup failed:', error);
@@ -225,15 +268,31 @@ class RegistrationHandler {
    * Check if user is online
    */
   async isUserOnline(userId) {
+    const count = await redisClient.sCard(userSocketsKey(userId));
+    if (count > 0) return true;
+
+    // Backward-compatible fallback
     const socketId = await redisClient.get(userSocketKey(userId));
     return socketId !== null;
   }
 
   /**
-   * Get user's socket ID
+   * Get user's primary socket ID
    */
   async getUserSocketId(userId) {
+    const socketIds = await redisClient.sMembers(userSocketsKey(userId));
+    if (socketIds.length > 0) {
+      return socketIds[0];
+    }
+
     return await redisClient.get(userSocketKey(userId));
+  }
+
+  /**
+   * Get all user's socket IDs
+   */
+  async getUserSocketIds(userId) {
+    return await redisClient.sMembers(userSocketsKey(userId));
   }
 
   /**
@@ -257,17 +316,14 @@ class RegistrationHandler {
 export const setupRegistrationHandlers = (io, socket) => {
   const handler = new RegistrationHandler(io);
 
-  // Register event
   socket.on(SOCKET_EVENTS.REGISTER, async (data) => {
     await handler.handleRegister(socket, data);
   });
 
-  // Unregister event
   socket.on(SOCKET_EVENTS.UNREGISTER, async () => {
     await handler.handleUnregister(socket);
   });
 
-  // Disconnect event
   socket.on(SOCKET_EVENTS.DISCONNECT, async () => {
     await handler.handleDisconnect(socket);
   });

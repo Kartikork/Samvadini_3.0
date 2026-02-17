@@ -14,15 +14,109 @@ import {
   validateSignalingPayload,
 } from '../calls/callValidator.js';
 import { fcmService } from '../push/fcm.js';
-import { buildIncomingCallPayload, buildCallCancelledPayload } from '../push/payloadBuilder.js';
-import { redisClient } from '../redis/client.js';
-import { userSocketKey } from '../redis/keys.js';
 import { SOCKET_EVENTS, ERROR_CODES, CALL_STATES } from '../utils/constants.js';
 import logger from '../utils/logger.js';
+
+const ACK_TIMEOUT_MS = 2000;
 
 class CallRouter {
   constructor(io) {
     this.io = io;
+  }
+
+  async emitToRoomWithAck(
+    roomId,
+    eventName,
+    payload,
+    { requireAck = false, ackTimeoutMs = ACK_TIMEOUT_MS } = {}
+  ) {
+    const sockets = await this.io.in(roomId).fetchSockets();
+    if (!sockets || sockets.length === 0) {
+      return {
+        delivered: false,
+        acked: false,
+        socketCount: 0,
+        reason: 'no_sockets',
+      };
+    }
+
+    if (!requireAck) {
+      this.io.to(roomId).emit(eventName, payload);
+      return {
+        delivered: true,
+        acked: false,
+        socketCount: sockets.length,
+      };
+    }
+
+    return await new Promise((resolve) => {
+      this.io.to(roomId).timeout(ackTimeoutMs).emit(eventName, payload, (err, responses) => {
+        if (err) {
+          logger.warn('[CallRouter] Emit ack timeout', {
+            roomId,
+            eventName,
+            socketCount: sockets.length,
+          });
+
+          resolve({
+            delivered: false,
+            acked: false,
+            socketCount: sockets.length,
+            reason: 'ack_timeout',
+          });
+          return;
+        }
+
+        resolve({
+          delivered: true,
+          acked: true,
+          acknowledgements: responses?.length || 0,
+          socketCount: sockets.length,
+        });
+      });
+    });
+  }
+
+  validateSignalingContext(call, from, to) {
+    if (!call) {
+      return {
+        code: ERROR_CODES.CALL_NOT_FOUND,
+        message: 'Call not found',
+      };
+    }
+
+    if (call.callerId !== from && call.calleeId !== from) {
+      return {
+        code: ERROR_CODES.UNAUTHORIZED,
+        message: 'Sender is not a participant of this call',
+      };
+    }
+
+    if (call.callerId !== to && call.calleeId !== to) {
+      return {
+        code: ERROR_CODES.INVALID_PAYLOAD,
+        message: 'Recipient is not a participant of this call',
+      };
+    }
+
+    if (from === to) {
+      return {
+        code: ERROR_CODES.INVALID_PAYLOAD,
+        message: 'Sender and recipient cannot be same',
+      };
+    }
+
+    if (
+      call.state !== CALL_STATES.RINGING &&
+      call.state !== CALL_STATES.ACCEPTED
+    ) {
+      return {
+        code: ERROR_CODES.INVALID_CALL_STATE,
+        message: `Call is not in signaling-compatible state: ${call.state}`,
+      };
+    }
+
+    return null;
   }
 
   /**
@@ -30,7 +124,7 @@ class CallRouter {
    */
   async handleCallInitiate(socket, data, callback) {
     try {
-      const { calleeId, callType, callerName, callerAvatar } = data;
+      const { calleeId, callType, callerName, callerAvatar } = data || {};
       const callerId = socket.userId;
 
       logger.info('[CallRouter] Call initiation request', {
@@ -46,21 +140,17 @@ class CallRouter {
         return this.sendError(callback, validation.errors[0]);
       }
 
-      // Check if callee is online
-      const calleeSocketId = await redisClient.get(userSocketKey(calleeId));
-      const isCalleeOnline = calleeSocketId !== null;
-
-      logger.debug('[CallRouter] Callee status', {
-        calleeId,
-        isOnline: isCalleeOnline,
-        socketId: calleeSocketId,
-      });
-
       // Generate call ID
       const callId = uuidv4();
 
-      // Create call in store
+      // Create call in store (includes busy/collision reservation)
       const call = await callStore.createCall(callId, callerId, calleeId, callType);
+      if (!call) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.CALLEE_BUSY,
+          message: 'Caller or callee is already in another call',
+        });
+      }
 
       // Start ringing timeout
       callTimeoutManager.startRingingTimeout(callId, this.io, callerId, calleeId);
@@ -75,23 +165,25 @@ class CallRouter {
         timestamp: Date.now(),
       };
 
-      // If callee is online, send via socket
-      if (isCalleeOnline) {
-        logger.info('[CallRouter] Sending incoming call via socket', {
-          callId,
-          calleeId,
-        });
+      // Send via socket room (cross-server when adapter is enabled)
+      const socketDelivery = await this.emitToRoomWithAck(
+        calleeId,
+        SOCKET_EVENTS.INCOMING_CALL,
+        callData,
+        { requireAck: false }
+      );
 
-        this.io.to(calleeId).emit(SOCKET_EVENTS.INCOMING_CALL, callData);
-      }
+      logger.info('[CallRouter] Incoming call emit result', {
+        callId,
+        calleeId,
+        delivered: socketDelivery.delivered,
+        acked: socketDelivery.acked,
+        socketCount: socketDelivery.socketCount,
+        reason: socketDelivery.reason,
+      });
 
-      // Always send push notification (for background/killed state)
+      // Also send push notification (background/killed-state safety net)
       if (fcmService.isAvailable()) {
-        logger.info('[CallRouter] Sending push notification', {
-          callId,
-          calleeId,
-        });
-
         await fcmService.sendIncomingCallNotification(calleeId, callData);
       }
 
@@ -121,12 +213,11 @@ class CallRouter {
    */
   async handleCallAccept(socket, data, callback) {
     try {
-      const { callId } = data;
+      const { callId } = data || {};
       const userId = socket.userId;
 
       logger.info('[CallRouter] Call accept request', { callId, userId });
 
-      // Validate
       const validation = await validateCallAccept(callId, userId);
       if (!validation.valid) {
         logger.warn('[CallRouter] Call accept validation failed', validation.errors);
@@ -135,20 +226,34 @@ class CallRouter {
 
       const call = validation.call;
 
-      // Clear ringing timeout
       callTimeoutManager.clearTimeout(callId);
 
-      // Update call state
-      await callStore.acceptCall(callId);
+      const updatedCall = await callStore.acceptCall(callId);
+      if (!updatedCall) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.INVALID_CALL_STATE,
+          message: 'Call state changed before acceptance',
+        });
+      }
 
-      // Notify caller
-      this.io.to(call.callerId).emit(SOCKET_EVENTS.CALL_ACCEPT, {
-        callId,
-        calleeId: userId,
-        timestamp: Date.now(),
-      });
+      const delivery = await this.emitToRoomWithAck(
+        call.callerId,
+        SOCKET_EVENTS.CALL_ACCEPT,
+        {
+          callId,
+          calleeId: userId,
+          timestamp: Date.now(),
+        },
+        { requireAck: false }
+      );
 
-      // Response to callee
+      if (!delivery.delivered) {
+        logger.warn('[CallRouter] Caller not reachable for call_accept', {
+          callId,
+          callerId: call.callerId,
+        });
+      }
+
       this.sendSuccess(callback, {
         callId,
         state: CALL_STATES.ACCEPTED,
@@ -174,12 +279,11 @@ class CallRouter {
    */
   async handleCallReject(socket, data, callback) {
     try {
-      const { callId, reason } = data;
+      const { callId, reason } = data || {};
       const userId = socket.userId;
 
       logger.info('[CallRouter] Call reject request', { callId, userId, reason });
 
-      // Validate
       const validation = await validateCallReject(callId, userId);
       if (!validation.valid) {
         logger.warn('[CallRouter] Call reject validation failed', validation.errors);
@@ -188,21 +292,35 @@ class CallRouter {
 
       const call = validation.call;
 
-      // Clear ringing timeout
       callTimeoutManager.clearTimeout(callId);
 
-      // Update call state
-      await callStore.rejectCall(callId);
+      const updatedCall = await callStore.rejectCall(callId);
+      if (!updatedCall) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.INVALID_CALL_STATE,
+          message: 'Call state changed before rejection',
+        });
+      }
 
-      // Notify caller
-      this.io.to(call.callerId).emit(SOCKET_EVENTS.CALL_REJECT, {
-        callId,
-        calleeId: userId,
-        reason: reason || 'declined',
-        timestamp: Date.now(),
-      });
+      const delivery = await this.emitToRoomWithAck(
+        call.callerId,
+        SOCKET_EVENTS.CALL_REJECT,
+        {
+          callId,
+          calleeId: userId,
+          reason: reason || 'declined',
+          timestamp: Date.now(),
+        },
+        { requireAck: false }
+      );
 
-      // Response to callee
+      if (!delivery.delivered) {
+        logger.warn('[CallRouter] Caller not reachable for call_reject', {
+          callId,
+          callerId: call.callerId,
+        });
+      }
+
       this.sendSuccess(callback, {
         callId,
         message: 'Call rejected',
@@ -228,12 +346,11 @@ class CallRouter {
    */
   async handleCallEnd(socket, data, callback) {
     try {
-      const { callId } = data;
+      const { callId } = data || {};
       const userId = socket.userId;
 
       logger.info('[CallRouter] Call end request', { callId, userId });
 
-      // Validate
       const validation = await validateCallEnd(callId, userId);
       if (!validation.valid) {
         logger.warn('[CallRouter] Call end validation failed', validation.errors);
@@ -241,22 +358,37 @@ class CallRouter {
       }
 
       const call = validation.call;
-
-      // Clear any timeouts
       callTimeoutManager.clearTimeout(callId);
 
       if (call) {
-        // Update call state
-        await callStore.endCall(callId);
+        const updatedCall = await callStore.endCall(callId);
+        if (!updatedCall) {
+          return this.sendError(callback, {
+            code: ERROR_CODES.INVALID_CALL_STATE,
+            message: 'Call state changed before end',
+          });
+        }
 
-        // Notify the other participant
-        const otherUserId = call.callerId === userId ? call.calleeId : call.callerId;
+        const otherUserId =
+          call.callerId === userId ? call.calleeId : call.callerId;
 
-        this.io.to(otherUserId).emit(SOCKET_EVENTS.CALL_END, {
-          callId,
-          endedBy: userId,
-          timestamp: Date.now(),
-        });
+        const delivery = await this.emitToRoomWithAck(
+          otherUserId,
+          SOCKET_EVENTS.CALL_END,
+          {
+            callId,
+            endedBy: userId,
+            timestamp: Date.now(),
+          },
+          { requireAck: false }
+        );
+
+        if (!delivery.delivered) {
+          logger.warn('[CallRouter] Other participant not reachable for call_end', {
+            callId,
+            otherUserId,
+          });
+        }
 
         logger.info('[CallRouter] Call ended', {
           callId,
@@ -265,7 +397,6 @@ class CallRouter {
         });
       }
 
-      // Response (always success for idempotency)
       this.sendSuccess(callback, {
         callId,
         message: 'Call ended',
@@ -284,33 +415,40 @@ class CallRouter {
    */
   async handleSdpOffer(socket, data, callback) {
     try {
-      const { callId, to, sdp } = data;
+      const { callId, to, sdp } = data || {};
       const from = socket.userId;
 
       logger.debug('[CallRouter] SDP offer', { callId, from, to });
 
-      // Validate payload
-      const validation = validateSignalingPayload(data);
-      if (!validation.valid) {
-        return this.sendError(callback, validation.errors[0]);
+      const payloadValidation = validateSignalingPayload(data, ['sdp']);
+      if (!payloadValidation.valid) {
+        return this.sendError(callback, payloadValidation.errors[0]);
       }
 
-      // Verify call exists
       const call = await callStore.getCall(callId);
-      if (!call) {
+      const contextError = this.validateSignalingContext(call, from, to);
+      if (contextError) {
+        return this.sendError(callback, contextError);
+      }
+
+      const delivery = await this.emitToRoomWithAck(
+        to,
+        SOCKET_EVENTS.SDP_OFFER,
+        {
+          callId,
+          from,
+          sdp,
+          timestamp: Date.now(),
+        },
+        { requireAck: false }
+      );
+
+      if (!delivery.delivered) {
         return this.sendError(callback, {
-          code: ERROR_CODES.CALL_NOT_FOUND,
-          message: 'Call not found',
+          code: ERROR_CODES.CALLEE_NOT_AVAILABLE,
+          message: 'Recipient is not connected',
         });
       }
-
-      // Forward SDP offer to recipient
-      this.io.to(to).emit(SOCKET_EVENTS.SDP_OFFER, {
-        callId,
-        from,
-        sdp,
-        timestamp: Date.now(),
-      });
 
       this.sendSuccess(callback, { message: 'SDP offer sent' });
     } catch (error) {
@@ -327,24 +465,40 @@ class CallRouter {
    */
   async handleSdpAnswer(socket, data, callback) {
     try {
-      const { callId, to, sdp } = data;
+      const { callId, to, sdp } = data || {};
       const from = socket.userId;
 
       logger.debug('[CallRouter] SDP answer', { callId, from, to });
 
-      // Validate payload
-      const validation = validateSignalingPayload(data);
-      if (!validation.valid) {
-        return this.sendError(callback, validation.errors[0]);
+      const payloadValidation = validateSignalingPayload(data, ['sdp']);
+      if (!payloadValidation.valid) {
+        return this.sendError(callback, payloadValidation.errors[0]);
       }
 
-      // Forward SDP answer to recipient
-      this.io.to(to).emit(SOCKET_EVENTS.SDP_ANSWER, {
-        callId,
-        from,
-        sdp,
-        timestamp: Date.now(),
-      });
+      const call = await callStore.getCall(callId);
+      const contextError = this.validateSignalingContext(call, from, to);
+      if (contextError) {
+        return this.sendError(callback, contextError);
+      }
+
+      const delivery = await this.emitToRoomWithAck(
+        to,
+        SOCKET_EVENTS.SDP_ANSWER,
+        {
+          callId,
+          from,
+          sdp,
+          timestamp: Date.now(),
+        },
+        { requireAck: false }
+      );
+
+      if (!delivery.delivered) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.CALLEE_NOT_AVAILABLE,
+          message: 'Recipient is not connected',
+        });
+      }
 
       this.sendSuccess(callback, { message: 'SDP answer sent' });
     } catch (error) {
@@ -361,18 +515,28 @@ class CallRouter {
    */
   async handleIceCandidate(socket, data, callback) {
     try {
-      const { callId, to, candidate } = data;
+      const { callId, to, candidate } = data || {};
       const from = socket.userId;
 
       logger.debug('[CallRouter] ICE candidate', { callId, from, to });
 
-      // Validate payload
-      const validation = validateSignalingPayload(data);
-      if (!validation.valid) {
-        return this.sendError(callback, validation.errors[0]);
+      const payloadValidation = validateSignalingPayload(data, ['candidate']);
+      if (!payloadValidation.valid) {
+        return this.sendError(callback, payloadValidation.errors[0]);
       }
 
-      // Forward ICE candidate to recipient
+      const call = await callStore.getCall(callId);
+      const contextError = this.validateSignalingContext(call, from, to);
+      if (contextError) {
+        return this.sendError(callback, contextError);
+      }
+
+      const sockets = await this.io.in(to).fetchSockets();
+      if (!sockets || sockets.length === 0) {
+        logger.warn('[CallRouter] ICE recipient offline', { callId, to, from });
+        return;
+      }
+
       this.io.to(to).emit(SOCKET_EVENTS.ICE_CANDIDATE, {
         callId,
         from,
@@ -380,9 +544,17 @@ class CallRouter {
         timestamp: Date.now(),
       });
 
-      // No callback needed for ICE candidates (high frequency)
+      if (typeof callback === 'function') {
+        this.sendSuccess(callback, { message: 'ICE candidate sent' });
+      }
     } catch (error) {
       logger.error('[CallRouter] ICE candidate failed:', error);
+      if (typeof callback === 'function') {
+        this.sendError(callback, {
+          code: ERROR_CODES.CALL_SETUP_FAILED,
+          message: 'Failed to send ICE candidate',
+        });
+      }
     }
   }
 
@@ -452,4 +624,3 @@ export const setupCallRouterHandlers = (io, socket) => {
 
 // Export router class
 export { CallRouter };
-

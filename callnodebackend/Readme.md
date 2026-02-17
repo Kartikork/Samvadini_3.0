@@ -530,6 +530,9 @@ curl http://localhost:3000/health
 # ICE servers
 curl http://localhost:3000/ice-servers?userId=test123
 
+# Best TURN server by load (requires TURN_SERVERS + coturn prometheus exporter)
+curl http://localhost:3000/api/turn/best
+
 # Server info
 curl http://localhost:3000/info
 ```
@@ -609,7 +612,8 @@ TURN_SERVER_URL=<your-turn-server>
 - Use Redis for session storage (already implemented)
 - Deploy multiple instances behind load balancer
 - Enable Socket.IO sticky sessions
-- Use Redis adapter for Socket.IO (optional)
+- Use Redis adapter for Socket.IO (enabled via `SOCKET_REDIS_ADAPTER_ENABLED=true`)
+- Configure load balancer affinity using Socket.IO cookie (`SOCKET_STICKY_COOKIE_NAME`)
 
 ---
 
@@ -631,6 +635,11 @@ TURN_SERVER_URL=<your-turn-server>
 | `TURN_SERVER_URL` | No | - | TURN server URL |
 | `TURN_USERNAME` | No | - | TURN username |
 | `TURN_CREDENTIAL` | No | - | TURN credential |
+| `TURN_SERVERS` | No | - | TURN list for `/api/turn/best` (JSON array or CSV `name=host,name2=host2`) |
+| `SOCKET_AUTH_REQUIRED` | No | `true` | Enforce JWT auth on socket connect |
+| `SOCKET_REDIS_ADAPTER_ENABLED` | No | `true` | Enable Redis pub/sub adapter for cross-node signaling |
+| `SOCKET_STICKY_COOKIE_ENABLED` | No | `true` | Enable Socket.IO cookie to support LB sticky sessions |
+| `SOCKET_STICKY_COOKIE_NAME` | No | `io` | Sticky-session cookie name used by Socket.IO |
 | `CALL_RING_TIMEOUT` | No | `45000` | Ring timeout (ms) |
 | `LOG_LEVEL` | No | `info` | Logging level |
 

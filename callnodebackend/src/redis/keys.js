@@ -20,6 +20,13 @@ export const userSocketKey = (userId) => {
 };
 
 /**
+ * Generate user sockets set key (userId -> Set<socketId>)
+ */
+export const userSocketsKey = (userId) => {
+  return `${REDIS_KEYS.USER_SOCKETS}:${userId}`;
+};
+
+/**
  * Generate socket user mapping key (socketId -> userId)
  */
 export const socketUserKey = (socketId) => {
@@ -38,6 +45,13 @@ export const callKey = (callId) => {
  */
 export const callTimeoutKey = (callId) => {
   return `${REDIS_KEYS.CALL_TIMEOUT}:${callId}`;
+};
+
+/**
+ * Generate active call mapping key (userId -> callId)
+ */
+export const userActiveCallKey = (userId) => {
+  return `${REDIS_KEYS.USER_ACTIVE_CALL}:${userId}`;
 };
 
 /**
