@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { SocketService } from '../../../services/SocketService';
 import { OutgoingMessageManager } from '../../../services/OutgoingMessageManager';
+import { GroupChatManager } from '../../../services/GroupChatManager';
 import { useAppSelector } from '../../../state/hooks';
 import PickerModal from '../../../components/EmojiGifStickerPicker/PickerModal';
 import ActionButtons from './ActionButtons';
@@ -24,6 +25,7 @@ interface ChatInputProps {
   onMessageSent?: () => void;
   replyMessage?: any;
   onCancelReply?: () => void;
+  isGroup?: boolean; // If true, use GroupChatManager instead of OutgoingMessageManager
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -31,6 +33,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onMessageSent,
   replyMessage,
   onCancelReply,
+  isGroup = false,
 }) => {
   const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
@@ -42,6 +45,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerHeight, setPickerHeight] = useState(0);
   const [showActions, setShowActions] = useState(false);
+console.log("chatId==========>", chatId);
 
   /**
    * Handle text change
@@ -97,10 +101,30 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
 
     try {
-      console.log('Sending message:', chatId, isSending, currentUserId);
-      await OutgoingMessageManager.sendTextMessage(chatId, messageText, {
-        replyMessage,
-      });
+      console.log('Sending message:', chatId, isSending, currentUserId, 'isGroup:', isGroup);
+      
+      if (isGroup) {
+        // Use GroupChatManager for group messages
+        await GroupChatManager.sendGroupMessage(
+          chatId,
+          messageText,
+          'text',
+          {
+            replyMessage: replyMessage ? {
+              refrenceId: replyMessage.refrenceId,
+              pathakah_chinha: replyMessage.pathakah_chinha,
+              vishayah: replyMessage.vishayah,
+              sandesha_prakara: replyMessage.sandesha_prakara,
+              ukti: replyMessage.ukti || '',
+            } : undefined,
+          }
+        );
+      } else {
+        // Use OutgoingMessageManager for 1-to-1 messages
+        await OutgoingMessageManager.sendTextMessage(chatId, messageText, {
+          replyMessage,
+        });
+      }
 
       // Message sent successfully - trigger refresh in ChatScreen
       // Give DB a moment to ensure message is committed
@@ -115,7 +139,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     } finally {
       setIsSending(false);
     }
-  }, [text, chatId, isSending, currentUserId, onMessageSent, replyMessage, onCancelReply]);
+  }, [text, chatId, isSending, currentUserId, isGroup, onMessageSent, replyMessage, onCancelReply]);
 
   /**
    * Handle media attachment

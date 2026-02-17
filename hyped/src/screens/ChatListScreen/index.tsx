@@ -139,7 +139,7 @@ export default function ChatListScreen() {
 
   // Memoized selectors
   const chatIds = useAppSelector(selectChatIdsForActiveTab);
-  const { showSkeleton } = useAppSelector(selectLoadingState);
+  const { showSkeleton } = useAppSelector(selectLoadingState) as { showSkeleton: boolean };
   const requestBadge = useAppSelector(selectRequestBadge);
 
   // ============================================
