@@ -49,6 +49,9 @@ const chess = lazy(() => import('../screens/LanguageGameScreen/GAMER/Chess/chess
 const pong = lazy(() => import('../screens/LanguageGameScreen/GAMER/pong/footballNet.js'));
 const homescreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/HomeScreen.js'));
 const roomscreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/RoomScreen.js'));
+const LudoWelcomeScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/Screens/WelcomeScreen'));
+const LudoColorSelectionScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/Screens/ColorSelectionScreen'));
+const ludoGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/utils/Index'));
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
 
@@ -178,6 +181,9 @@ export type RootStackParamList = {
   crossword: undefined;
   MazeGame: undefined;
   SliceGame: undefined;
+  LudoWelcomeScreen: undefined;
+  LudoColorSelectionScreen: undefined;
+  ludoGame: { gameMode: string; playerColors: string[] };
   LRNScreen: undefined;
   DailyPlanner: undefined;
   AddPlan: undefined;
@@ -386,7 +392,7 @@ export default function MainNavigator() {
           options={commonHeaderOptions}
         />
 
-       
+
         {/* Call Screen - No header, full screen */}
         <Stack.Screen
           name="Call"
@@ -426,7 +432,7 @@ export default function MainNavigator() {
           component={SnakeLaddersGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
-        
+
 
         <Stack.Screen
           name="MemoryGame"
@@ -509,6 +515,21 @@ export default function MainNavigator() {
         <Stack.Screen
           name="SliceGame"
           component={SliceGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="LudoWelcomeScreen"
+          component={LudoWelcomeScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="LudoColorSelectionScreen"
+          component={LudoColorSelectionScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="ludoGame"
+          component={ludoGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
 

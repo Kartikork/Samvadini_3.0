@@ -1,5 +1,6 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useEffect } from "react";
+import { View, StyleSheet, BackHandler, AppState } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 import ChessPieces from "./ChessPieces";
 
@@ -42,11 +43,40 @@ const initialPositions = [
 ];
 
 export default function ChessGame() {
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const handleBackPress = () => {
+      navigation.navigate('LanguageGameScreen');
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      handleBackPress
+    );
+
+    return () => backHandler.remove();
+  }, [navigation]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState.match(/inactive|background/)) {
+        // Handle background state if needed (e.g., save game or pause timers)
+        console.log('App is in background');
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.boardWrapper}>
         {/* Base board */}
-      
+
 
         {/* Interactive pieces (layered on top) */}
         <ChessPieces positions={initialPositions} />

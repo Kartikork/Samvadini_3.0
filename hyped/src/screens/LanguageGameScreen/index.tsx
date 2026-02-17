@@ -98,7 +98,7 @@ const LanguageGamesScreen = ({ navigation }) => {
           { icon: carrom_icon, image: require('../../screens/LanguageGameScreen/GAMER/CarromGame/carrom_icon.png'), title: 'CarromGame', route: 'CarromGame' },
           { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/Chess/chess.png'), title: 'Chess', route: 'chess' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/space_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/space_icon.png'), title: 'Space Exploration', route: 'PlanetSelectionScreen' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), title: 'Ludo', route: 'WelcomeScreen' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), title: 'Ludo', route: 'LudoWelcomeScreen' },
           { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/icons/slingshot.png'), title: 'Space Shooter', route: 'BalloonShootingGame' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/car_logo.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/car_logo.png'), title: 'Car Race', route: 'CarGame' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/gilli.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/gilli.png'), title: 'Gilli Danda', route: 'TipCat' },
