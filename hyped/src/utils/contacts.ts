@@ -1,6 +1,5 @@
 import Contacts from 'react-native-contacts';
 import { PermissionsAndroid, Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
   getAllContacts,
@@ -8,8 +7,7 @@ import {
   insertSyncContact,
 } from '../storage/sqllite/authentication/UsersContactsList';
 import { axiosConn } from '../storage/helper/Config';
-
-// ---- Basic contact retrieval and filtering ----
+import { store } from '../state/store';
 
 export const getContacts = async () => {
   try {
@@ -75,15 +73,19 @@ export const filterContactsByDemographics = (
     gender,
   }: { vayahMin?: number; vayahMax?: number; gender?: string } = {},
 ) => {
-  if (!contacts) return [];
+  if (!contacts?.length) return [];
 
   const getAgeFromDOB = (dob?: string | null) => {
     if (!dob) return null;
     const birthDate = new Date(dob);
+    if (isNaN(birthDate.getTime())) return null;
+
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
     return age;
   };
 
@@ -91,28 +93,22 @@ export const filterContactsByDemographics = (
     const contactAge = getAgeFromDOB(contact?.janma_tithi);
     const contactGender = contact?.linga?.toLowerCase();
 
-    const inAgeRange =
+    // Age match: null age fails age filter
+    const ageMatch =
       contactAge !== null &&
-      (!isNaN(vayahMin as any) || !isNaN(vayahMax as any)) &&
-      ((vayahMin == null && vayahMax == null) ||
-        (vayahMin != null &&
-          vayahMax == null &&
-          contactAge >= Number(vayahMin)) ||
-        (vayahMin == null &&
-          vayahMax != null &&
-          contactAge <= Number(vayahMax)) ||
-        (vayahMin != null &&
-          vayahMax != null &&
-          contactAge >= Number(vayahMin) &&
-          contactAge <= Number(vayahMax)));
+      (vayahMin == null || contactAge >= vayahMin) &&
+      (vayahMax == null || contactAge <= vayahMax);
 
-    const genderMatch = gender && contactGender === gender.toLowerCase();
+    // Gender match: if no gender provided, it's a match
+    const genderMatch = !gender || contactGender === gender.toLowerCase();
 
-    // require both gender and age match if provided
-    if (gender && (vayahMin != null || vayahMax != null))
-      return inAgeRange && genderMatch;
+    // Apply combined logic
+    if (gender && (vayahMin != null || vayahMax != null)) {
+      return ageMatch && genderMatch;
+    }
+
     if (gender) return genderMatch;
-    if (vayahMin != null || vayahMax != null) return inAgeRange;
+    if (vayahMin != null || vayahMax != null) return ageMatch;
     return true;
   });
 };
@@ -144,7 +140,7 @@ let isSyncRunning = false;
 
 export async function upsertContactsToServer(formattedContacts: any[]) {
   try {
-    const uniqueId = await AsyncStorage.getItem('uniqueId');
+    const uniqueId = store.getState().auth.uniqueId;
     if (!uniqueId) {
       throw new Error('uniqueId not found in storage');
     }
@@ -236,14 +232,13 @@ export const syncContacts = async (
       (_, i) =>
         formattedContacts.slice(i * batchSize, (i + 1) * batchSize),
     );
-console.log(formattedContacts,"bbbbbbbbbbbbbbbbbbbbbbb")
-    const currentUserUniqueId = await AsyncStorage.getItem('uniqueId');
-
+  const uniqueId = store.getState().auth.uniqueId;
     const syncBatch = async (batch: any[], i: number) => {
+
       try {
         const payload: any = { contacts: batch.map(c => c.phoneNumber) };
-        if (currentUserUniqueId) {
-          payload.uniqueId = currentUserUniqueId;
+        if (uniqueId) {
+          payload.uniqueId = uniqueId;
         }
         const {
           data: { data },
@@ -277,7 +272,7 @@ console.log(formattedContacts,"bbbbbbbbbbbbbbbbbbbbbbb")
 
     // Also upsert full phonebook to backend (Mongo) in required format
     try {
-      const uniqueId = await AsyncStorage.getItem('uniqueId');
+      const uniqueId = store.getState().auth.uniqueId;
       if (uniqueId) {
         await upsertContactsToServer(formattedContacts);
       } else {
@@ -308,10 +303,9 @@ console.log(formattedContacts,"bbbbbbbbbbbbbbbbbbbbbbb")
 };
 
 export const upsertContactsAfterLogin = async () => {
-console.log('upsertContactsAfterLoginaaaaaaaaaaaaaaaaaaaaaaaaaaa');
   try {
     // Ensure user is logged in
-    const uniqueId = await AsyncStorage.getItem('uniqueId');
+    const uniqueId = store.getState().auth.uniqueId;
     if (!uniqueId) {
       console.log(
         'Skip upsertContactsAfterLogin: no uniqueId (not logged in).',

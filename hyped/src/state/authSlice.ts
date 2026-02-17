@@ -30,6 +30,7 @@ export interface AuthUserSettings {
   ekatma_chinha?: string;
   dhwani?: string | null;
   durasamparka_gopaniya?: boolean;
+  durasamparka_sankhya?: string;
   desha_suchaka_koda?: string;
 }
 

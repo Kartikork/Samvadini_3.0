@@ -111,7 +111,7 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
     [navigation],
   );
   const navigateToCreateNewGroup = useCallback(
-    () => navigation.navigate('CreateGroup'),
+    () => navigation.navigate('CreateNewGroup'),
     [navigation],
   );
   const navigateToPrivateRoom = useCallback(

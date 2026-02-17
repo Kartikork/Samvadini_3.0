@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,14 +10,12 @@ import {
   Image,
   ActivityIndicator,
   Platform,
-  BackHandler,
   KeyboardAvoidingView,
   ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
-import { useNavigation, useFocusEffect, CommonActions } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 import ImageCropPicker from 'react-native-image-crop-picker';
 import BottomNavigation from '../../components/BottomNavigation';
@@ -41,6 +33,7 @@ import {
 } from '../../utils/contacts';
 import { getImageUrlWithSas } from '../../config/env';
 import { activeChatActions } from '../../state/activeChatSlice';
+import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 
 interface AgeGroup {
   min: string;
@@ -51,33 +44,36 @@ interface RegisteredContact {
   uniqueId: string;
   name: string;
   phoneNumber: string | number;
+  janma_tithi?: string | null;
+  linga?: string | null;
   image?: { uri: string } | null;
 }
 
 export default function CreateNewGroup() {
   const navigation = useNavigation<any>();
   const dispatch = useDispatch();
-
+  useHardwareBackHandler('Dashboard');
   const lang = useAppSelector(state => state.language.lang);
   const currentUserId = useAppSelector(state => state.auth.uniqueId);
   const t = getAppTranslations(lang);
 
   const [groupName, setGroupName] = useState('');
-  const [selectedContacts, setSelectedContacts] = useState<RegisteredContact[]>([]);
+  const [selectedContacts, setSelectedContacts] = useState<RegisteredContact[]>(
+    [],
+  );
   const [imageUrl, setImageUrl] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const isSubmittingRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [groupType, setGroupType] = useState('');
+  const [groupType, setGroupType] = useState('Family');
   const [ageGroup, setAgeGroup] = useState<AgeGroup>({ min: '10', max: '40' });
   const [gender, setGender] = useState('All');
-  const [privacy, setPrivacy] = useState('');
-  const [currentStep, setCurrentStep] = useState<1 | 2>(1); // 1: Settings, 2: Contacts
+  const [privacy, setPrivacy] = useState('Public');
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 
   const [contacts, setContacts] = useState<any[]>([]);
-  const [contactsError, setContactsError] = useState<string | null>(null);
   const [contactsLoading, setContactsLoading] = useState(false);
   const [contactsSetupLoading, setContactsSetupLoading] = useState(false);
 
@@ -87,67 +83,17 @@ export default function CreateNewGroup() {
     [t],
   );
 
-  useFocusEffect(
-    useCallback(() => {
-      const onBackPress = () => {
-        if (currentStep === 2) {
-          setCurrentStep(1);
-          return true;
-        }
-        const state = navigation.getState();
-        const currentRoute = state.routes[state.index]?.name;
-        if (currentRoute === 'Dashboard') {
-          Alert.alert(
-            'Exit App',
-            'Are you sure you want to exit?',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'YES', onPress: () => BackHandler.exitApp() },
-            ],
-          );
-          return true;
-        }
-        if (navigation.canGoBack()) {
-          navigation.goBack();
-          return true;
-        }
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: 'Dashboard' }],
-          }),
-        );
-        return true;
-      };
-      const sub = BackHandler.addEventListener(
-        'hardwareBackPress',
-        onBackPress,
-      );
-      return () => sub.remove();
-    }, [navigation, currentStep]),
-  );
-
-  const handleContactsError = useCallback(() => {
-    Alert.alert(
-      getTranslation('Error', 'Error'),
-      getTranslation('FailedToFetchContacts', 'Failed to fetch contacts'),
-    );
-  }, [getTranslation]);
-
   const loadContacts = useCallback(async () => {
     try {
       setContactsLoading(true);
       const list = await getContacts();
       setContacts(list || []);
-      setContactsError(null);
     } catch (error) {
       console.error('Error loading contacts:', error);
-      setContactsError('Failed to fetch contacts');
-      handleContactsError();
     } finally {
       setContactsLoading(false);
     }
-  }, [handleContactsError]);
+  }, []);
 
   useEffect(() => {
     const setup = async () => {
@@ -158,45 +104,42 @@ export default function CreateNewGroup() {
     setup();
   }, [loadContacts]);
 
-  const contactsOptions = useMemo(
-    () => ({
-      filterRegistered: true,
-      includeImageObject: true,
-    }),
-    [],
-  );
-
   const registeredContacts: RegisteredContact[] = useMemo(() => {
     const { contactsOnSamvadini } = separateContacts(contacts || []);
     return (contactsOnSamvadini || []).map((c: any) => ({
       uniqueId: c.ekatma_chinha,
       name: c.praman_patrika || '',
       phoneNumber: c.durasamparka_sankhya,
+      janma_tithi: c.janma_tithi || null,
+      linga: c.linga || null,
       image: c.parichayapatra
         ? { uri: getImageUrlWithSas(c.parichayapatra) || '' }
         : null,
     }));
-  }, [contacts, contactsOptions]);
+  }, [contacts]);
 
   const filteredContacts = useMemo(() => {
     let baseList = filterContacts(
       registeredContacts as any[],
       searchQuery,
-      currentUserId,
+      currentUserId ?? undefined,
     );
 
     const normalizedGender =
       gender && typeof gender === 'string'
         ? ['all', 'any'].includes(gender.toLowerCase().trim())
-          ? null
-          : gender
-        : null;
+          ? undefined
+          : gender.trim()
+        : undefined;
 
-    if ((ageGroup.min && ageGroup.max) || normalizedGender) {
+    const shouldApplyDemographic =
+      ageGroup.min || ageGroup.max || normalizedGender;
+
+    if (shouldApplyDemographic) {
       baseList = filterContactsByDemographics(baseList as any[], {
         vayahMin: ageGroup.min ? Number(ageGroup.min) : undefined,
         vayahMax: ageGroup.max ? Number(ageGroup.max) : undefined,
-        gender: normalizedGender || undefined,
+        gender: normalizedGender,
       });
     }
 
@@ -278,10 +221,7 @@ export default function CreateNewGroup() {
                   console.error('Error picking image:', error);
                   Alert.alert(
                     getTranslation('error', 'Error'),
-                    getTranslation(
-                      'failedPickImage',
-                      'Failed to pick image',
-                    ),
+                    getTranslation('failedPickImage', 'Failed to pick image'),
                   );
                 }
               });
@@ -356,11 +296,6 @@ export default function CreateNewGroup() {
     }
   };
 
-  const handleBack = () => {
-    setCurrentStep(1);
-    setSelectedContacts([]);
-  };
-
   const handleSubmit = async () => {
     const privacyKeys = await generateKeys(1);
     if (isSubmittingRef.current) return;
@@ -376,16 +311,12 @@ export default function CreateNewGroup() {
           ),
         );
       }
-
-      const uniqueId = await AsyncStorage.getItem('uniqueId');
-      if (!uniqueId) {
-        throw new Error(
-          getTranslation('UserIdNotFound', 'User ID not found'),
-        );
+      if (!currentUserId) {
+        throw new Error(getTranslation('UserIdNotFound', 'User ID not found'));
       }
 
       const postData = {
-        pathakah_chinha: uniqueId,
+        pathakah_chinha: currentUserId,
         samvada_nama: groupName,
         prakara: 'Group',
         bhagavah: selectedContacts.map(c => c.uniqueId),
@@ -398,16 +329,18 @@ export default function CreateNewGroup() {
         privacy_keys: privacyKeys,
         timeStamp: new Date().toISOString(),
       };
-
       const response = await axiosConn(
         'post',
         'chat/add-new-chat-request',
         postData,
       );
-
       if (response.status === 201 || response.status === 200) {
         const chatData = (response as any).data.data;
-        const localdata = await insertSingleChat(chatData, false, uniqueId);
+        const localdata = await insertSingleChat(
+          chatData,
+          false,
+          currentUserId,
+        );
 
         dispatch(
           activeChatActions.setActiveChat({
@@ -470,11 +403,7 @@ export default function CreateNewGroup() {
                     }}
                   >
                     <Image
-                      source={
-                        imageUrl
-                          ? { uri: imageUrl }
-                          : { uri: imageUrl }
-                      }
+                      source={imageUrl ? { uri: imageUrl } : { uri: imageUrl }}
                       style={styles.userIcon}
                     />
                     <TouchableOpacity
@@ -520,7 +449,7 @@ export default function CreateNewGroup() {
                   </View>
                 </View>
 
-                <View style={{ marginTop: 20 }} />
+                {/* <View style={{ marginTop: 20 }} /> */}
 
                 {isLoading && (
                   <ActivityIndicator size="large" color="#0000ff" />
@@ -707,7 +636,10 @@ export default function CreateNewGroup() {
             </LinearGradient>
           </TouchableOpacity>
         )}
-        <BottomNavigation navigation={navigation} activeScreen="CreateNewGroup" />
+        <BottomNavigation
+          navigation={navigation}
+          activeScreen="CreateNewGroup"
+        />
       </KeyboardAvoidingView>
     </>
   );
@@ -908,4 +840,3 @@ const styles = StyleSheet.create({
     color: '#333',
   },
 });
-
