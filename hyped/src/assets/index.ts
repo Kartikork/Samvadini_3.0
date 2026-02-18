@@ -36,6 +36,8 @@ export { default as noImage } from './images/no-image.png';
 export { default as callBackgroung } from './images/calls/call-bg.png';
 export { default as priorityIcon } from './images/priority.png';
 export { default as userIcon } from './images/user-icon.png';
+export { default as cameraIcon } from './images/camera.png';
+export { default as backArrowIcon } from './images/back-arrow-icon.png';
 export { default as groupIcons } from './images/groupIcons.png';
 export { default as educationGroupIcons } from './images/event/education.jpg';
 
