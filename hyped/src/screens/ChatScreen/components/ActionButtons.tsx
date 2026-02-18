@@ -15,7 +15,6 @@ import {
   errorCodes,
   isErrorWithCode,
 } from '@react-native-documents/picker';
-import Geolocation from 'react-native-geolocation-service';
 import { useMediaPermission } from '../../../hooks';
 import { useAppSelector } from '../../../state/hooks';
 import { getAppTranslations } from '../../../translations';
@@ -27,15 +26,13 @@ interface ActionButtonsProps {
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const lang = useAppSelector(state => state.language.lang);
   const t = getAppTranslations(lang);
   const { ensureDocumentAccess } = useMediaPermission();
   const { openCameraPicker, openGalleryPicker } = useMediaPicker();
 
   const handleSimpleAction = (label: string) => {
-    // Placeholder for future media/location/contact handling
-    // Keeps current integration focused on opening the section
     console.log(`[ActionButtons] ${label} pressed`);
     onClose();
   };
@@ -50,16 +47,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
     } finally {
       onClose();
     }
-  };
-  const handleLocation = () => {
-    Geolocation.getCurrentPosition(
-      position => {
-        console.log('Location:', position.coords);
-        onClose();
-      },
-      error => console.warn(error),
-      { enableHighAccuracy: true, timeout: 15000 },
-    );
   };
 
   const handleCamera = () => {
@@ -108,7 +95,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
     <View style={styles.actionButtonsContainer}>
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={() => handleSimpleAction('Location')}
+        onPress={() => {
+          navigation.navigate('LocationShare');
+        }}
       >
         <View style={styles.actionButtonone}>
           <Ionicons name="location-outline" size={24} color="#ffffff" />
