@@ -97,6 +97,7 @@ const roomscreen = lazy(
 const ChatProfile = lazy(() => import('../screens/Profile/ChatProfile.js'));
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
+import LocationShareScreen from '../screens/ChatScreen/components/LocationShareScreen';
 
 // Loader Component
 const ScreenLoader = () => {
@@ -248,6 +249,7 @@ export type RootStackParamList = {
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
   SelectedFiles: { assets: any[] } | undefined;
+  LocationShare: { chatId: string; isGroup?: boolean };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -437,6 +439,15 @@ export default function MainNavigator() {
         <Stack.Screen
           name="SelectedFiles"
           component={SelectedFilesScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+
+        <Stack.Screen
+          name="LocationShare"
+          component={LocationShareScreen}
           options={{
             headerShown: false,
             animation: 'slide_from_right',

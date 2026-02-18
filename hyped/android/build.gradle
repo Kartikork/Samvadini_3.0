@@ -6,6 +6,10 @@ buildscript {
         targetSdkVersion = 36
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.0.21"
+        // Ensure a consistent Play Services Location version across all modules.
+        // This avoids runtime crashes in react-native-geolocation-service (RNFusedLocation)
+        // caused by mismatched Play Services Location classes on the classpath.
+        playServicesLocationVersion = "21.3.0"
     }
     repositories {
         google()

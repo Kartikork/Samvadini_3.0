@@ -308,6 +308,8 @@ console.log("chatId==========>", chatId);
 
   {showActions && (
     <ActionButtons
+      chatId={chatId}
+      isGroup={isGroup}
       onClose={() => setShowActions(false)}
     />
   )}
