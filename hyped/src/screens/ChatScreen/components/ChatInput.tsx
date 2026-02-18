@@ -19,6 +19,8 @@ import { useAppSelector } from '../../../state/hooks';
 import PickerModal from '../../../components/EmojiGifStickerPicker/PickerModal';
 import ActionButtons from './ActionButtons';
 import ReplyPreview from './ReplyPreview';
+import LinearGradient from 'react-native-linear-gradient';
+
 
 interface ChatInputProps {
   chatId: string;
@@ -258,7 +260,7 @@ console.log("chatId==========>", chatId);
       onPress={handleEmojiPicker}
       disabled={isSending}
     >
-      <Icon name="smile-o" size={22} color="#666" />
+      <Icon name="smile-o" size={22} color="#2222222" />
     </TouchableOpacity>
 
     {/* Text Input */}
@@ -266,7 +268,7 @@ console.log("chatId==========>", chatId);
       ref={inputRef}
       style={styles.input}
       placeholder="Type a message..."
-      placeholderTextColor="#999"
+      placeholderTextColor="#2222222"
       value={text}
       onChangeText={handleTextChange}
       multiline
@@ -280,7 +282,7 @@ console.log("chatId==========>", chatId);
       onPress={handleAttachment}
       disabled={isSending}
     >
-      <MaterialIcons name="add" size={22} color="#666" />
+      <MaterialIcons name="add" size={22} color="#2222222" />
     </TouchableOpacity>
   </View>
 
@@ -298,9 +300,10 @@ console.log("chatId==========>", chatId);
     ) : hasText ? (
       <MaterialIcons name="send" size={20} color="#FFFFFF" />
     ) : (
-      <MaterialIcons name="mic" size={20} color="#666666" />
+      <MaterialIcons name="mic" size={20} color="#222222" />
     )}
   </TouchableOpacity>
+
 </View>
 
   {showActions && (
@@ -318,9 +321,9 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     paddingHorizontal: 8,
     paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
+    // backgroundColor: '#FFFFFF',
+    // borderTopWidth: 1,
+    // borderTopColor: '#E5E5E5',
   },
   inputRow: {
     flexDirection: 'row',
@@ -330,7 +333,7 @@ const styles = StyleSheet.create({
  flex: 1,
   flexDirection: 'row',
   alignItems: 'center',
-  backgroundColor: '#F0F0F0',
+  backgroundColor: '#ffffff',
   borderRadius: 24,
   paddingHorizontal: 8,
   paddingVertical: 6,
@@ -366,7 +369,7 @@ const styles = StyleSheet.create({
   width: 44,
   height: 44,
   borderRadius: 22,
-  backgroundColor: '#E0E0E0',
+  backgroundColor: '#ffffff',
   justifyContent: 'center',
   alignItems: 'center',
   },

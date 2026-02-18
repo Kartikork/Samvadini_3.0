@@ -108,6 +108,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   return (
     <View style={styles.container}>
+
       <Pressable
         ref={bubbleRef}
         style={styles.bubble}
@@ -145,8 +146,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     replyMeta.lastUkti
                       ? replyMeta.lastUkti
                       : replyMeta.lastSenderId === currentUserId
-                      ? 'You'
-                      : 'Replied message'
+                        ? 'You'
+                        : 'Replied message'
                   }
                   message={replyMeta.lastContent}
                   accentColor="#007AFF"
@@ -159,8 +160,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             {hasMedia && (
               <View style={styles.mediaContainer}>
                 {message.sandesha_prakara === 'image' ||
-                message.sandesha_prakara === 'gif' ||
-                message.sandesha_prakara === 'sticker' ? (
+                  message.sandesha_prakara === 'gif' ||
+                  message.sandesha_prakara === 'sticker' ? (
                   <Image
                     source={{ uri: message.vishayah }}
                     style={styles.mediaImage}
@@ -233,101 +234,105 @@ function formatTimestamp(timestamp: number): string {
   return `${hours}:${minutes}`;
 }
 
-function createStyles(isOutgoing: boolean, isHighlighted: boolean,) {
-  const outgoingBg = isHighlighted ? '#075E54' : '#D0E6FB';
-  const incomingBg = isHighlighted ? '#2A3942' : '#FFFFFF';
-   const outgoingBorder = isHighlighted ? '#128C7E' : '#90CAF9';
-  const incomingBorder = isHighlighted ? '#3A4B53' : '#E0E0E0';
-
-
+function createStyles(isOutgoing: boolean, isHighlighted: boolean) {
   return StyleSheet.create({
     container: {
-      paddingHorizontal: 12,
-      paddingVertical: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 2,
       flexDirection: 'row',
       justifyContent: isOutgoing ? 'flex-end' : 'flex-start',
       backgroundColor: isHighlighted ? '#e5f4ff' : 'transparent',
       marginBottom: 2,
     },
+
     bubble: {
-      maxWidth: '75%',
-      borderWidth: 5,
-      // borderColor: '#7391AD',
-      borderColor: isOutgoing ? outgoingBorder : incomingBorder,
-      borderRadius: 16,
-      paddingHorizontal: 10,
-      paddingVertical: 8,
-      backgroundColor: isOutgoing ? outgoingBg : incomingBg,
-      ...Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.12,
-          shadowRadius: 1.5,
-        },
-        android: {
-          elevation: 1,
-        },
-      }),
+      maxWidth: '78%',
+      backgroundColor: isOutgoing ? '#0B88D2' : '#ffffff',
+      paddingHorizontal: 8,
+      paddingTop: 6,
+      paddingBottom: 4,
+      borderTopLeftRadius: 8,
+      borderTopRightRadius: 8,
+      borderBottomLeftRadius: isOutgoing ? 8 : 2,
+      borderBottomRightRadius: isOutgoing ? 2 : 8,
+      shadowColor: '#666666',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.18,
+      shadowRadius: 2,
+      // ✅ Android shadow
+      elevation: 2,
     },
+
     replyWrapper: {
       marginBottom: 6,
     },
+
     mediaContainer: {
       marginBottom: 4,
-      borderRadius: 8,
+      borderRadius: 6,
       overflow: 'hidden',
     },
+
     mediaImage: {
-      width: 200,
-      height: 200,
-      borderRadius: 8,
+      width: 220,
+      height: 220,
+      borderRadius: 6,
     },
+
     videoPlaceholder: {
-      width: 200,
+      width: 220,
       height: 150,
-      backgroundColor: isOutgoing ? 'rgba(255,255,255,0.2)' : '#F0F0F0',
+      backgroundColor: '#111B21',
       justifyContent: 'center',
       alignItems: 'center',
-      borderRadius: 8,
+      borderRadius: 6,
     },
+
     videoText: {
-      fontSize: 16,
-      color: isOutgoing ? '#FFFFFF' : '#666666',
+      fontSize: 14,
+      color: '#8696A0',
     },
+
     documentPlaceholder: {
-      padding: 12,
-      backgroundColor: isOutgoing ? 'rgba(255,255,255,0.2)' : '#F0F0F0',
-      borderRadius: 8,
+      padding: 10,
+      backgroundColor: '#111B21',
+      borderRadius: 6,
     },
+
     documentText: {
       fontSize: 14,
-      color: isOutgoing ? '#FFFFFF' : '#666666',
+      color: '#8696A0',
     },
+
     messageText: {
       fontSize: 16,
-      color: isOutgoing ? '#000000' : '#000000',
-      lineHeight: 22,
+      color: isOutgoing ? '#E9EDEF' : '#222222',
+      lineHeight: 21,
     },
+
     footer: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'flex-end',
-      marginTop: 4,
+      marginTop: 2,
     },
+
     metaIcon: {
       marginRight: 4,
     },
+
     editedText: {
       fontSize: 11,
-      color: isOutgoing ? 'rgba(255,255,255,0.8)' : '#999999',
+      color: '#8696A0',
       marginRight: 4,
     },
+
     timestamp: {
       fontSize: 11,
-      color: isOutgoing ? '#000000' : '#000000',
-      marginLeft: 2,
+      color: isOutgoing ? '#E9EDEF' : '#222222',
+      marginLeft: 4,
     },
+
     deletedContainer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -337,7 +342,7 @@ function createStyles(isOutgoing: boolean, isHighlighted: boolean,) {
     deletedText: {
       fontSize: 14,
       fontStyle: 'italic',
-      color: isOutgoing ? 'rgba(255,255,255,0.7)' : '#777',
+      color: '#8696A0',
     },
   });
 }
