@@ -1,21 +1,4 @@
-/**
- * Group Database
- * 
- * RESPONSIBILITY:
- * - Group metadata storage and queries
- * - Group membership management
- * - Group settings and permissions
- * - Fast queries with proper indexing
- * 
- * SCHEMA:
- * Groups: Uses existing td_chat_qutubminar_211 table (prakara='Group')
- * Members: Uses existing td_chat_bhagwah_211 table (participants)
- * 
- * This is a wrapper around existing SQLite schema functions
- * to provide a clean API for GroupChatManager
- */
-
-import { 
+import {
   fetchChatBySamvadaChinha,
   getAllChatLists,
   UpdateChatList,
@@ -101,10 +84,10 @@ class GroupDB {
         console.warn('[GroupDB] Group not found:', groupId);
         return [];
       }
-      
+
       // Then get all participants for this group
       const participants = await getAllChatParticipants(samvada_chinha_id);
-      
+
       // Transform to GroupMember format
       return participants.map((p: any) => ({
         ekatma_chinha: p.ekatma_chinha,
@@ -114,6 +97,8 @@ class GroupDB {
         sakriyamastiva: p.sakriyamastiva || 1,
         contact_name: p.contact_name,
         contact_photo: p.contact_photo,
+        publicKey: p.publicKey,
+        privateKey: p.privateKey,
       })) as GroupMember[];
     } catch (error) {
       console.error('[GroupDB] Failed to get group members:', error);
@@ -127,7 +112,9 @@ class GroupDB {
   async getActiveMemberCount(groupId: string): Promise<number> {
     try {
       const members = await this.getGroupMembers(groupId);
-      return members.filter(m => m.sakriyamastiva === 1 && m.status === 'Accepted').length;
+      return members.filter(
+        m => m.sakriyamastiva === 1 && m.status === 'Accepted',
+      ).length;
     } catch (error) {
       console.error('[GroupDB] Failed to get active member count:', error);
       return 0;
@@ -165,12 +152,16 @@ class GroupDB {
   /**
    * Helper to update group field
    */
-  private async updateGroupField(groupId: string, field: string, value: any): Promise<void> {
+  private async updateGroupField(
+    groupId: string,
+    field: string,
+    value: any,
+  ): Promise<void> {
     const samvada_chinha_id = await getSamvadaChinhaId(groupId);
     if (!samvada_chinha_id) {
       throw new Error('Group not found');
     }
-    
+
     await UpdateChatList({
       samvada_chinha_id: [samvada_chinha_id],
       action: 'update',
@@ -207,7 +198,10 @@ class GroupDB {
   /**
    * Update group description
    */
-  async updateGroupDescription(groupId: string, description: string): Promise<void> {
+  async updateGroupDescription(
+    groupId: string,
+    description: string,
+  ): Promise<void> {
     console.log('[GroupDB] Update group description:', groupId);
     try {
       await this.updateGroupField(groupId, 'samuhavarnanam', description);
@@ -227,7 +221,7 @@ class GroupDB {
       if (!samvada_chinha_id) {
         throw new Error('Group not found');
       }
-      
+
       // Update each setting field
       for (const [field, value] of Object.entries(settings)) {
         await UpdateChatList({
@@ -312,7 +306,7 @@ class GroupDB {
     try {
       const allGroups = await this.getUserGroups(userId);
       return allGroups.filter(group =>
-        group.samvada_nama?.toLowerCase().includes(query.toLowerCase())
+        group.samvada_nama?.toLowerCase().includes(query.toLowerCase()),
       );
     } catch (error) {
       console.error('[GroupDB] Failed to search groups:', error);
@@ -355,7 +349,9 @@ class GroupDB {
   async getGroupAdmins(groupId: string): Promise<GroupMember[]> {
     try {
       const members = await this.getGroupMembers(groupId);
-      return members.filter(m => m.bhumika === 'Admin' && m.status === 'Accepted');
+      return members.filter(
+        m => m.bhumika === 'Admin' && m.status === 'Accepted',
+      );
     } catch (error) {
       console.error('[GroupDB] Failed to get group admins:', error);
       return [];
@@ -387,4 +383,3 @@ class GroupDB {
 }
 
 export const groupDB = new GroupDB();
-

@@ -15,7 +15,6 @@ import {
   errorCodes,
   isErrorWithCode,
 } from '@react-native-documents/picker';
-import Geolocation from 'react-native-geolocation-service';
 import { useMediaPermission } from '../../../hooks';
 import { useAppSelector } from '../../../state/hooks';
 import { getAppTranslations } from '../../../translations';
@@ -40,8 +39,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const { openCameraPicker, openGalleryPicker } = useMediaPicker();
 
   const handleSimpleAction = (label: string) => {
-    // Placeholder for future media/location/contact handling
-    // Keeps current integration focused on opening the section
     console.log(`[ActionButtons] ${label} pressed`);
     onClose();
   };

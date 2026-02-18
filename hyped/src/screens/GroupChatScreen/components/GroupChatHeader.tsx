@@ -1,14 +1,3 @@
-/**
- * GroupChatHeader - Header component for group chat
- * 
- * Shows:
- * - Group name
- * - Group avatar
- * - Member count
- * - Back button
- * - Group info button (opens member list)
- */
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -20,6 +9,8 @@ import {
 } from 'react-native';
 
 import { groupDB } from '../../../storage/groupDB';
+import { env } from '../../../config';
+import { groupIcons } from '../../../assets';
 
 interface GroupChatHeaderProps {
   groupId: string;
@@ -55,7 +46,6 @@ const GroupChatHeader: React.FC<GroupChatHeaderProps> = ({
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Back Button */}
-        
 
         {/* Group Info */}
         <TouchableOpacity
@@ -64,15 +54,13 @@ const GroupChatHeader: React.FC<GroupChatHeaderProps> = ({
           activeOpacity={0.7}
         >
           {/* Group Avatar */}
-          {groupAvatar ? (
-            <Image source={{ uri: groupAvatar }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Text style={styles.avatarText}>
-                {groupName.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-          )}
+
+          <Image
+            source={
+              groupAvatar ? { uri: groupAvatar + env.SAS_KEY } : groupIcons
+            }
+            style={styles.avatar}
+          />
 
           {/* Group Name + Member Count */}
           <View style={styles.textContainer}>
@@ -163,6 +151,3 @@ const styles = StyleSheet.create({
 });
 
 export default React.memo(GroupChatHeader);
-
-
-
