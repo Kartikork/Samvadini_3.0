@@ -55,13 +55,7 @@ const GroupChatHeader: React.FC<GroupChatHeaderProps> = ({
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Back Button */}
-        <TouchableOpacity
-          onPress={onBackPress}
-          style={styles.backButton}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        
 
         {/* Group Info */}
         <TouchableOpacity

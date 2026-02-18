@@ -37,6 +37,8 @@ import {
   updateMessagesActionState,
   copyMessagesToClipboard,
 } from './helpers/messageActions';
+import LinearGradient from 'react-native-linear-gradient';
+
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -500,6 +502,11 @@ const ChatScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+          <LinearGradient
+  colors={['#FEE7F8', '#FEF7EA',]}
+  style={{ flex: 1 }}
+>
+ 
       {/* Selection bar (overlays header) */}
       {isSelectionMode && (
         <MessageActionsBar
@@ -597,6 +604,7 @@ const ChatScreen: React.FC = () => {
           />
         </View>
       </KeyboardAvoidingView>
+      </LinearGradient>
     </View>
   );
 };

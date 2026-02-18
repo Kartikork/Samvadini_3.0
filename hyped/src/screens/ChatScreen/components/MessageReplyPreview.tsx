@@ -39,9 +39,10 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     borderRadius: 8,
     overflow: 'hidden',
+    minWidth: '100%',
   },
   accentBar: {
-    width: 3,
+    width: 0,
   },
   content: {
     flex: 1,
