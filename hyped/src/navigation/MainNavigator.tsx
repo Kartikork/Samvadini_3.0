@@ -52,6 +52,8 @@ const roomscreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antara
 const LudoWelcomeScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/Screens/WelcomeScreen'));
 const LudoColorSelectionScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/Screens/ColorSelectionScreen'));
 const ludoGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/utils/Index'));
+const Basketball = lazy(() => import('../screens/LanguageGameScreen/GAMER/Basketball/main/BasketBall'));
+const PianoGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/piano/PianoGame'));
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
 
@@ -179,8 +181,14 @@ export type RootStackParamList = {
   CarromGame: undefined;
   TipCat: undefined;
   crossword: undefined;
+  pong: undefined;
+  chess: undefined;
+  homescreen: undefined;
+  roomscreen: undefined;
   MazeGame: undefined;
   SliceGame: undefined;
+  Basketball: undefined;
+  PianoGame: undefined;
   LudoWelcomeScreen: undefined;
   LudoColorSelectionScreen: undefined;
   ludoGame: { gameMode: string; playerColors: string[] };
@@ -515,6 +523,16 @@ export default function MainNavigator() {
         <Stack.Screen
           name="SliceGame"
           component={SliceGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="Basketball"
+          component={Basketball}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="PianoGame"
+          component={PianoGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
         <Stack.Screen
