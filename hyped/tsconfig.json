@@ -4,6 +4,6 @@
     "jsx": "react-jsx",
     "types": ["jest"]
   },
-  "include": ["**/*.ts", "**/*.tsx", "src/screens/CategoryScreen/JobScreen.js"],
+  "include": ["**/*.ts", "**/*.tsx","**/*.js", "src/screens/CategoryScreen/JobScreen.js", "src/screens/StatusScreen/StatusScreen.js"],
   "exclude": ["**/node_modules", "**/Pods"]
 }
