@@ -123,23 +123,7 @@ const GroupMessageBubble: React.FC<GroupMessageBubbleProps> = ({
       ]}
       onLayout={handleLayout}
     >
-      {/* Sender Avatar (for incoming messages) */}
-      {!isOutgoing && showSenderInfo && (
-        <View style={styles.avatarContainer}>
-          {message.sender_photo ? (
-            <Image
-              source={{ uri: message.sender_photo }}
-              style={styles.avatar}
-            />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Text style={styles.avatarText}>
-                {getSenderName().charAt(0).toUpperCase()}
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
+
 
       {/* Message Bubble */}
       <TouchableOpacity
@@ -154,9 +138,31 @@ const GroupMessageBubble: React.FC<GroupMessageBubbleProps> = ({
         ]}
       >
         {/* Sender Name (for incoming messages) */}
-        {!isOutgoing && showSenderInfo && (
-          <Text style={styles.senderName}>{getSenderName()}</Text>
-        )}
+
+        <View style={styles.senderRow}>
+          {!isOutgoing && showSenderInfo && (
+
+            <View style={styles.avatarContainer}>
+              {message.sender_photo ? (
+                <Image
+                  source={{ uri: message.sender_photo }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                  <Text style={styles.avatarText}>
+                    {getSenderName().charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+          <View>
+            {!isOutgoing && showSenderInfo && (
+              <Text style={styles.senderName}>{getSenderName()}</Text>
+            )}
+          </View>
+        </View>
 
         {/* Message Content */}
         {renderMessageContent()}
@@ -166,7 +172,7 @@ const GroupMessageBubble: React.FC<GroupMessageBubbleProps> = ({
           <Text style={[styles.timestamp, isOutgoing && styles.outgoingTimestamp]}>
             {/* {message.preritam_tithih} */}
           </Text>
-          
+
           {/* Status Indicator (for outgoing messages) */}
           {isOutgoing && (
             <Text style={styles.statusIcon}>
@@ -224,6 +230,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
+    backgroundColor: '#E8E8E8',
   },
   avatarPlaceholder: {
     backgroundColor: '#007AFF',
@@ -333,6 +340,11 @@ const styles = StyleSheet.create({
   },
   indicator: {
     fontSize: 14,
+  },
+  senderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
   },
 });
 
