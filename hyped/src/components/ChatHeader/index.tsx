@@ -196,13 +196,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
               <Icon name="video-outline" size={24} color="#000000" />
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={onMenuPress}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Icon name="dots-vertical" size={24} color="#000000" />
-          </TouchableOpacity>
+          
         </View>
       </View>
     </View>

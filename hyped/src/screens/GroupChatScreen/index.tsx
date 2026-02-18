@@ -62,6 +62,8 @@ import {
 import GroupChatHeader from './components/GroupChatHeader';
 import GroupMessageBubble from './components/GroupMessageBubble';
 import GroupMemberListModal from './components/GroupMemberListModal';
+import LinearGradient from 'react-native-linear-gradient';
+
 
 type GroupChatScreenRouteProp = RouteProp<RootStackParamList, 'GroupChat'>;
 
@@ -303,15 +305,15 @@ const GroupChatScreen: React.FC = () => {
 
   useEffect(() => {
     if (!groupId) return;
-console.log("groupId=======>", groupId);
+    console.log("groupId=======>", groupId);
 
     const handleNewMessage = async (payload: any) => {
       const incomingGroupId = payload?.samvada_chinha || payload?.chatId;
       console.log("incomingGroupId=======>", incomingGroupId, groupId);
-      
+
       // Only handle messages for this group
       if (incomingGroupId !== groupId) return;
-      
+
       setTimeout(() => {
         appendLatestMessageFromDb();
       }, 300);
@@ -342,12 +344,12 @@ console.log("groupId=======>", groupId);
           type === 'pin'
             ? { sthapitam_sandesham: 1 }
             : type === 'unPin'
-            ? { sthapitam_sandesham: 0 }
-            : type === 'star'
-            ? { kimTaritaSandesha: 1 }
-            : type === 'unStar'
-            ? { kimTaritaSandesha: 0 }
-            : {};
+              ? { sthapitam_sandesham: 0 }
+              : type === 'star'
+                ? { kimTaritaSandesha: 1 }
+                : type === 'unStar'
+                  ? { kimTaritaSandesha: 0 }
+                  : {};
       }
 
       setMessages(prev =>
@@ -541,6 +543,7 @@ console.log("groupId=======>", groupId);
 
       return (
         <View>
+          
           {showDateSeparator && (
             <DateSeparator date={new Date(item.preritam_tithih)} />
           )}
@@ -638,6 +641,10 @@ console.log("groupId=======>", groupId);
       )}
 
       {/* Messages List */}
+           <LinearGradient
+              colors={['#FEE7F8', '#FEF7EA',]}
+              style={{ flex: 1 }}
+            >
       <AnyFlashList
         ref={flashListRef}
         data={messages}
@@ -679,7 +686,7 @@ console.log("groupId=======>", groupId);
           }}
         />
       )}
-
+</LinearGradient>
       {/* Member List Modal */}
       <GroupMemberListModal
         visible={showMemberList}
