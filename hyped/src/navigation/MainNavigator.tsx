@@ -50,6 +50,14 @@ const chess = lazy(() => import('../screens/LanguageGameScreen/GAMER/Chess/chess
 const pong = lazy(() => import('../screens/LanguageGameScreen/GAMER/pong/footballNet.js'));
 const homescreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/HomeScreen.js'));
 const roomscreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/RoomScreen.js'));
+const PlanetSelectionScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/PlanetSelectionScreen.js'));
+const MiniGamesHubScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGamesHubScreen.js'));
+const MiniGame1 = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGame1.js'));
+const MiniGame2 = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGame2.js'));
+const MiniGame3 = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGame3.js'));
+const MiniGame4 = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGame4.js'));
+const GameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/gamescreen.js'));
+
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
 
@@ -199,6 +207,13 @@ export type RootStackParamList = {
   chess: undefined;
   homescreen: undefined;
   roomscreen: undefined;
+  PlanetSelectionScreen: undefined;
+  MiniGamesHubScreen: undefined;
+  MiniGame1: undefined;
+  MiniGame2: undefined;
+  MiniGame3: undefined;
+  MiniGame4: undefined;
+  GameScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -523,6 +538,41 @@ export default function MainNavigator() {
           name="SliceGame"
           component={SliceGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="PlanetSelectionScreen"
+          component={PlanetSelectionScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="MiniGamesHubScreen"
+          component={MiniGamesHubScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="MiniGame1"
+          component={MiniGame1}
+          options={{ animation: 'slide_from_right', headerShown: true }}
+        />
+        <Stack.Screen
+          name="MiniGame2"
+          component={MiniGame2}
+          options={{ animation: 'slide_from_right', headerShown: true }}
+        />
+        <Stack.Screen
+          name="MiniGame3"
+          component={MiniGame3}
+          options={{ animation: 'slide_from_right', headerShown: true }}
+        />
+        <Stack.Screen
+          name="MiniGame4"
+          component={MiniGame4}
+          options={{ animation: 'slide_from_right', headerShown: true }}
+        />
+        <Stack.Screen
+          name="GameScreen"
+          component={GameScreen}
+          options={{ animation: 'slide_from_right', headerShown: true }}
         />
 
         {/* TODO: Add these screens
