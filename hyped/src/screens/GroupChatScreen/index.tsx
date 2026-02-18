@@ -56,7 +56,7 @@ import MessageActionsBar, {
 import MessageReactionPicker from '../ChatScreen/components/MessageReactionPicker';
 import { useMessageSelectionWithReactions } from '../ChatScreen/hooks/useMessageSelectionWithReactions';
 import {
-  updateMessagesActionState,
+  updateGroupMessagesActionState,
   copyMessagesToClipboard,
 } from '../ChatScreen/helpers/messageActions';
 import GroupChatHeader from './components/GroupChatHeader';
@@ -93,11 +93,9 @@ const GroupChatScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const activeChat = useAppSelector(state => state.activeChat);
   useHardwareBackHandler('ChatList');
-  
   // Group ID from Redux (primary) or route params (fallback)
   const groupId = activeChat.chatId ?? route.params?.chatId;
   const groupFromDb = useChatById(groupId);
-  
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
@@ -199,7 +197,7 @@ const GroupChatScreen: React.FC = () => {
       // fetchGroupMessages requires: (samvada_chinha, uniqueId, limit, offset)
       const loadedMessages = await fetchGroupMessages(groupId, currentUserId, 20, 0);
       console.log('[GroupChatScreen] Loaded messages count:', loadedMessages.length);
-      
+
       if (loadedMessages && loadedMessages.length > 0) {
         const transformedMessages = loadedMessages.map((msg: GroupMessage) => ({
           ...msg,
@@ -269,12 +267,12 @@ const GroupChatScreen: React.FC = () => {
 
   const appendLatestMessageFromDb = useCallback(async () => {
     if (!groupId || !currentUserId) return;
-    
+
     try {
       // fetchGroupMessages requires: (samvada_chinha, uniqueId, limit, offset)
       const latest = await fetchGroupMessages(groupId, currentUserId, 1, 0);
       console.log('[GroupChatScreen] Latest message:', latest, 'groupId:', groupId);
-      
+
       if (!latest || latest.length === 0) return;
 
       const latestMsg = latest[0] as GroupMessage;
@@ -466,62 +464,73 @@ const GroupChatScreen: React.FC = () => {
   // ────────────────────────────────────────────────────────────
   // MESSAGE ACTIONS
   // ────────────────────────────────────────────────────────────
-
   const handleMessageAction = useCallback(
     async (action: MessageActionType) => {
-      if (selectedMessageIds.length === 0) return;
-
-      switch (action) {
-        case 'copy':
-          await copyMessagesToClipboard(selectedMessages);
-          clearSelection();
-          break;
-
-        case 'pin':
-        case 'unPin':
-          await updateMessagesActionState(
-            groupId,
-            selectedMessageIds,
-            action,
-            true, // isGroup
-          );
-          clearSelection();
-          break;
-
-        case 'star':
-        case 'unStar':
-          await updateMessagesActionState(
-            groupId,
-            selectedMessageIds,
-            action,
-            true, // isGroup
-          );
-          clearSelection();
-          break;
-
-        case 'delete':
-          // Handle delete
-          clearSelection();
-          break;
-
-        case 'forward':
-          // Handle forward
-          clearSelection();
-          break;
-
-        case 'reply':
-          if (selectedMessages.length === 1) {
-            setReplyMessage(selectedMessages[0]);
-          }
-          clearSelection();
-          break;
-
-        default:
-          break;
+      if (action === 'reply') {
+        if (selectedMessages.length === 1) {
+          setReplyMessage(selectedMessages[0] as GroupMessage);
+        }
+        clearSelection();
+        return;
       }
+
+      if (
+        action === 'pin' ||
+        action === 'unpin' ||
+        action === 'star' ||
+        action === 'unstar'
+      ) {
+        if (!groupId || selectedMessages.length === 0) return;
+
+        // Clear selection immediately for better UX (like WhatsApp)
+        clearSelection();
+
+        await updateGroupMessagesActionState({
+          type:
+            action === 'pin'
+              ? 'pin'
+              : action === 'unpin'
+                ? 'unPin'
+                : action === 'star'
+                  ? 'star'
+                  : 'unStar',
+          groupId,
+          currentUserId: currentUserId ?? '',
+          selectedMessages,
+          setMessages: setMessages as any,
+        });
+
+        return;
+      }
+
+      if (action === 'copy') {
+        copyMessagesToClipboard(selectedMessages as any);
+        clearSelection();
+        return;
+      }
+
+      if (action === 'delete' || action === 'deleteEveryone') {
+        if (!groupId || selectedMessages.length === 0) return;
+        const toUpdate = selectedMessages as any;
+        clearSelection();
+
+        await updateGroupMessagesActionState({
+          type: action === 'delete' ? 'delete' : 'deleteEveryone',
+          groupId,
+          currentUserId: currentUserId ?? '',
+          selectedMessages: toUpdate,
+          setMessages: setMessages as any,
+        });
+
+        return;
+      }
+
+      // For now, clear selection after other actions as well
+      clearSelection();
     },
-    [selectedMessageIds, selectedMessages, groupId, clearSelection],
+    [groupId, selectedMessages, clearSelection],
   );
+
 
   // ────────────────────────────────────────────────────────────
   // RENDER HELPERS
@@ -543,42 +552,30 @@ const GroupChatScreen: React.FC = () => {
 
       return (
         <View>
-          
           {showDateSeparator && (
-            <DateSeparator date={new Date(item.preritam_tithih)} />
+            <DateSeparator timestamp={new Date(item.preritam_tithih).getTime()} />
           )}
           <GroupMessageBubble
             message={item}
             isOutgoing={item.is_outgoing ?? false}
             showSenderInfo={showSenderInfo}
+            currentUserId={currentUserId}
             isSelected={selectedMessageIds.includes(item.refrenceId)}
             isSelectionMode={isSelectionMode}
-            onLongPress={() =>
-              handleMessageLongPress(item.refrenceId, item.is_outgoing ?? false)
-            }
-            onPress={() => {
-              if (isSelectionMode) {
-                toggleMessageSelection(item.refrenceId);
-              }
-            }}
-            onMeasure={layout =>
-              handleMeasureMessage(
-                item.refrenceId,
-                layout,
-                item.is_outgoing ?? false,
-              )
-            }
+            onLongPress={() => handleMessageLongPress(item)}
+            onPress={() => toggleMessageSelection(item)}
+            onMeasure={layout => handleMeasureMessage(item.refrenceId, layout)}
           />
         </View>
       );
     },
     [
-      messages,
-      selectedMessageIds,
-      isSelectionMode,
-      handleMessageLongPress,
-      toggleMessageSelection,
-      handleMeasureMessage,
+        messages,
+        selectedMessageIds,
+        isSelectionMode,
+        handleMessageLongPress,
+        toggleMessageSelection,
+        handleMeasureMessage,
     ],
   );
 
@@ -586,7 +583,7 @@ const GroupChatScreen: React.FC = () => {
 
   const renderListFooter = () => {
     if (typingUsers.length > 0) {
-      return <TypingIndicator userNames={typingUsers} />;
+      return <TypingIndicator />;
     }
     return null;
   };
@@ -632,11 +629,12 @@ const GroupChatScreen: React.FC = () => {
       {/* Message Actions Bar */}
       {isSelectionMode && (
         <MessageActionsBar
+          selectedMessages={selectedMessages}
           selectedCount={selectedMessageIds.length}
           hasPinnedMessages={hasPinnedMessages}
           hasStarredMessages={hasStarredMessages}
-          onAction={handleMessageAction}
-          onClose={clearSelection}
+          onActionPress={handleMessageAction}
+          onCloseSelection={clearSelection}
         />
       )}
 
@@ -660,18 +658,16 @@ const GroupChatScreen: React.FC = () => {
       />
 
       {/* Reaction Picker */}
-      {isReactionPickerVisible && reactionTargetMessageId && (
-        <MessageReactionPicker
-          visible={isReactionPickerVisible}
-          position={reactionPickerPosition}
-          onSelectReaction={(emoji: string) => {
-            // Handle reaction
-            closeReactionPicker();
-          }}
-          onClose={closeReactionPicker}
-          isSelfMessage={isSelfTargetMessage}
-        />
-      )}
+      <MessageReactionPicker
+        visible={isReactionPickerVisible}
+        onClose={closeReactionPicker}
+        onSelectReaction={emoji => {
+          if (!reactionTargetMessageId) return;
+          // TODO: Persist selected emoji reaction for reactionTargetMessageId
+        }}
+        messagePosition={reactionPickerPosition || undefined}
+        isSelfMessage={isSelfTargetMessage}
+      />
 
       {/* Chat Input */}
       {groupId && (

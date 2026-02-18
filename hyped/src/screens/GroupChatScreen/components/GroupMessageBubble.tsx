@@ -1,23 +1,84 @@
-/**
- * GroupMessageBubble - Message bubble for group chat
- * 
- * DIFFERENCES FROM 1-TO-1:
- * - Shows sender name above message (if not current user)
- * - Shows sender avatar to the left (if not current user)
- * - Supports @mentions highlighting
- * - Different alignment based on sender
- */
+import React, { useEffect, useRef, useMemo } from 'react';
+  import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import MessageReplyPreview from '../../ChatScreen/components/MessageReplyPreview';
+import MessageStatusIcon from '../../ChatScreen/components/MessageStatusIcon';
 
-import React, { useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  LayoutChangeEvent,
-} from 'react-native';
-// import { formatMessageTime } from '../../../helper/DateFormatter';
+type ReplyMeta = {
+  lastRefrenceId: string;
+  lastSenderId: string;
+  lastType: string;
+  lastContent: string;
+  lastUkti?: string;
+};
+
+function formatTimestamp(timestamp: number): string {
+  const date = new Date(timestamp);
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+function createBubbleStyles(isOutgoing: boolean, isHighlighted: boolean) {
+  return StyleSheet.create({
+    container: {
+      paddingHorizontal: 10,
+      paddingVertical: 2,
+      flexDirection: 'row',
+      justifyContent: isOutgoing ? 'flex-end' : 'flex-start',
+      backgroundColor: isHighlighted ? '#e5f4ff' : 'transparent',
+      marginBottom: 2,
+    },
+    bubble: {
+      maxWidth: '78%',
+      backgroundColor: isOutgoing ? '#0B88D2' : '#ffffff',
+      paddingHorizontal: 8,
+      paddingTop: 6,
+      paddingBottom: 4,
+      borderTopLeftRadius: 8,
+      borderTopRightRadius: 8,
+      borderBottomLeftRadius: isOutgoing ? 8 : 2,
+      borderBottomRightRadius: isOutgoing ? 2 : 8,
+      shadowColor: '#666666',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.18,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    replyWrapper: {
+      marginBottom: 6,
+    },
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      marginTop: 2,
+    },
+    metaIcon: {
+      marginRight: 4,
+    },
+    editedText: {
+      fontSize: 11,
+      color: '#8696A0',
+      marginRight: 4,
+    },
+    timestamp: {
+      fontSize: 11,
+      color: isOutgoing ? '#E9EDEF' : '#222222',
+      marginLeft: 4,
+    },
+    deletedContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 4,
+    },
+    deletedText: {
+      fontSize: 14,
+      fontStyle: 'italic',
+      color: '#8696A0',
+    },
+  });
+}
 
 interface GroupMessageBubbleProps {
   message: {
@@ -27,16 +88,20 @@ interface GroupMessageBubbleProps {
     sandesha_prakara: string; // type
     avastha: string; // status
     preritam_tithih: string; // timestamp
+    createdAt?: string;
     sender_name?: string;
     sender_photo?: string;
     reaction?: string;
     reaction_summary?: string;
     sthapitam_sandesham?: number; // pin flag
     kimTaritaSandesha?: number; // star flag
+    nirastah?: number; // deleted flag
+    sampaditam?: boolean; // edited flag
     [key: string]: any;
   };
   isOutgoing: boolean;
   showSenderInfo: boolean; // Show name + avatar
+  currentUserId?: string | null;
   isSelected?: boolean;
   isSelectionMode?: boolean;
   onLongPress: () => void;
@@ -48,26 +113,29 @@ const GroupMessageBubble: React.FC<GroupMessageBubbleProps> = ({
   message,
   isOutgoing,
   showSenderInfo,
+  currentUserId,
   isSelected,
   isSelectionMode,
   onLongPress,
   onPress,
   onMeasure,
 }) => {
-  const handleLayout = useCallback(
-    (event: LayoutChangeEvent) => {
-      const { x, y, width, height } = event.nativeEvent.layout;
-      onMeasure({ x, y, width, height });
-    },
-    [onMeasure],
-  );
+  const replyMeta = useMemo<ReplyMeta | null>(() => {
+    if (!message.pratisandeshah) return null;
+    try {
+      const parsed = JSON.parse(message.pratisandeshah);
+      return parsed && parsed.lastRefrenceId ? (parsed as ReplyMeta) : null;
+    } catch (_e) {
+      return null;
+    }
+  }, [message.pratisandeshah]);
 
-  const getSenderName = () => {
+  const senderName = useMemo(() => {
     if (isOutgoing) return 'You';
     return message.sender_name || 'Unknown';
-  };
+  }, [isOutgoing, message.sender_name]);
 
-  const renderMessageContent = () => {
+  const messageContent = useMemo(() => {
     switch (message.sandesha_prakara) {
       case 'text':
         return (
@@ -113,96 +181,161 @@ const GroupMessageBubble: React.FC<GroupMessageBubbleProps> = ({
           </Text>
         );
     }
-  };
+  }, [isOutgoing, message.sandesha_prakara, message.ukti, message.vishayah]);
+
+  const bubbleRef = useRef<any>(null);
+
+  // Only highlight when selection mode is active and this message is selected
+  const isHighlighted = !!isSelected && !!isSelectionMode;
+
+  // Map avastha to status
+  const currentStatus = message.avastha || 'sent';
+
+  const bubbleStyles = useMemo(
+    () => createBubbleStyles(isOutgoing, isHighlighted),
+    [isOutgoing, isHighlighted],
+  );
+
+  const containerStyle = useMemo(
+    () => [
+      bubbleStyles.container,
+      isOutgoing ? styles.outgoingContainer : styles.incomingContainer,
+    ],
+    [isOutgoing, bubbleStyles.container],
+  );
+
+  useEffect(() => {
+    if (!isSelectionMode || !isSelected) return;
+    if (!bubbleRef.current || !onMeasure) return;
+
+    // measureInWindow gives coordinates relative to the screen (needed for overlays)
+    const timer = setTimeout(() => {
+      bubbleRef.current?.measureInWindow?.((x: number, y: number, width: number, height: number) => {
+        onMeasure({ x, y, width, height });
+      });
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [isSelectionMode, isSelected, onMeasure]);
 
   return (
-    <View
-      style={[
-        styles.container,
-        isOutgoing ? styles.outgoingContainer : styles.incomingContainer,
-      ]}
-      onLayout={handleLayout}
-    >
+    <View style={containerStyle}>
 
 
       {/* Message Bubble */}
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onLongPress={onLongPress}
-        onPress={onPress}
+      <Pressable
+        ref={bubbleRef}
         style={[
-          styles.bubble,
-          isOutgoing ? styles.outgoingBubble : styles.incomingBubble,
+          bubbleStyles.bubble,
           isSelected && styles.selectedBubble,
           isSelectionMode && styles.selectionModeBubble,
         ]}
+        android_ripple={
+          isSelectionMode || isSelected
+            ? undefined
+            : { color: isOutgoing ? 'rgba(255,255,255,0.15)' : '#e0e0e0' }
+        }
+        onLongPress={onLongPress}
+        onPress={() => {
+          // If selection mode is active, pressing toggles selection (parent handles)
+          // If not in selection mode, pressing behaves as regular press (parent handles)
+          onPress();
+        }}
       >
-        {/* Sender Name (for incoming messages) */}
-
-        <View style={styles.senderRow}>
-          {!isOutgoing && showSenderInfo && (
-
-            <View style={styles.avatarContainer}>
-              {message.sender_photo ? (
-                <Image
-                  source={{ uri: message.sender_photo }}
-                  style={styles.avatar}
-                />
-              ) : (
-                <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                  <Text style={styles.avatarText}>
-                    {getSenderName().charAt(0).toUpperCase()}
-                  </Text>
+        {/* DELETED MESSAGE */}
+        {Number(message.nirastah) === 1 ? (
+          <View style={bubbleStyles.deletedContainer}>
+            <MaterialCommunityIcons
+              name="delete-outline"
+              size={16}
+              color={isOutgoing ? 'rgba(255,255,255,0.7)' : '#777'}
+              style={{ marginRight: 6 }}
+            />
+            <Text style={bubbleStyles.deletedText}>This message was deleted</Text>
+          </View>
+        ) : (
+          <>
+            {/* Sender Name (for incoming messages) */}
+            <View style={styles.senderRow}>
+              {!isOutgoing && showSenderInfo && (
+                <View style={styles.avatarContainer}>
+                  {message.sender_photo ? (
+                    <Image
+                      source={{ uri: message.sender_photo }}
+                      style={styles.avatar}
+                    />
+                  ) : (
+                    <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                      <Text style={styles.avatarText}>
+                        {senderName.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               )}
+              <View>
+                {!isOutgoing && showSenderInfo && (
+                  <Text style={styles.senderName}>{senderName}</Text>
+                )}
+              </View>
             </View>
-          )}
-          <View>
-            {!isOutgoing && showSenderInfo && (
-              <Text style={styles.senderName}>{getSenderName()}</Text>
+
+            {/* Reply Preview */}
+            {replyMeta && (
+              <View style={bubbleStyles.replyWrapper}>
+                <MessageReplyPreview
+                  title={
+                    replyMeta.lastUkti
+                      ? replyMeta.lastUkti
+                      : replyMeta.lastSenderId === currentUserId
+                        ? 'You'
+                        : 'Replied message'
+                  }
+                  message={replyMeta.lastContent}
+                  accentColor="#007AFF"
+                  backgroundColor={isOutgoing ? 'rgba(255,255,255,0.9)' : '#FFFFFF'}
+                />
+              </View>
             )}
-          </View>
-        </View>
 
-        {/* Message Content */}
-        {renderMessageContent()}
+            {/* Message Content */}
+            {messageContent}
+          </>
+        )}
 
-        {/* Timestamp + Status */}
-        <View style={styles.footer}>
-          <Text style={[styles.timestamp, isOutgoing && styles.outgoingTimestamp]}>
-            {/* {message.preritam_tithih} */}
+        {/* Footer always visible */}
+        <View style={bubbleStyles.footer}>
+          {Number(message.sthapitam_sandesham) === 1 && (
+            <MaterialCommunityIcons
+              name="pin-outline"
+              size={14}
+              color={isOutgoing ? 'rgba(255,255,255,0.8)' : '#999999'}
+              style={bubbleStyles.metaIcon}
+            />
+          )}
+
+          {Number(message.kimTaritaSandesha) === 1 && (
+            <MaterialCommunityIcons
+              name="star"
+              size={14}
+              color={isOutgoing ? 'rgba(255,255,255,0.8)' : '#999999'}
+              style={bubbleStyles.metaIcon}
+            />
+          )}
+
+          {message.sampaditam ? (
+            <Text style={bubbleStyles.editedText}>edited</Text>
+          ) : null}
+
+          <Text style={bubbleStyles.timestamp}>
+            {formatTimestamp(
+              new Date(message.preritam_tithih || message.createdAt || Date.now()).getTime(),
+            )}
           </Text>
 
-          {/* Status Indicator (for outgoing messages) */}
-          {isOutgoing && (
-            <Text style={styles.statusIcon}>
-              {message.avastha === 'sent' && '✓'}
-              {message.avastha === 'delivered' && '✓✓'}
-              {message.avastha === 'read' && '✓✓'}
-              {message.avastha === 'failed' && '⚠'}
-            </Text>
-          )}
+          {isOutgoing && <MessageStatusIcon status={currentStatus as any} />}
         </View>
-
-        {/* Reaction Summary */}
-        {message.reaction_summary && (
-          <View style={styles.reactionSummary}>
-            <Text style={styles.reactionText}>{message.reaction_summary}</Text>
-          </View>
-        )}
-
-        {/* Pin/Star Indicators */}
-        {(message.sthapitam_sandesham === 1 || message.kimTaritaSandesha === 1) && (
-          <View style={styles.indicators}>
-            {message.sthapitam_sandesham === 1 && (
-              <Text style={styles.indicator}>📌</Text>
-            )}
-            {message.kimTaritaSandesha === 1 && (
-              <Text style={styles.indicator}>⭐</Text>
-            )}
-          </View>
-        )}
-      </TouchableOpacity>
+      </Pressable>
 
       {/* Spacer for outgoing messages */}
       {isOutgoing && <View style={styles.avatarSpacer} />}
@@ -211,11 +344,6 @@ const GroupMessageBubble: React.FC<GroupMessageBubbleProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    marginVertical: 4,
-    paddingHorizontal: 8,
-  },
   outgoingContainer: {
     justifyContent: 'flex-end',
   },
@@ -244,21 +372,6 @@ const styles = StyleSheet.create({
   },
   avatarSpacer: {
     width: 40,
-  },
-  bubble: {
-    maxWidth: '75%',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    position: 'relative',
-  },
-  incomingBubble: {
-    backgroundColor: '#FFFFFF',
-    borderBottomLeftRadius: 4,
-  },
-  outgoingBubble: {
-    backgroundColor: '#007AFF',
-    borderBottomRightRadius: 4,
   },
   selectedBubble: {
     borderWidth: 2,
@@ -300,47 +413,6 @@ const styles = StyleSheet.create({
     fontSize: 48,
     color: '#FFF',
   },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    gap: 4,
-  },
-  timestamp: {
-    fontSize: 11,
-    color: '#666',
-  },
-  outgoingTimestamp: {
-    color: '#E0E0E0',
-  },
-  statusIcon: {
-    fontSize: 12,
-    color: '#E0E0E0',
-  },
-  reactionSummary: {
-    position: 'absolute',
-    bottom: -10,
-    right: 8,
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  reactionText: {
-    fontSize: 12,
-  },
-  indicators: {
-    position: 'absolute',
-    top: -8,
-    right: 8,
-    flexDirection: 'row',
-    gap: 4,
-  },
-  indicator: {
-    fontSize: 14,
-  },
   senderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -348,7 +420,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(GroupMessageBubble);
-
-
-
+export default React.memo(
+  GroupMessageBubble,
+  (prevProps, nextProps) =>
+    prevProps.message === nextProps.message &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.isSelectionMode === nextProps.isSelectionMode,
+);
