@@ -203,17 +203,7 @@ export const hasGroupChatPermission = async (samvada_chinha, uniqueId) => {
 // Main insert function
 export const insertGroupMessage = async (data) => {
   try {
-    const uniqueId = store.getState().auth.uniqueId;
-    if (!uniqueId) {
-      console.error('[insertGroupMessage] No uniqueId found in Redux store');
-      return;
-    }
-    const hasPermission = await hasGroupChatPermission(data.samvada_chinha, uniqueId);
     const layout = getRandomLayout();
-    if (!hasPermission) {
-      console.log("Don't have permission");
-      return;
-    }
 
     const db = await openDatabase();
     db.transaction((tx) => {

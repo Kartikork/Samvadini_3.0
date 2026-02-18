@@ -1,41 +1,12 @@
-/**
- * GroupChatManager - Singleton (Principal-Level Architecture)
- * 
- * RESPONSIBILITIES:
- * - Group chat lifecycle coordinator (restore → sync → realtime)
- * - Group membership management (add/remove members, roles)
- * - Broadcast-based messaging
- * - Group channel joining/leaving
- * - Group metadata caching
- * - Scalable read receipts (per-group tracking)
- * 
- * CRITICAL RULES:
- * - Local DB is source of truth for group messages
- * - Broadcast channel per group (group:groupId)
- * - Each member joins same group channel
- * - Group metadata stored separately from messages
- * - Sender info rendered per message (not just "me")
- * - Handle member list updates in real-time
- * 
- * DIFFERENCES FROM 1-TO-1:
- * - Multiple members (not just 2)
- * - Sender name + avatar shown on each message
- * - Group-level permissions (admin/member)
- * - Member add/remove events
- * - Per-group read receipts (optional: per-member)
- */
-
 import { SocketService } from '../SocketService';
 import { groupDB } from '../../storage/groupDB';
-import { 
-  fetchGroupMessages, 
+import {
+  fetchGroupMessages,
   insertGroupMessage,
   updateGroupMessage,
   hasGroupChatPermission,
 } from '../../storage/sqllite/chat/GroupMessageSchema';
-import { 
-  fetchChatBySamvadaChinha,
-} from '../../storage/sqllite/chat/ChatListSchema';
+import { fetchChatBySamvadaChinha } from '../../storage/sqllite/chat/ChatListSchema';
 import { store } from '../../state/store';
 import { chatSlice } from '../../state/chatSlice';
 import { syncAPI } from '../../utils/syncAPI';
@@ -99,7 +70,12 @@ export interface GroupChannel {
 }
 
 export interface GroupEvent {
-  type: 'member_added' | 'member_removed' | 'member_promoted' | 'group_updated' | 'group_left';
+  type:
+    | 'member_added'
+    | 'member_removed'
+    | 'member_promoted'
+    | 'group_updated'
+    | 'group_left';
   groupId: string;
   userId?: string;
   metadata?: any;
@@ -113,13 +89,13 @@ export interface GroupEvent {
 class GroupChatManagerClass {
   private static instance: GroupChatManagerClass;
   private isInitialized = false;
-  
+
   // Track joined group channels
   private joinedChannels: Map<string, GroupChannel> = new Map();
-  
+
   // Cache group metadata for quick access
   private groupMetadataCache: Map<string, GroupMetadata> = new Map();
-  
+
   // Track pending message sends (offline queue)
   private pendingMessages: Map<string, GroupMessage> = new Map();
 
@@ -158,7 +134,7 @@ class GroupChatManagerClass {
   /**
    * Initialize GroupChatManager
    * Three phases: Restore → Sync → Realtime
-   * 
+   *
    * @param isFirstSync - Whether this is first sync (after signup/login)
    */
   public async initialize(isFirstSync: boolean = false): Promise<void> {
@@ -169,18 +145,17 @@ class GroupChatManagerClass {
 
     const userId = this.currentUserId;
     if (!userId) {
-      console.error('[GroupChatManager] Cannot initialize: no current user ID in Redux store');
+      console.error(
+        '[GroupChatManager] Cannot initialize: no current user ID in Redux store',
+      );
       throw new Error('User not authenticated');
     }
 
-    console.log('[GroupChatManager] Initializing...', { userId, isFirstSync });
-
-    // Phase 1: Restore State (instant UI)
     await this.restoreState();
 
     // Phase 2: Sync Safety Net (background)
     this.syncGroupMessages(isFirstSync).catch(err =>
-      console.error('[GroupChatManager] Sync failed:', err)
+      console.error('[GroupChatManager] Sync failed:', err),
     );
 
     // Phase 3: Activate Realtime (when socket ready)
@@ -195,18 +170,18 @@ class GroupChatManagerClass {
    * Load group metadata and last active group messages from local DB
    */
   private async restoreState(): Promise<void> {
-    console.log('[GroupChatManager] Phase 1: Restoring group state from DB...');
-
     try {
       // Load user's groups from DB
       const groups = await groupDB.getUserGroups(this.currentUserId!);
-      
+
       // Cache group metadata
       groups.forEach(group => {
         this.groupMetadataCache.set(group.samvada_chinha, group);
       });
 
-      console.log(`[GroupChatManager] Phase 1: Restored ${groups.length} groups`);
+      console.log(
+        `[GroupChatManager] Phase 1: Restored ${groups.length} groups`,
+      );
     } catch (error) {
       console.error('[GroupChatManager] Phase 1 failed:', error);
       throw error;
@@ -218,15 +193,19 @@ class GroupChatManagerClass {
    * Fetch missed group messages from server
    */
   private async syncGroupMessages(isFirstSync: boolean = false): Promise<void> {
-    console.log('[GroupChatManager] Phase 2: Syncing group messages...', { isFirstSync });
+    console.log('[GroupChatManager] Phase 2: Syncing group messages...', {
+      isFirstSync,
+    });
 
     try {
       // Sync group messages via API
       const syncResult = await syncAPI.syncGroupMessages();
 
       if (syncResult.count > 0) {
-        console.log(`[GroupChatManager] Synced: ${syncResult.count} group messages`);
-        
+        console.log(
+          `[GroupChatManager] Synced: ${syncResult.count} group messages`,
+        );
+
         // Notify Redux to refresh
         store.dispatch(chatSlice.actions.refreshConversations());
       }
@@ -243,22 +222,21 @@ class GroupChatManagerClass {
    * Join all group channels and subscribe to events
    */
   private activateRealtime(): void {
-    console.log('[GroupChatManager] Phase 3: Activating realtime for groups...');
-
     // Wait for socket to be ready
     const checkSocket = setInterval(() => {
       if (SocketService.isConnected()) {
         clearInterval(checkSocket);
-        
+
         // Join all group channels
         this.joinUserGroups();
 
         // Subscribe to group events
         SocketService.on('new_message', this.handleNewGroupMessage.bind(this));
         SocketService.on('group_update', this.handleGroupUpdate.bind(this));
-        SocketService.on('message_updated', this.handleMessageUpdated.bind(this));
-
-        console.log('[GroupChatManager] Phase 3: Realtime activated for groups');
+        SocketService.on(
+          'message_updated',
+          this.handleMessageUpdated.bind(this),
+        );
       }
     }, 100);
 
@@ -272,7 +250,7 @@ class GroupChatManagerClass {
   private async joinUserGroups(): Promise<void> {
     try {
       const groups = await groupDB.getUserGroups(this.currentUserId!);
-      
+
       for (const group of groups) {
         await this.joinGroupChannel(group.samvada_chinha);
       }
@@ -302,7 +280,7 @@ class GroupChatManagerClass {
     // Note: Phoenix channels are joined via the main user channel
     // The backend routes group messages based on membership
     // So we just track locally that we're monitoring this group
-    
+
     this.joinedChannels.set(groupId, {
       groupId,
       isJoined: true,
@@ -322,7 +300,7 @@ class GroupChatManagerClass {
     }
 
     console.log(`[GroupChatManager] Leaving group channel: ${groupId}`);
-    
+
     this.joinedChannels.delete(groupId);
     this.groupMetadataCache.delete(groupId);
 
@@ -335,7 +313,7 @@ class GroupChatManagerClass {
 
   /**
    * Send a message to a group
-   * 
+   *
    * FLOW (matching 1-to-1 message flow):
    * 1. Validate input + auth + permissions
    * 2. Create message metadata (refrenceId, timestamps)
@@ -350,7 +328,7 @@ class GroupChatManagerClass {
     groupId: string,
     content: string,
     type: string = 'text',
-    metadata?: any
+    metadata?: any,
   ): Promise<void> {
     const trimmed = content.trim();
     if (!trimmed) {
@@ -359,7 +337,9 @@ class GroupChatManagerClass {
 
     // 1. Auth / validation
     if (!this.currentUserId) {
-      console.error('[GroupChatManager] Cannot send message: no current user ID');
+      console.error(
+        '[GroupChatManager] Cannot send message: no current user ID',
+      );
       throw new Error('User not authenticated');
     }
 
@@ -367,7 +347,7 @@ class GroupChatManagerClass {
       console.warn('[GroupChatManager] Cannot send message, no groupId');
       return;
     }
-    
+
     // Check permission first
     let permission;
     try {
@@ -375,34 +355,40 @@ class GroupChatManagerClass {
       console.log('[GroupChatManager] Permission check result:', {
         groupId,
         userId: this.currentUserId,
-        permission: permission ? {
-          status: permission.status,
-          bhumika: permission.bhumika,
-          sakriyamastiva: permission.sakriyamastiva,
-          onlyAdminsCanMessage: permission.onlyAdminsCanMessage,
-        } : null,
+        permission: permission
+          ? {
+              status: permission.status,
+              bhumika: permission.bhumika,
+              sakriyamastiva: permission.sakriyamastiva,
+              onlyAdminsCanMessage: permission.onlyAdminsCanMessage,
+            }
+          : null,
       });
     } catch (error) {
       console.error('[GroupChatManager] Error checking permission:', error);
       permission = null; // Will be handled below
     }
-    
+
     // If permission check failed or returned null, verify user is member
     if (!permission) {
-      console.log('[GroupChatManager] Permission check failed, verifying membership...');
-      
+      console.log(
+        '[GroupChatManager] Permission check failed, verifying membership...',
+      );
+
       // Check if user is a member using groupDB
       const isMember = await groupDB.isUserMember(groupId, this.currentUserId);
-      
+
       if (isMember) {
         // User is a member but permission check failed - might be DB sync issue
         // Allow sending but log warning
-        console.warn('[GroupChatManager] Permission check returned null but user is member, allowing send');
-        permission = { 
-          status: 'Accepted', 
-          bhumika: 'Member', 
-          sakriyamastiva: 1, 
-          onlyAdminsCanMessage: 0 
+        console.warn(
+          '[GroupChatManager] Permission check returned null but user is member, allowing send',
+        );
+        permission = {
+          status: 'Accepted',
+          bhumika: 'Member',
+          sakriyamastiva: 1,
+          onlyAdminsCanMessage: 0,
         };
       } else {
         // Last resort: check if group exists in user's chat list (they can see it)
@@ -410,33 +396,42 @@ class GroupChatManagerClass {
         if (groupMetadata) {
           // If group exists in their list, they should be able to send
           // This handles cases where DB sync is incomplete
-          console.warn('[GroupChatManager] Permission check failed but group exists in user list, allowing send (DB sync may be incomplete)');
-          permission = { 
-            status: 'Accepted', 
-            bhumika: 'Member', 
-            sakriyamastiva: 1, 
-            onlyAdminsCanMessage: 0 
+          console.warn(
+            '[GroupChatManager] Permission check failed but group exists in user list, allowing send (DB sync may be incomplete)',
+          );
+          permission = {
+            status: 'Accepted',
+            bhumika: 'Member',
+            sakriyamastiva: 1,
+            onlyAdminsCanMessage: 0,
           };
         } else {
-          console.error('[GroupChatManager] User is not a member of group and group not found:', { 
-            groupId, 
-            userId: this.currentUserId 
-          });
+          console.error(
+            '[GroupChatManager] User is not a member of group and group not found:',
+            {
+              groupId,
+              userId: this.currentUserId,
+            },
+          );
           throw new Error('You are not a member of this group');
         }
       }
     }
-    
+
     // Check if only admins can message
     if (permission.onlyAdminsCanMessage && permission.bhumika !== 'Admin') {
-      console.error('[GroupChatManager] Only admins can send messages in this group');
+      console.error(
+        '[GroupChatManager] Only admins can send messages in this group',
+      );
       throw new Error('Only admins can send messages in this group');
     }
 
     // 2. Create metadata - matching 1-to-1 message payload structure
     const now = new Date();
     const nowIso = now.toISOString();
-    const refrenceId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const refrenceId = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
 
     // Check if text is URL
     const urlPattern = /^(https?:\/\/|www\.)/i;
@@ -505,7 +500,10 @@ class GroupChatManagerClass {
         refrenceId,
       });
     } catch (error) {
-      console.error('[GroupChatManager] Failed to insert message into DB:', error);
+      console.error(
+        '[GroupChatManager] Failed to insert message into DB:',
+        error,
+      );
       // Even if DB insert fails, we can still try sending, but UI might not show it correctly
     }
 
@@ -514,28 +512,35 @@ class GroupChatManagerClass {
     // For now, we'll get the first member's key as a placeholder
     // TODO: Implement proper group encryption (encrypt for all members or use shared group key)
     const groupMembers = await groupDB.getGroupMembers(groupId);
-    const otherMembers = groupMembers.filter(m => m.ekatma_chinha !== this.currentUserId);
-    
+    const otherMembers = groupMembers.filter(
+      m => m.ekatma_chinha !== this.currentUserId,
+    );
+
     if (otherMembers.length === 0) {
-      console.warn('[GroupChatManager] No other members in group, cannot encrypt');
+      console.warn(
+        '[GroupChatManager] No other members in group, cannot encrypt',
+      );
       return;
     }
 
     // Get encryption key (for now, use first member's key - TODO: implement proper group encryption)
-    const { getOtherParticipantPublicKey } = await import('../../storage/sqllite/chat/Participants');
-    const firstMember = otherMembers[0];
-    const encryptionKey = await getOtherParticipantPublicKey(groupId, this.currentUserId!);
-    
-    if (!encryptionKey || !encryptionKey.publicKey) {
-      console.error('[GroupChatManager] No public key found for group encryption. Cannot send message without encryption.');
-      return;
-    }
+    // const { getOtherParticipantPublicKey } = await import('../../storage/sqllite/chat/Participants');
+    // const firstMember = otherMembers[0];
+    // const encryptionKey = await getOtherParticipantPublicKey(groupId, this.currentUserId!);
+
+    // if (!encryptionKey || !encryptionKey.publicKey) {
+    //   console.error('[GroupChatManager] No public key found for group encryption. Cannot send message without encryption.');
+    //   return;
+    // }
 
     // 5. Encrypt message (required - no plaintext fallback)
     let encryptedPayload;
     try {
       const { encryptMessage } = await import('../../helper/Encryption');
-      const encryptedBody = await encryptMessage(basePayload.vishayah, encryptionKey.publicKey);
+      const encryptedBody = await encryptMessage(
+        basePayload.vishayah,
+        otherMembers[0].publicKey,
+      );
       encryptedPayload = {
         ...basePayload,
         vishayah: encryptedBody,
@@ -543,7 +548,10 @@ class GroupChatManagerClass {
       };
       console.log('[GroupChatManager] Message encrypted successfully');
     } catch (error) {
-      console.error('[GroupChatManager] Encryption failed. Cannot send message without encryption:', error);
+      console.error(
+        '[GroupChatManager] Encryption failed. Cannot send message without encryption:',
+        error,
+      );
       return;
     }
 
@@ -557,14 +565,17 @@ class GroupChatManagerClass {
         ...encryptedPayload,
         ip_address: 'Unknown', // TODO: Get actual IP using NetworkInfo if needed
       };
-      
+
       await chatAPI.sendEncryptedMessage(encryptedPayloadWithIP);
       console.log('[GroupChatManager] Encrypted message sent to API:', {
         groupId,
         refrenceId,
       });
     } catch (error) {
-      console.error('[GroupChatManager] Error sending encrypted message to API:', error);
+      console.error(
+        '[GroupChatManager] Error sending encrypted message to API:',
+        error,
+      );
       // Continue even if API call fails - socket send already succeeded
     }
   }
@@ -581,7 +592,10 @@ class GroupChatManagerClass {
           refrenceId: payload.refrenceId,
         });
       } catch (error) {
-        console.error('[GroupChatManager] Socket send failed, enqueuing:', error);
+        console.error(
+          '[GroupChatManager] Socket send failed, enqueuing:',
+          error,
+        );
         this.enqueue(payload);
       }
     } else {
@@ -595,7 +609,10 @@ class GroupChatManagerClass {
    */
   private enqueue(payload: any): void {
     this.pendingMessages.set(payload.refrenceId, payload);
-    console.log('[GroupChatManager] Message enqueued for retry:', payload.refrenceId);
+    console.log(
+      '[GroupChatManager] Message enqueued for retry:',
+      payload.refrenceId,
+    );
   }
 
   /**
@@ -605,7 +622,10 @@ class GroupChatManagerClass {
     if (!SocketService.isConnected()) return;
     if (this.pendingMessages.size === 0) return;
 
-    console.log('[GroupChatManager] Flushing pending queue:', this.pendingMessages.size);
+    console.log(
+      '[GroupChatManager] Flushing pending queue:',
+      this.pendingMessages.size,
+    );
 
     const stillPending: Map<string, any> = new Map();
 
@@ -616,7 +636,7 @@ class GroupChatManagerClass {
           groupId: payload?.samvada_chinha,
           refrenceId,
         });
-        
+
         // Update status to sent
         await updateGroupMessage(refrenceId, { avastha: 'sent' });
       } catch (error) {
@@ -629,12 +649,18 @@ class GroupChatManagerClass {
         // Keep in queue for next retry (limit retries to prevent infinite loop)
         const attempts = (payload as any).attempts || 0;
         if (attempts < 3) {
-          stillPending.set(refrenceId, { ...payload, attempts: attempts + 1 } as any);
+          stillPending.set(refrenceId, {
+            ...payload,
+            attempts: attempts + 1,
+          } as any);
         } else {
-          console.error('[GroupChatManager] Dropping message after max retries:', {
-            groupId: payload?.samvada_chinha,
-            refrenceId,
-          });
+          console.error(
+            '[GroupChatManager] Dropping message after max retries:',
+            {
+              groupId: payload?.samvada_chinha,
+              refrenceId,
+            },
+          );
           // Mark as failed in DB
           await updateGroupMessage(refrenceId, { avastha: 'failed' });
         }
@@ -655,7 +681,7 @@ class GroupChatManagerClass {
   private async handleNewGroupMessage(payload: any): Promise<void> {
     const groupId = payload?.samvada_chinha;
     const senderId = payload?.pathakah_chinha;
-    
+
     // Only handle group messages
     if (!this.joinedChannels.has(groupId)) {
       return;
@@ -699,14 +725,22 @@ class GroupChatManagerClass {
       await this.updateGroupLastMessage(groupId, message);
 
       // Notify Redux
-      store.dispatch(chatSlice.actions.addMessage({
-        conversationId: groupId,
-        message: message as any,
-      }));
+      store.dispatch(
+        chatSlice.actions.addMessage({
+          conversationId: groupId,
+          message: message as any,
+        }),
+      );
 
-      console.log('[GroupChatManager] Group message inserted:', message.refrenceId);
+      console.log(
+        '[GroupChatManager] Group message inserted:',
+        message.refrenceId,
+      );
     } catch (error) {
-      console.error('[GroupChatManager] Failed to handle new group message:', error);
+      console.error(
+        '[GroupChatManager] Failed to handle new group message:',
+        error,
+      );
     }
   }
 
@@ -723,17 +757,26 @@ class GroupChatManagerClass {
       return;
     }
 
-    console.log('[GroupChatManager] Message updated in group:', { groupId, type, refrenceIds });
+    console.log('[GroupChatManager] Message updated in group:', {
+      groupId,
+      type,
+      refrenceIds,
+    });
 
     try {
       // Update in DB (already done by SocketService global handler)
       // Just notify Redux
-      store.dispatch(chatSlice.actions.updateMessage({
-        messageId: refrenceIds[0], // Assumes single message for now
-        updates,
-      }));
+      store.dispatch(
+        chatSlice.actions.updateMessage({
+          messageId: refrenceIds[0], // Assumes single message for now
+          updates,
+        }),
+      );
     } catch (error) {
-      console.error('[GroupChatManager] Failed to handle message update:', error);
+      console.error(
+        '[GroupChatManager] Failed to handle message update:',
+        error,
+      );
     }
   }
 
@@ -748,36 +791,43 @@ class GroupChatManagerClass {
       return;
     }
 
-    console.log('[GroupChatManager] Group update:', { groupId, updateType, payload });
+    console.log('[GroupChatManager] Group update:', {
+      groupId,
+      updateType,
+      payload,
+    });
 
     try {
       switch (updateType) {
         case 'name_changed':
           await this.handleGroupNameChanged(groupId, payload.samvada_nama);
           break;
-        
+
         case 'avatar_changed':
           await this.handleGroupAvatarChanged(groupId, payload.samuha_chitram);
           break;
-        
+
         case 'member_added':
           await this.handleMemberAdded(groupId, payload.ekatma_chinha);
           break;
-        
+
         case 'member_removed':
           await this.handleMemberRemoved(groupId, payload.ekatma_chinha);
           break;
-        
+
         case 'member_promoted':
           await this.handleMemberPromoted(groupId, payload.ekatma_chinha);
           break;
-        
+
         case 'settings_changed':
           await this.handleGroupSettingsChanged(groupId, payload.settings);
           break;
-        
+
         default:
-          console.log('[GroupChatManager] Unknown group update type:', updateType);
+          console.log(
+            '[GroupChatManager] Unknown group update type:',
+            updateType,
+          );
       }
 
       // Refresh conversations in Redux
@@ -798,9 +848,12 @@ class GroupChatManagerClass {
     name: string,
     memberIds: string[],
     avatar?: string,
-    description?: string
+    description?: string,
   ): Promise<string> {
-    console.log('[GroupChatManager] Creating group:', { name, memberCount: memberIds.length });
+    console.log('[GroupChatManager] Creating group:', {
+      name,
+      memberCount: memberIds.length,
+    });
 
     try {
       // Call backend API to create group
@@ -831,12 +884,21 @@ class GroupChatManagerClass {
   /**
    * Add member to group
    */
-  public async addMemberToGroup(groupId: string, userId: string): Promise<void> {
-    console.log('[GroupChatManager] Adding member to group:', { groupId, userId });
+  public async addMemberToGroup(
+    groupId: string,
+    userId: string,
+  ): Promise<void> {
+    console.log('[GroupChatManager] Adding member to group:', {
+      groupId,
+      userId,
+    });
 
     try {
       // Check admin permission
-      const permission = await hasGroupChatPermission(groupId, this.currentUserId!);
+      const permission = await hasGroupChatPermission(
+        groupId,
+        this.currentUserId!,
+      );
       if (permission?.bhumika !== 'Admin') {
         throw new Error('Only admins can add members');
       }
@@ -862,12 +924,21 @@ class GroupChatManagerClass {
   /**
    * Remove member from group
    */
-  public async removeMemberFromGroup(groupId: string, userId: string): Promise<void> {
-    console.log('[GroupChatManager] Removing member from group:', { groupId, userId });
+  public async removeMemberFromGroup(
+    groupId: string,
+    userId: string,
+  ): Promise<void> {
+    console.log('[GroupChatManager] Removing member from group:', {
+      groupId,
+      userId,
+    });
 
     try {
       // Check admin permission
-      const permission = await hasGroupChatPermission(groupId, this.currentUserId!);
+      const permission = await hasGroupChatPermission(
+        groupId,
+        this.currentUserId!,
+      );
       if (permission?.bhumika !== 'Admin') {
         throw new Error('Only admins can remove members');
       }
@@ -893,12 +964,21 @@ class GroupChatManagerClass {
   /**
    * Promote member to admin
    */
-  public async promoteMemberToAdmin(groupId: string, userId: string): Promise<void> {
-    console.log('[GroupChatManager] Promoting member to admin:', { groupId, userId });
+  public async promoteMemberToAdmin(
+    groupId: string,
+    userId: string,
+  ): Promise<void> {
+    console.log('[GroupChatManager] Promoting member to admin:', {
+      groupId,
+      userId,
+    });
 
     try {
       // Check admin permission
-      const permission = await hasGroupChatPermission(groupId, this.currentUserId!);
+      const permission = await hasGroupChatPermission(
+        groupId,
+        this.currentUserId!,
+      );
       if (permission?.bhumika !== 'Admin') {
         throw new Error('Only admins can promote members');
       }
@@ -955,7 +1035,10 @@ class GroupChatManagerClass {
 
     try {
       // Check admin permission
-      const permission = await hasGroupChatPermission(groupId, this.currentUserId!);
+      const permission = await hasGroupChatPermission(
+        groupId,
+        this.currentUserId!,
+      );
       if (permission?.bhumika !== 'Admin') {
         throw new Error('Only admins can update group name');
       }
@@ -988,12 +1071,18 @@ class GroupChatManagerClass {
   /**
    * Update group avatar
    */
-  public async updateGroupAvatar(groupId: string, avatar: string): Promise<void> {
+  public async updateGroupAvatar(
+    groupId: string,
+    avatar: string,
+  ): Promise<void> {
     console.log('[GroupChatManager] Updating group avatar:', { groupId });
 
     try {
       // Check admin permission
-      const permission = await hasGroupChatPermission(groupId, this.currentUserId!);
+      const permission = await hasGroupChatPermission(
+        groupId,
+        this.currentUserId!,
+      );
       if (permission?.bhumika !== 'Admin') {
         throw new Error('Only admins can update group avatar');
       }
@@ -1027,9 +1116,12 @@ class GroupChatManagerClass {
   // GROUP EVENT HANDLERS
   // ────────────────────────────────────────────────────────────
 
-  private async handleGroupNameChanged(groupId: string, newName: string): Promise<void> {
+  private async handleGroupNameChanged(
+    groupId: string,
+    newName: string,
+  ): Promise<void> {
     await groupDB.updateGroupName(groupId, newName);
-    
+
     const cached = this.groupMetadataCache.get(groupId);
     if (cached) {
       cached.samvada_nama = newName;
@@ -1037,9 +1129,12 @@ class GroupChatManagerClass {
     }
   }
 
-  private async handleGroupAvatarChanged(groupId: string, newAvatar: string): Promise<void> {
+  private async handleGroupAvatarChanged(
+    groupId: string,
+    newAvatar: string,
+  ): Promise<void> {
     await groupDB.updateGroupAvatar(groupId, newAvatar);
-    
+
     const cached = this.groupMetadataCache.get(groupId);
     if (cached) {
       cached.samuha_chitram = newAvatar;
@@ -1047,43 +1142,67 @@ class GroupChatManagerClass {
     }
   }
 
-  private async handleMemberAdded(groupId: string, userId: string): Promise<void> {
-    console.log('[GroupChatManager] Member added to group:', { groupId, userId });
-    
+  private async handleMemberAdded(
+    groupId: string,
+    userId: string,
+  ): Promise<void> {
+    console.log('[GroupChatManager] Member added to group:', {
+      groupId,
+      userId,
+    });
+
     // Refresh group metadata from DB
     await groupDB.refreshGroupMembers(groupId);
-    
+
     // Clear cache to force reload
     this.groupMetadataCache.delete(groupId);
   }
 
-  private async handleMemberRemoved(groupId: string, userId: string): Promise<void> {
-    console.log('[GroupChatManager] Member removed from group:', { groupId, userId });
-    
+  private async handleMemberRemoved(
+    groupId: string,
+    userId: string,
+  ): Promise<void> {
+    console.log('[GroupChatManager] Member removed from group:', {
+      groupId,
+      userId,
+    });
+
     // If it's the current user, leave the channel
     if (userId === this.currentUserId) {
       await this.leaveGroupChannel(groupId);
     }
-    
+
     // Refresh group metadata from DB
     await groupDB.refreshGroupMembers(groupId);
-    
+
     // Clear cache to force reload
     this.groupMetadataCache.delete(groupId);
   }
 
-  private async handleMemberPromoted(groupId: string, userId: string): Promise<void> {
-    console.log('[GroupChatManager] Member promoted in group:', { groupId, userId });
-    
+  private async handleMemberPromoted(
+    groupId: string,
+    userId: string,
+  ): Promise<void> {
+    console.log('[GroupChatManager] Member promoted in group:', {
+      groupId,
+      userId,
+    });
+
     // Refresh group metadata from DB
     await groupDB.refreshGroupMembers(groupId);
   }
 
-  private async handleGroupSettingsChanged(groupId: string, settings: any): Promise<void> {
-    console.log('[GroupChatManager] Group settings changed:', { groupId, settings });
-    
+  private async handleGroupSettingsChanged(
+    groupId: string,
+    settings: any,
+  ): Promise<void> {
+    console.log('[GroupChatManager] Group settings changed:', {
+      groupId,
+      settings,
+    });
+
     await groupDB.updateGroupSettings(groupId, settings);
-    
+
     // Clear cache to force reload
     this.groupMetadataCache.delete(groupId);
   }
@@ -1099,7 +1218,9 @@ class GroupChatManagerClass {
     console.log('[GroupChatManager] Opening group conversation:', groupId);
 
     // Set active conversation in Redux
-    store.dispatch(chatSlice.actions.setActiveConversation({ conversationId: groupId }));
+    store.dispatch(
+      chatSlice.actions.setActiveConversation({ conversationId: groupId }),
+    );
 
     // Load messages from DB (this will be done by GroupChatScreen)
     // Just ensure we've joined the channel
@@ -1111,8 +1232,16 @@ class GroupChatManagerClass {
   /**
    * Load group messages from DB
    */
-  public async loadGroupMessages(groupId: string, limit: number = 50, offset: number = 0): Promise<GroupMessage[]> {
-    console.log('[GroupChatManager] Loading group messages:', { groupId, limit, offset });
+  public async loadGroupMessages(
+    groupId: string,
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<GroupMessage[]> {
+    console.log('[GroupChatManager] Loading group messages:', {
+      groupId,
+      limit,
+      offset,
+    });
 
     try {
       const messages = await fetchGroupMessages(groupId, limit, offset);
@@ -1126,7 +1255,10 @@ class GroupChatManagerClass {
   /**
    * Get group metadata
    */
-  public async getGroupMetadata(groupId: string, forceRefresh: boolean = false): Promise<GroupMetadata | null> {
+  public async getGroupMetadata(
+    groupId: string,
+    forceRefresh: boolean = false,
+  ): Promise<GroupMetadata | null> {
     // Check cache first
     if (!forceRefresh && this.groupMetadataCache.has(groupId)) {
       return this.groupMetadataCache.get(groupId)!;
@@ -1151,7 +1283,10 @@ class GroupChatManagerClass {
   /**
    * Check if message exists in DB
    */
-  private async messageExists(groupId: string, refrenceId: string): Promise<boolean> {
+  private async messageExists(
+    groupId: string,
+    refrenceId: string,
+  ): Promise<boolean> {
     try {
       const messages = await fetchGroupMessages(groupId, 1, 0);
       return messages.some((msg: any) => msg.refrenceId === refrenceId);
@@ -1163,13 +1298,19 @@ class GroupChatManagerClass {
   /**
    * Update group last message
    */
-  private async updateGroupLastMessage(groupId: string, message: GroupMessage): Promise<void> {
+  private async updateGroupLastMessage(
+    groupId: string,
+    message: GroupMessage,
+  ): Promise<void> {
     try {
       // Update group last message via groupDB
       // Note: This is handled automatically by the chat list sync
       // No need to manually update here
     } catch (error) {
-      console.error('[GroupChatManager] Failed to update group last message:', error);
+      console.error(
+        '[GroupChatManager] Failed to update group last message:',
+        error,
+      );
     }
   }
 
@@ -1181,7 +1322,9 @@ class GroupChatManagerClass {
       return;
     }
 
-    console.log(`[GroupChatManager] Retrying ${this.pendingMessages.size} pending messages...`);
+    console.log(
+      `[GroupChatManager] Retrying ${this.pendingMessages.size} pending messages...`,
+    );
 
     for (const [refrenceId, message] of this.pendingMessages.entries()) {
       try {
@@ -1212,7 +1355,7 @@ class GroupChatManagerClass {
    */
   public cleanup(): void {
     console.log('[GroupChatManager] Cleaning up...');
-    
+
     // Leave all group channels
     for (const groupId of this.joinedChannels.keys()) {
       this.leaveGroupChannel(groupId);
@@ -1221,10 +1364,9 @@ class GroupChatManagerClass {
     this.joinedChannels.clear();
     this.groupMetadataCache.clear();
     this.pendingMessages.clear();
-    
+
     this.isInitialized = false;
   }
 }
 
 export const GroupChatManager = GroupChatManagerClass.getInstance();
-
