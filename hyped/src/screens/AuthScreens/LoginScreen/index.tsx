@@ -1,20 +1,3 @@
-/**
- * LoginScreen
- * 
- * PERFORMANCE OPTIMIZATIONS:
- * 1. Lazy loading: CountryPicker modal rendered only when visible
- * 2. Memoization: All child components are memoized
- * 3. Stable callbacks: useCallback for all handlers
- * 4. Optimized state: Minimal state updates, refs for non-render data
- * 5. Code splitting: Heavy components loaded separately
- * 6. Render optimization: Conditional rendering with early returns
- * 7. Fixed layouts: Prevents layout thrashing
- * 8. Keyboard handling: Optimized KeyboardAvoidingView
- * 
- * FLOW:
- * Phone/Email Input → Send OTP → Verify OTP → Navigate
- */
-
 import React, {
   useState,
   useCallback,
