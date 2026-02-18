@@ -10,6 +10,8 @@ import { fetchChatBySamvadaChinha } from '../../storage/sqllite/chat/ChatListSch
 import { store } from '../../state/store';
 import { chatSlice } from '../../state/chatSlice';
 import { syncAPI } from '../../utils/syncAPI';
+import axios from 'axios';
+import { env } from '../../config';
 
 // ────────────────────────────────────────────────────────────
 // TYPES
@@ -565,8 +567,11 @@ class GroupChatManagerClass {
         ...encryptedPayload,
         ip_address: 'Unknown', // TODO: Get actual IP using NetworkInfo if needed
       };
-
-      await chatAPI.sendEncryptedMessage(encryptedPayloadWithIP);
+      await axios.post(
+        `${env.API_BASE_URL}/chat/send-group-message`,
+        encryptedPayloadWithIP,
+      );
+      // await chatAPI.sendEncryptedMessage(encryptedPayloadWithIP);
       console.log('[GroupChatManager] Encrypted message sent to API:', {
         groupId,
         refrenceId,
