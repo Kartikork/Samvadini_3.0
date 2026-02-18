@@ -117,7 +117,7 @@ const LanguageGamesScreen = ({ navigation }) => {
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/bowling_icon.jpg'), image: require('../../screens/LanguageGameScreen/GAMER/icons/bowling_icon.jpg'), title: 'Desi Bowling', route: 'BowlingGame' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/drum_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/drum_icon.png'), title: 'DrumGame', route: 'DrumGame' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/pianologo.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/pianologo.png'), title: 'Piano Game', route: 'PianoGame' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/talkingtom_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/talkingtom_icon.png'), title: 'Talking Tom', route: 'talkingtom' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/talkingtom_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/talkingtom_icon.png'), title: 'Talking Tom', route: 'TalkingTom' },
           // { icon: require('./Assets/hill_climb_icon.png'), image: require('./Assets/hill_climb_icon.png'), title: 'Hill Climb', route: 'HillClimbGame' },
         ]
       },

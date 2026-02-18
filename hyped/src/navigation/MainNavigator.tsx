@@ -57,6 +57,7 @@ const MiniGame2 = lazy(() => import('../screens/LanguageGameScreen/GAMER/Astrona
 const MiniGame3 = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGame3.js'));
 const MiniGame4 = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGame4.js'));
 const GameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/gamescreen.js'));
+const TalkingTom = lazy(() => import('../screens/LanguageGameScreen/GAMER/TalkingTom/talkingtom.js'));
 
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
@@ -214,6 +215,7 @@ export type RootStackParamList = {
   MiniGame3: undefined;
   MiniGame4: undefined;
   GameScreen: undefined;
+  TalkingTom: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -573,6 +575,11 @@ export default function MainNavigator() {
           name="GameScreen"
           component={GameScreen}
           options={{ animation: 'slide_from_right', headerShown: true }}
+        />
+        <Stack.Screen
+          name="TalkingTom"
+          component={TalkingTom}
+          options={{ animation: 'slide_from_right', headerShown: false }}
         />
 
         {/* TODO: Add these screens
