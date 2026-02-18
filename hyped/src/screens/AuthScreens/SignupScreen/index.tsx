@@ -118,14 +118,11 @@ export default function SignupScreen() {
   const lang = useAppSelector((state) => state.language.lang);
   const isMountedRef = useRef(true);
   const scrollRef = useRef<ScrollView>(null);
-
-  const [keyboardShown, setKeyboardShown] = useState(false);
   const [username, setUsername] = useState('');
   const [photo, setPhoto] = useState('');
   const [referredBy, setReferredBy] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeField, setActiveField] = useState(true);
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedGender, setSelectedGender] = useState<{ label: string; value: string } | null>(null);
@@ -136,6 +133,7 @@ export default function SignupScreen() {
   const screenHeight = Dimensions.get('window').height;
   const dynamicMarginTop = screenHeight * 0.1;
   const t = useMemo(() => getAppTranslations(lang), [lang]);
+  const contentStyle = useMemo(() => [styles.content, { marginTop: dynamicMarginTop }], [dynamicMarginTop]);
 
   const GENDER_OPTIONS = useMemo(
     () => [
@@ -328,6 +326,8 @@ export default function SignupScreen() {
     t,
     dispatch,
     navigation,
+    uniqueId,
+    token,
   ]);
 
   const handlePhotoUpload = useCallback(() => {
@@ -405,7 +405,6 @@ export default function SignupScreen() {
         } as any);
 
         const uploadUrl = `${env.API_BASE_URL.replace(/\/$/, '')}/chat/upload-media`;
-console.log(uploadUrl, "uploadUrl");
         const response = await axios.post(uploadUrl, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
@@ -418,11 +417,8 @@ console.log(uploadUrl, "uploadUrl");
             } catch (_) {}
           },
         });
-        console.log(JSON.stringify(response), "response222222222222222222222222222");
-
         const serverUrl =
           response?.data?.fileUrl || response?.data?.data?.fileUrl || response?.data?.data || null;
-console.log(JSON.stringify(serverUrl), "serverUrl33333333333333333333333");
         if (!serverUrl) {
           throw new Error('Invalid server response');
         }
@@ -447,7 +443,6 @@ console.log(JSON.stringify(serverUrl), "serverUrl33333333333333333333333");
   const onOpenDatePicker = useCallback(() => setShowDatePicker(true), []);
   const toggleGenderDropdown = useCallback(() => {
     Keyboard.dismiss();
-    setActiveField(false);
     setTimeout(() => setShowGenderDropdown((prev) => !prev), 80);
   }, []);
 
@@ -468,11 +463,10 @@ console.log(JSON.stringify(serverUrl), "serverUrl33333333333333333333333");
             >
               <TouchableWithoutFeedback
                 onPress={() => {
-                  setActiveField(false);
                   Keyboard.dismiss();
                 }}
               >
-                <View style={[styles.content, { marginTop: dynamicMarginTop }]}>
+                <View style={contentStyle}>
                   <Image
                     source={hypedLogo}
                     style={styles.logo}
@@ -698,9 +692,7 @@ console.log(JSON.stringify(serverUrl), "serverUrl33333333333333333333333");
           theme="light"
         />
       </KeyboardAvoidingView>
-      <View style={{ height: keyboardShown ? 0 : undefined, overflow: 'hidden' }}>
-        <Footer />
-      </View>
+      <Footer />
     </>
   );
 }
