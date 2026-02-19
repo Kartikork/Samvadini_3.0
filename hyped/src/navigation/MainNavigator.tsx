@@ -54,6 +54,7 @@ const LudoColorSelectionScreen = lazy(() => import('../screens/LanguageGameScree
 const ludoGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/utils/Index'));
 const Basketball = lazy(() => import('../screens/LanguageGameScreen/GAMER/Basketball/main/BasketBall'));
 const PianoGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/piano/PianoGame'));
+const MathTugOfWar = lazy(() => import('../screens/LanguageGameScreen/GAMER/MathTugOfWar'));
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
 
@@ -189,6 +190,7 @@ export type RootStackParamList = {
   SliceGame: undefined;
   Basketball: undefined;
   PianoGame: undefined;
+  MathTugOfWar: undefined;
   LudoWelcomeScreen: undefined;
   LudoColorSelectionScreen: undefined;
   ludoGame: { gameMode: string; playerColors: string[] };
@@ -533,6 +535,11 @@ export default function MainNavigator() {
         <Stack.Screen
           name="PianoGame"
           component={PianoGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="MathTugOfWar"
+          component={MathTugOfWar}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
         <Stack.Screen
