@@ -145,44 +145,44 @@ const MiniGame4 = ({ route }) => {
     }
   };
 
-  // useEffect(() => {
-  //   Sound.setCategory('Playback');
-  //   const sound = new Sound(require('../../Assets/background_music_alien.mp3'), (error) => {
-  //     if (error) {
-  //       console.log('Error loading sound:', error);
-  //       return;
-  //     }
-  //     soundRef.current = sound;
-  //     sound.setVolume(isMuted ? 0 : 0.5);
-  //     sound.setNumberOfLoops(-1);
-  //     if (appState.current === 'active' && !isMuted) {
-  //       sound.play((success) => {
-  //         if (!success) console.log('Playback failed');
-  //       });
-  //     }
-  //   });
+  useEffect(() => {
+    // Sound.setCategory('Playback');
+    // const sound = new Sound(require('../../Assets/background_music_alien.mp3'), (error) => {
+    //   if (error) {
+    //     console.log('Error loading sound:', error);
+    //     return;
+    //   }
+    //   soundRef.current = sound;
+    //   sound.setVolume(isMuted ? 0 : 0.5);
+    //   sound.setNumberOfLoops(-1);
+    //   if (appState.current === 'active' && !isMuted) {
+    //     sound.play((success) => {
+    //       if (!success) console.log('Playback failed');
+    //     });
+    //   }
+    // });
 
-  //   initializeAliens();
-  //   startGameLoop();
+    initializeAliens();
+    startGameLoop();
 
-  //   const listenerId = playerPosition.addListener(({ value }) => {
-  //     playerLocationRef.current = value;
-  //   });
+    const listenerId = playerPosition.addListener(({ value }) => {
+      playerLocationRef.current = value;
+    });
 
-  //   const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
 
-  //   return () => {
-  //     if (soundRef.current) {
-  //       soundRef.current.stop();
-  //       soundRef.current.release();
-  //     }
-  //     playerPosition.removeListener(listenerId);
-  //     if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
-  //     if (reloadTimer.current) clearTimeout(reloadTimer.current);
-  //     if (comboTimer.current) clearTimeout(comboTimer.current);
-  //     subscription.remove();
-  //   };
-  // }, []);
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.stop();
+        soundRef.current.release();
+      }
+      playerPosition.removeListener(listenerId);
+      if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
+      if (reloadTimer.current) clearTimeout(reloadTimer.current);
+      if (comboTimer.current) clearTimeout(comboTimer.current);
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (gameOver && gameLoopRef.current) {
