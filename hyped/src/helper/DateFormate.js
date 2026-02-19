@@ -95,3 +95,32 @@ export const generateUID = () => {
 
     return `${timestamp}${randomValue}${counter}`;
 };
+
+export const formatDatewithTime = (dateString) => {
+    const inputDate = dayjs(dateString);
+    const now = dayjs();
+
+    const diffInDays = now.diff(inputDate, 'day');
+    const diffInWeeks = now.diff(inputDate, 'week');
+
+    // Same day - show only time
+    if (diffInDays === 0) {
+        return inputDate.format('h:mm A');
+    }
+    // Yesterday - show "Yesterday" + time
+    else if (diffInDays === 1) {
+        return `Yesterday ${inputDate.format('h:mm A')}`;
+    }
+    // Same week (2-6 days ago) - show day name + time
+    else if (diffInWeeks === 0 && diffInDays < 7) {
+        return `${inputDate.format('dddd')} ${inputDate.format('h:mm A')}`;
+    }
+    // Last week (7-13 days ago) - show day name + time
+    else if (diffInWeeks === 1 && diffInDays < 14) {
+        return `${inputDate.format('h:mm A')}`;
+    }
+    // Older than 2 weeks - show Indian date format (DD/MM/YYYY) + time
+    else {
+        return `${inputDate.format('DD/MM/YYYY')} ${inputDate.format('h:mm A')}`;
+    }
+};

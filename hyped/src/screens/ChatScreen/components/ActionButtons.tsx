@@ -15,7 +15,6 @@ import {
   errorCodes,
   isErrorWithCode,
 } from '@react-native-documents/picker';
-import Geolocation from 'react-native-geolocation-service';
 import { useMediaPermission } from '../../../hooks';
 import { useAppSelector } from '../../../state/hooks';
 import { getAppTranslations } from '../../../translations';
@@ -23,19 +22,23 @@ import { showPermissionDeniedWithSettings } from '../../../utils/permissions';
 import { useMediaPicker } from '../../../hooks/useMediaPicker';
 
 interface ActionButtonsProps {
+  chatId: string;
+  isGroup?: boolean;
   onClose: () => void;
 }
 
-const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
+const ActionButtons: React.FC<ActionButtonsProps> = ({
+  chatId,
+  isGroup,
+  onClose,
+}) => {
   const navigation = useNavigation<any>();
   const lang = useAppSelector(state => state.language.lang);
   const t = getAppTranslations(lang);
-  const { ensureDocumentAccess } = useMediaPermission();
+  const { ensureDocumentAccess, ensureLocationAccess } = useMediaPermission();
   const { openCameraPicker, openGalleryPicker } = useMediaPicker();
 
   const handleSimpleAction = (label: string) => {
-    // Placeholder for future media/location/contact handling
-    // Keeps current integration focused on opening the section
     console.log(`[ActionButtons] ${label} pressed`);
     onClose();
   };
@@ -51,15 +54,25 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
       onClose();
     }
   };
-  const handleLocation = () => {
-    Geolocation.getCurrentPosition(
-      position => {
-        console.log('Location:', position.coords);
-        onClose();
-      },
-      error => console.warn(error),
-      { enableHighAccuracy: true, timeout: 15000 },
-    );
+
+  const handleLocation = async () => {
+    try {
+      const granted = await ensureLocationAccess();
+      if (!granted) {
+        showPermissionDeniedWithSettings(
+          t.PermissionDenied,
+          t.LocationPermissionRequired,
+          t.Settings,
+        );
+        return;
+      }
+
+      // @ts-ignore - LocationShare is defined in RootStackParamList
+      navigation.navigate('LocationShare', { chatId, isGroup });
+      onClose();
+    } catch (error) {
+      console.warn('[ActionButtons] Location permission/navigation error:', error);
+    }
   };
 
   const handleCamera = () => {
@@ -108,7 +121,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ onClose }) => {
     <View style={styles.actionButtonsContainer}>
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={() => handleSimpleAction('Location')}
+        onPress={handleLocation}
       >
         <View style={styles.actionButtonone}>
           <Ionicons name="location-outline" size={24} color="#ffffff" />

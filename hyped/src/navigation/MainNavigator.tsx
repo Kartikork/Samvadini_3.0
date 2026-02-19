@@ -23,6 +23,7 @@ import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
+import GroupChatScreen from '../screens/GroupChatScreen';
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
 import NewContactFormScreen from '../screens/NewContactFormScreen';
@@ -55,8 +56,10 @@ const ludoGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame
 const Basketball = lazy(() => import('../screens/LanguageGameScreen/GAMER/Basketball/main/BasketBall'));
 const PianoGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/piano/PianoGame'));
 const MathTugOfWar = lazy(() => import('../screens/LanguageGameScreen/GAMER/MathTugOfWar'));
+const ChatProfile = lazy(() => import('../screens/Profile/ChatProfile.js'));
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
+import LocationShareScreen from '../screens/ChatScreen/components/LocationShareScreen';
 
 // Loader Component
 const ScreenLoader = () => {
@@ -87,8 +90,6 @@ const LazyScreen = (Component: React.LazyExoticComponent<any>) => {
 const CallHistoryScreen = LazyScreen(
   lazy(() => import('../screens/CallHistoryScreen')),
 );
-
-const StatusScreen = LazyScreen(lazy(() => import('../screens/StatusScreen')));
 
 const JobScreen = LazyScreen(
   lazy(() => import('../screens/CategoryScreen/JobScreen')),
@@ -149,6 +150,18 @@ const UpdateReminder = LazyScreen(
 const SharePlannerCount = LazyScreen(
   lazy(() => import('../screens/DailyPlanner/SharePlannerCount')),
 );
+const StatusScreen = LazyScreen(
+  lazy(() => import('../screens/StatusScreen/StatusScreen.js')),
+);
+const ViewStatus = LazyScreen(
+  lazy(() => import('../screens/StatusScreen/ViewStatus.js')),
+);
+const ViewMyStatus = LazyScreen(
+  lazy(() => import('../screens/StatusScreen/ViewMyStatus.js')),
+);
+const StatusEditor = LazyScreen(
+  lazy(() => import('../screens/StatusScreen/StatusEditor.js')),
+);
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -160,6 +173,9 @@ export type RootStackParamList = {
   ChatList: undefined;
   CallHistory: undefined;
   StatusScreen: undefined;
+  ViewStatus: undefined;
+  ViewMyStatus: undefined;
+  StatusEditor: undefined;
   JobScreen: undefined;
   JobsDetailsScreen: undefined;
   LanguageGameScreen: undefined;
@@ -205,10 +221,12 @@ export type RootStackParamList = {
   EventListScreen: undefined;
   CreateEvents: undefined;
   DetailsScreen: undefined;
+  ChatProfile: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
   SelectedFiles: { assets: any[] } | undefined;
+  LocationShare: { chatId: string; isGroup?: boolean };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -248,7 +266,10 @@ export default function MainNavigator() {
           options={{ animation: 'none' }}
         />
 
-        <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
+        <Stack.Screen
+          name="LanguageSelection"
+          component={LanguageSelectionScreen}
+        />
         <Stack.Screen
           name="Login"
           component={LoginScreen}
@@ -287,6 +308,21 @@ export default function MainNavigator() {
         <Stack.Screen
           name="StatusScreen"
           component={StatusScreen}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="ViewStatus"
+          component={ViewStatus}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="ViewMyStatus"
+          component={ViewMyStatus}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="StatusEditor"
+          component={StatusEditor}
           options={commonHeaderOptions}
         />
         <Stack.Screen
@@ -387,6 +423,15 @@ export default function MainNavigator() {
         />
 
         <Stack.Screen
+          name="LocationShare"
+          component={LocationShareScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+
+        <Stack.Screen
           name="ContactDesignScreen"
           component={ContactDesignScreen}
           options={commonHeaderOptions}
@@ -401,7 +446,11 @@ export default function MainNavigator() {
           component={CreateNewGroupScreen}
           options={commonHeaderOptions}
         />
-
+        <Stack.Screen
+          name="ChatProfile"
+          component={ChatProfile}
+          options={commonHeaderOptions}
+        />
 
         {/* Call Screen - No header, full screen */}
         <Stack.Screen
@@ -415,7 +464,6 @@ export default function MainNavigator() {
         />
 
         {/* TODO: Add GroupChat screen when needed */}
-
 
         <Stack.Screen
           name="pong"
@@ -502,7 +550,7 @@ export default function MainNavigator() {
           component={DrumGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
-        <Stack.Screen
+                <Stack.Screen
           name="CarromGame"
           component={CarromGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
@@ -558,9 +606,14 @@ export default function MainNavigator() {
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
 
+        {/* Group Chat Screen */}
+        <Stack.Screen
+          name="GroupChat"
+          component={GroupChatScreen}
+          options={commonHeaderOptions}
+        />
 
         {/* TODO: Add these screens
-        <Stack.Screen name="GroupChat" component={GroupChatScreen} />
         <Stack.Screen name="Call" component={CallScreen} />
         <Stack.Screen name="IncomingCall" component={IncomingCallScreen} />
         */}

@@ -148,7 +148,10 @@ export function DashboardScreen({ navigation }: { navigation: any }) {
   }
 
   return (
-    <SafeAreaView style={styles.safeAreaView} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView
+      style={styles.safeAreaView}
+      edges={['left', 'right', 'bottom']}
+    >
       <View style={styles.flexContainer}>
         <View style={styles.container}>
           <View style={styles.scrollView}>

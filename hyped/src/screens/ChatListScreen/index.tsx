@@ -72,8 +72,8 @@ import { SocketService } from '../../services/SocketService';
 // Message handler for saving incoming messages
 import { handleIncomingMessage } from '../../services/MessageHandler';
 import { GradientBackground } from '../../components/GradientBackground';
-import BottomNavigation from '../../components/BottomNavigation';
 import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
+import BottomNavigation from '../../components/BottomNavigation';
 
 // ============================================
 // LAZY LOADED COMPONENTS (Event-based)
@@ -103,9 +103,12 @@ type ChatListScreenNavigationProp = NativeStackNavigationProp<
   'ChatList'
 >;
 
-// Enable LayoutAnimation on Android
+// LayoutAnimation on Android: setLayoutAnimationEnabledExperimental is a no-op in the New Architecture (Fabric).
+// Skip the call to avoid the console warning when fabric is enabled.
+const isFabric = typeof (globalThis as any).__turboModuleProxy === 'object';
 if (
   Platform.OS === 'android' &&
+  !isFabric &&
   UIManager.setLayoutAnimationEnabledExperimental
 ) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -136,7 +139,7 @@ export default function ChatListScreen() {
 
   // Memoized selectors
   const chatIds = useAppSelector(selectChatIdsForActiveTab);
-  const { showSkeleton } = useAppSelector(selectLoadingState);
+  const { showSkeleton } = useAppSelector(selectLoadingState) as { showSkeleton: boolean };
   const requestBadge = useAppSelector(selectRequestBadge);
 
   // ============================================
@@ -417,6 +420,8 @@ export default function ChatListScreen() {
                 chatId: chat.samvada_chinha,
                 username: chat.samvada_nama,
                 avatar: chat.samuha_chitram ?? null,
+                otherUserId: '',
+                otherUserPhoneNumber: null,
                 isGroup: true,
               }),
             );
@@ -425,14 +430,37 @@ export default function ChatListScreen() {
               groupName: chat.samvada_nama,
             });
           } else {
+            let blockedList: string[] | undefined;
+            if (typeof chat.prayoktaramnishkasaya === 'string') {
+              try {
+                blockedList = JSON.parse(
+                  chat.prayoktaramnishkasaya,
+                ) as string[];
+              } catch (e) {
+                blockedList = undefined;
+              }
+            } else if (Array.isArray(chat.prayoktaramnishkasaya)) {
+              blockedList = chat.prayoktaramnishkasaya;
+            } else {
+              blockedList = undefined;
+            }
             dispatch(
               activeChatActions.setActiveChat({
                 chatId: chat.samvada_chinha,
-                username: chat.contact_name,
+                username: chat.contact_name ?? '',
                 avatar: chat.contact_photo ?? null,
+                otherUserId: chat.pathakah_chinha ?? '',
+                BlockedUser: blockedList,
+                request: chat.status ?? null,
+                hidePhoneNumber: !!chat.hidePhoneNumber,
+                otherUserPhoneNumber:
+                  chat.contact_number != null
+                    ? String(chat.contact_number)
+                    : null,
                 isGroup: false,
               }),
             );
+
             navigation.navigate('Chat', {
               chatId: chat.samvada_chinha,
             });
@@ -680,7 +708,7 @@ export default function ChatListScreen() {
           </View>
         )}
       </View>
-      <BottomNavigation activeScreen="Listing" />
+      <BottomNavigation navigation={navigation} activeScreen="ChatList" />
     </>
   );
 }

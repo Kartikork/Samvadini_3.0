@@ -1,10 +1,3 @@
-/**
- * ChatHeader Component
- *
- * Header for chat screens (1-to-1 and group).
- * Reads username/avatar directly from Redux (activeChat). Fallback from DB when needed.
- */
-
 import React, { memo, useMemo, useCallback } from 'react';
 import {
   View,
@@ -26,17 +19,11 @@ import { CallManager } from '../../services/CallManager';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export interface ChatHeaderProps {
-  /** Chat ID fallback when Redux not yet populated (e.g. deep link) */
   chatId?: string;
-  /** Show audio call button */
   showCallButton?: boolean;
-  /** Show video call button */
   showVideoButton?: boolean;
-  /** Callback when audio call is pressed */
   onCallPress?: () => void;
-  /** Callback when video call is pressed */
   onVideoPress?: () => void;
-  /** Callback when menu (dots) is pressed */
   onMenuPress?: () => void;
 }
 
@@ -47,17 +34,16 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
 
   onMenuPress,
 }) {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'Chat'>>();
 
-  // Chat ID from Redux (primary) or route params (fallback when opened from deep link)
-  const activeChat = useAppSelector((state) => state.activeChat);
-  const chatId = activeChat.chatId ?? chatIdProp ?? (route.params as { chatId?: string })?.chatId ?? '';
-  
-  // Get current user ID from auth state
-  const currentUserId = useAppSelector((state) => state.auth.uniqueId);
-
-  // Fallback: fetch from DB when opened from elsewhere (e.g. deep link)
+  const activeChat = useAppSelector(state => state.activeChat);
+  const chatId =
+    activeChat.chatId ??
+    chatIdProp ??
+    (route.params as { chatId?: string })?.chatId ??
+    '';
   const chatFromDb = useChatById(chatId);
 
   const title = useMemo(() => {
@@ -75,9 +61,6 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
     return chatFromDb?.prakara === 'Group';
   }, [activeChat.chatId, activeChat.isGroup, chatId, chatFromDb]);
 
-  // Get receiver ID for 1-to-1 calls
-  // For 1-to-1 chats: use contact_uniqueId from DB (other user's ID)
-  // For groups: calls are not supported yet
   const receiverId = useMemo(() => {
     if (isGroup) return null;
     return chatFromDb?.contact_uniqueId || null;
@@ -91,10 +74,6 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
   const avatarIcon = useMemo(() => {
     return isGroup ? 'account-group' : 'account';
   }, [isGroup]);
-
-  // const handleBack = () => {
-  //   navigation.goBack();
-  // };
 
   const handleCallPress = useCallback(async () => {
     if (!receiverId) {
@@ -110,7 +89,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
     try {
       console.log('[ChatHeader] Initiating audio call', { receiverId, title });
       const callId = await CallManager.initiateCall(receiverId, title, 'audio');
-      
+
       if (callId) {
         // Navigate to CallScreen
         navigation.navigate('Call', {
@@ -119,7 +98,10 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
           isVideo: false,
         });
       } else {
-        Alert.alert('Call failed', 'Failed to initiate call. Please try again.');
+        Alert.alert(
+          'Call failed',
+          'Failed to initiate call. Please try again.',
+        );
       }
     } catch (error) {
       console.error('[ChatHeader] Call initiation failed:', error);
@@ -141,7 +123,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
     try {
       console.log('[ChatHeader] Initiating video call', { receiverId, title });
       const callId = await CallManager.initiateCall(receiverId, title, 'video');
-      
+
       if (callId) {
         // Navigate to CallScreen
         navigation.navigate('Call', {
@@ -150,11 +132,17 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
           isVideo: true,
         });
       } else {
-        Alert.alert('Call failed', 'Failed to initiate video call. Please try again.');
+        Alert.alert(
+          'Call failed',
+          'Failed to initiate video call. Please try again.',
+        );
       }
     } catch (error) {
       console.error('[ChatHeader] Video call initiation failed:', error);
-      Alert.alert('Call failed', 'Failed to initiate video call. Please try again.');
+      Alert.alert(
+        'Call failed',
+        'Failed to initiate video call. Please try again.',
+      );
     }
   }, [receiverId, isGroup, title, navigation]);
 
@@ -163,27 +151,29 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
       <View style={styles.header}>
         {/* Left: Back + Avatar + Title */}
         <View style={styles.leftSection}>
-          {/* <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Icon name="arrow-left" size={24} color="#000000" />
-          </TouchableOpacity> */}
-
           <View style={styles.avatarContainer}>
             {avatarSource ? (
-              <Image source={avatarSource} style={styles.avatar} resizeMode="cover" />
+              <Image
+                source={avatarSource}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Icon name={avatarIcon} size={28} color="#999" />
               </View>
             )}
           </View>
-
-          <Text style={styles.title} numberOfLines={1}>
-            {title || 'Unknown'}
-          </Text>
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            onPress={() => {
+              navigation.navigate('ChatProfile');
+            }}
+          >
+            <Text style={styles.title} numberOfLines={1}>
+              {title || 'Unknown'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Right: Call, Video, Menu */}
@@ -206,13 +196,7 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
               <Icon name="video-outline" size={24} color="#000000" />
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={onMenuPress}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Icon name="dots-vertical" size={24} color="#000000" />
-          </TouchableOpacity>
+          
         </View>
       </View>
     </View>
@@ -263,7 +247,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    flex: 1,
     fontSize: 18,
     fontWeight: '600',
     color: '#212121',
