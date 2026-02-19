@@ -9,6 +9,7 @@ import cors from 'cors';
 import { config, isProduction } from './config/env.js';
 import { redisClient } from './redis/client.js';
 import { fcmService } from './push/fcm.js';
+import { apnsService } from './push/apns.js';
 import { initializeSocket } from './socket/index.js';
 import { turnService } from './turn/turnService.js';
 import { callStore } from './calls/callStore.js';
@@ -131,6 +132,10 @@ const initializeServices = async () => {
     fcmService.initialize();
     logger.info('[Server] FCM initialized');
 
+    // Initialize APNs (for iOS VoIP killed-state pushes)
+    apnsService.initialize();
+    logger.info('[Server] APNs initialized');
+
     // Initialize Socket.IO
     const io = initializeSocket(httpServer);
     logger.info('[Server] Socket.IO initialized');
@@ -196,14 +201,34 @@ const startServer = async () => {
       logger.info('[Server] Ready to accept connections');
     });
 
+    // Handle port already in use – print a clear message and exit so the user
+    // knows to kill the old process rather than seeing a confusing stack trace.
+    httpServer.on('error', (error) => {
+      if (error.code === 'EADDRINUSE') {
+        logger.error(`[Server] Port ${config.port} is already in use. Run: lsof -ti:${config.port} | xargs kill -9`);
+        process.exit(1);
+      } else {
+        logger.error('[Server] HTTP server error:', error);
+        process.exit(1);
+      }
+    });
+
+    // Track whether shutdown is already in progress to prevent double-calls
+    let shuttingDown = false;
+    const onSignal = (signal) => {
+      if (shuttingDown) return;
+      shuttingDown = true;
+      gracefulShutdown(signal);
+    };
+
     // Setup graceful shutdown handlers
-    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    process.on('SIGTERM', () => onSignal('SIGTERM'));
+    process.on('SIGINT', () => onSignal('SIGINT'));
 
     // Handle uncaught exceptions
     process.on('uncaughtException', (error) => {
       logger.error('[Server] Uncaught exception:', error);
-      gracefulShutdown('UNCAUGHT_EXCEPTION');
+      onSignal('UNCAUGHT_EXCEPTION');
     });
 
     // Handle unhandled promise rejections

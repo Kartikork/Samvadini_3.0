@@ -10,6 +10,7 @@ import fs from 'fs';
 import { redisClient } from '../redis/client.js';
 import { fcmTokenKey } from '../redis/keys.js';
 import { TTL } from '../utils/constants.js';
+import { apnsService } from './apns.js';
 
 class FCMService {
   constructor() {
@@ -44,6 +45,9 @@ class FCMService {
 
       this.initialized = true;
       logger.info('[FCM] Initialized successfully');
+
+      // Also initialise the APNs VoIP push service (for iOS killed-state calls)
+      apnsService.initialize();
     } catch (error) {
       logger.error('[FCM] Initialization failed:', error);
     }
@@ -152,13 +156,28 @@ class FCMService {
     }
 
     try {
+      // For incoming_call on Android: send data-only so FCM does not auto-show a notification.
+      // The app's background handler will show a single Notifee notification with Accept/Reject buttons.
+      // If we sent android.notification here, FCM would show a text-only notification and the user would
+      // see no buttons until they pull down / expand.
+      const isIncomingCall = payload.data?.type === 'incoming_call';
+      const isIncomingCallAndroid = isIncomingCall;
+
+      // iOS incoming calls use 'content-available' so the app wakes in background.
+      // For KILLED state, a separate VoIP push is sent directly via APNs below.
+      // The category 'CALL_INVITATION' is a fallback for Notifee when CallKit is unavailable.
+      const apnsHeaders = {
+        'apns-priority': '10',
+        'apns-expiration': String(Math.floor(Date.now() / 1000) + 60),
+      };
+
       const message = {
         token: fcmToken,
         data: payload.data,
         android: {
           priority: 'high',
           ttl: 60000, // 60 seconds
-          notification: payload.notification ? {
+          notification: payload.notification && !isIncomingCallAndroid ? {
             title: payload.notification.title,
             body: payload.notification.body,
             channelId: 'incoming_calls',
@@ -167,22 +186,27 @@ class FCMService {
           } : undefined,
         },
         apns: {
-          headers: {
-            'apns-priority': '10', // High priority for immediate delivery
-            'apns-expiration': String(Math.floor(Date.now() / 1000) + 60), // 60 seconds TTL
-            'apns-push-type': 'alert', // Alert type for foreground notifications
-          },
+          headers: apnsHeaders,
           payload: {
             aps: {
-              alert: payload.notification ? {
-                title: payload.notification.title,
-                body: payload.notification.body,
-              } : undefined,
-              badge: 1,
-              sound: 'default',
-              contentAvailable: true, // Enable background processing
-              mutableContent: true, // Allow notification service extension
-              category: 'CALL_INVITATION', // For CallKit integration
+              'content-available': 1,
+              'mutable-content': 1,
+              // iOS: category must match app's setNotificationCategories id so Accept/Decline buttons show
+              // on long-press / expand when CallKit is not available.
+              // When CallKit (RNCallKeep) IS installed, it intercepts voip push and
+              // shows a native fullscreen incoming-call UI with green Answer + red Decline.
+              ...(isIncomingCall ? {
+                category: 'CALL_INVITATION',
+                sound: { name: 'default', critical: 1, volume: 1.0 },
+              } : { sound: 'default' }),
+              ...(payload.notification
+                ? {
+                    alert: {
+                      title: payload.notification.title,
+                      body: payload.notification.body,
+                    },
+                  }
+                : {}),
             },
           },
         },
@@ -192,6 +216,9 @@ class FCMService {
       const response = await admin.messaging().send(message);
       
       logger.info('[FCM] Notification sent successfully', { userId, messageId: response });
+
+      // Note: APNs VoIP push for iOS is sent by callRouter.js directly, not here.
+      // This avoids double VoIP pushes since callRouter already handles it for ALL iOS callees.
       
       return { success: true, messageId: response };
     } catch (error) {

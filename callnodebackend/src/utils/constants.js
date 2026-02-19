@@ -17,6 +17,7 @@ export const SOCKET_EVENTS = {
   REGISTERED: 'registered',
   REGISTRATION_ERROR: 'registration_error',
   UNREGISTER: 'unregister',
+  REGISTER_VOIP_TOKEN: 'register_voip_token', // iOS PushKit VoIP token
   
   // Call Flow
   CALL_INITIATE: 'call_initiate',
@@ -80,6 +81,7 @@ export const REDIS_KEYS = {
   SOCKET_USER: 'user:socket',
   CALL: 'call',
   CALL_TIMEOUT: 'timeout:call',
+  VOIP_TOKEN: 'voip:token',
   FCM_TOKEN: 'fcm:token', // FCM token storage
 };
 
@@ -128,6 +130,7 @@ export const TTL = {
   CALL_RINGING: 60, // 1 minute
   CALL_ACTIVE: 7200, // 2 hours
   FCM_TOKEN: 2592000, // 30 days (FCM tokens can be long-lived)
+  VOIP_TOKEN: 2592000, // 30 days (VoIP tokens are similarly long-lived)
 };
 
 /**

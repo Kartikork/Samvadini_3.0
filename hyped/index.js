@@ -5,7 +5,7 @@
 import { AppRegistry, Platform } from 'react-native';
 import { getApp } from '@react-native-firebase/app';
 import messaging from '@react-native-firebase/messaging';
-import notifee, { EventType, AndroidImportance } from '@notifee/react-native';
+import notifee, { EventType, AndroidImportance, AndroidStyle } from '@notifee/react-native';
 import App from './App';
 import { name as appName } from './app.json';
 import { PersistenceService } from './src/services/PersistenceService';
@@ -24,7 +24,7 @@ try {
 }
 
 // ========================================
-// SETUP NOTIFICATION CHANNEL (Android)
+// SETUP NOTIFICATION CHANNEL / CATEGORIES
 // ========================================
 if (Platform.OS === 'android') {
   notifee.createChannel({
@@ -34,6 +34,31 @@ if (Platform.OS === 'android') {
     sound: 'default',
   }).catch(err => {
     console.warn('[Setup] Failed to create notification channel:', err);
+  });
+}
+
+if (Platform.OS === 'ios') {
+  notifee.setNotificationCategories([
+    {
+      id: 'CALL_INVITATION',
+      actions: [
+        {
+          id: 'CALL_ACCEPT',
+          title: '✅ Accept',
+          foreground: true,   // opens app to foreground so CallManager can connect
+        },
+        {
+          id: 'CALL_REJECT',
+          title: '❌ Decline',
+          foreground: false,  // handled silently in background
+          destructive: true,  // red button on iOS
+        },
+      ],
+      allowInCarPlay: true,
+      intentIdentifiers: [],
+    },
+  ]).catch(err => {
+    console.warn('[Setup] Failed to set iOS notification categories:', err);
   });
 }
 
@@ -64,50 +89,99 @@ if (firebaseInitialized) {
     
     await PersistenceService.saveActiveCall(callData);
     console.log('[Background] ✅ Call data saved');
-    
-    // Show notification with Accept/Reject actions
-    await notifee.displayNotification({
-      id: callData.callId,
-      title: `${callData.callerName} is calling`,
-      body: callData.callType === 'video' ? 'Video call' : 'Audio call',
-      data: {
-        type: 'incoming_call',
-        callId: callData.callId,
-        callerId: callData.callerId,
-        callerName: callData.callerName,
-        callType: callData.callType,
-        timestamp: String(callData.timestamp),
-      },
-      android: {
-        channelId: 'incoming_calls',
-        category: 'call',
-        importance: 4,
-        pressAction: { 
-          id: 'default',
-          launchActivity: 'default',
+
+    // iOS: Use CallKit so Answer (green) and Decline (red) show by default
+    if (Platform.OS === 'ios') {
+      const { NativeModules } = require('react-native');
+      let callKeepShown = false;
+      if (NativeModules.RNCallKeep != null) {
+        try {
+          const RNCallKeep = require('react-native-callkeep').default;
+          // Ensure CallKit is set up before displaying incoming call
+          await RNCallKeep.setup({
+            ios: {
+              appName: 'hyped',
+              supportsVideo: true,
+              maximumCallGroups: '1',
+              maximumCallsPerCallGroup: '1',
+            },
+            android: { alertTitle: '', alertDescription: '', cancelButton: '', okButton: '', additionalPermissions: [] },
+          }).catch(() => {});
+          RNCallKeep.displayIncomingCall(
+            callData.callId,
+            callData.callerId,
+            callData.callerName,
+            'generic',
+            callData.callType === 'video'
+          );
+          callKeepShown = true;
+          console.log('[Background] 🔔 CallKit incoming call displayed (native green/red UI)');
+        } catch (e) {
+          console.warn('[Background] CallKeep failed, falling back to notification:', e);
+        }
+      }
+      if (!callKeepShown) {
+        // Fallback: Notifee notification with CALL_INVITATION category.
+        // On iOS, actions (Accept / Decline) appear when the user long-presses
+        // or swipes down on the notification banner.
+        await notifee.displayNotification({
+          id: callData.callId,
+          title: `📞 ${callData.callerName} is calling`,
+          body: callData.callType === 'video' ? '🎥 Incoming video call' : '🎤 Incoming audio call',
+          data: {
+            type: 'incoming_call',
+            callId: callData.callId,
+            callerId: callData.callerId,
+            callerName: callData.callerName,
+            callType: callData.callType,
+            timestamp: String(callData.timestamp),
+          },
+          ios: {
+            sound: 'default',
+            // categoryId links this notification to the CALL_INVITATION category
+            // registered via notifee.setNotificationCategories() above.
+            // iOS will show ✅ Accept / ❌ Decline buttons when expanded.
+            categoryId: 'CALL_INVITATION',
+            interruptionLevel: 'timeSensitive',
+            foregroundPresentationOptions: { alert: true, badge: true, sound: true, banner: true, list: true },
+          },
+        });
+        console.log('[Background] 🔔 Notifee fallback notification shown (expand to see Accept/Decline)');
+      }
+    }
+    if (Platform.OS !== 'ios') {
+      // Android: Show single notification with actions (backend sends data-only so FCM does not show a duplicate text-only notification)
+      const bodyText = callData.callType === 'video' ? 'Video call' : 'Audio call';
+      await notifee.displayNotification({
+        id: callData.callId,
+        title: `${callData.callerName} is calling`,
+        body: bodyText,
+        data: {
+          type: 'incoming_call',
+          callId: callData.callId,
+          callerId: callData.callerId,
+          callerName: callData.callerName,
+          callType: callData.callType,
+          timestamp: String(callData.timestamp),
         },
-        actions: [
-          {
-            title: 'Accept',
-            pressAction: { 
-              id: 'CALL_ACCEPT',
-              launchActivity: 'default',
-            },
-          },
-          {
-            title: 'Reject',
-            pressAction: { 
-              id: 'CALL_REJECT',
-            },
-          },
-        ],
-        autoCancel: true,
-        ongoing: true,
-        showTimestamp: true,
-        timestamp: callData.timestamp,
-      },
-    });
-    console.log('[Background] 🔔 Notification displayed');
+        android: {
+          channelId: 'incoming_calls',
+          category: 'call',
+          importance: AndroidImportance.HIGH,
+          pressAction: { id: 'default', launchActivity: 'default' },
+          actions: [
+            { title: 'Accept', pressAction: { id: 'CALL_ACCEPT', launchActivity: 'default' } },
+            { title: 'Reject', pressAction: { id: 'CALL_REJECT' } },
+          ],
+          style: { type: AndroidStyle.BIGTEXT, text: bodyText },
+          autoCancel: true,
+          ongoing: true,
+          showTimestamp: true,
+          timestamp: callData.timestamp,
+        },
+      });
+      console.log('[Background] 🔔 Notification displayed');
+    }
   }
   
   // Handle call termination

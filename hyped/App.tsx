@@ -18,6 +18,7 @@ import { loadFontSize } from './src/state/fontSizeSlice';
 import Toast from 'react-native-toast-message';
 import MainNavigator from './src/navigation/MainNavigator';
 import { NotificationService } from './src/services/NotificationService';
+import { CallKeepService } from './src/services/CallKeepService';
 import CallOverlay from './src/components/CallOverlay';
 
 // Loading component shown while rehydrating
@@ -36,6 +37,10 @@ function App() {
   useEffect(() => {
     store.dispatch(loadLanguage());
     store.dispatch(loadFontSize());
+    // Setup CallKit FIRST on iOS so it's ready before notifications arrive
+    CallKeepService.setup().then(ok => {
+      if (ok) console.log('[App] CallKeep (CallKit) ready for iOS');
+    }).catch(() => {});
     NotificationService.initialize().catch(err => {
       console.warn('[App] Notification init error:', err);
     });

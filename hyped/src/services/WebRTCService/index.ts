@@ -1,13 +1,16 @@
 import { io, Socket } from 'socket.io-client';
 import NetInfo from '@react-native-community/netinfo';
+import { Platform } from 'react-native';
 import { env } from '../../config/env';
 import type { IncomingCallPayload } from '../../types/call';
 import { normalizeCallType, normalizeTimestamp } from '../../utils/call';
+import { CallKeepService } from '../CallKeepService';
 
 const SOCKET_EVENTS = {
   REGISTER: 'register',
   REGISTERED: 'registered',
   REGISTRATION_ERROR: 'registration_error',
+  REGISTER_VOIP_TOKEN: 'register_voip_token', // iOS PushKit killed-state
 
   CALL_INITIATE: 'call_initiate',
   INCOMING_CALL: 'incoming_call',
@@ -43,6 +46,7 @@ interface InitConfig {
   deviceId: string;
   platform: string;
   fcmToken?: string | null;
+  voipToken?: string | null;
 }
 
 class WebRTCServiceClass {
@@ -116,6 +120,16 @@ class WebRTCServiceClass {
         clearTimeout(connectTimeout);
         this.isConnecting = false;
         this.registerIfNeeded();
+
+        // On iOS, inject a callback so CallKeepService can forward the PushKit
+        // VoIP token to the backend (needed for killed-state call wakeup).
+        if (Platform.OS === 'ios') {
+          CallKeepService.setVoipTokenEmitter((token: string) => {
+            console.log('[WebRTCService] Sending VoIP token to backend');
+            this.socket?.emit(SOCKET_EVENTS.REGISTER_VOIP_TOKEN, { voipToken: token });
+          });
+        }
+
         this.emit('connected', {});
         resolve();
       });
@@ -245,6 +259,7 @@ class WebRTCServiceClass {
       deviceId: this.config.deviceId,
       platform: this.config.platform,
       fcmToken: this.config.fcmToken || undefined,
+      voipToken: this.config.voipToken || undefined,
     });
   }
 

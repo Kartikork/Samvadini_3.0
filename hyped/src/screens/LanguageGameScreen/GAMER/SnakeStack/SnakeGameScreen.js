@@ -121,11 +121,11 @@ const SnakeGameScreen = () => {
     /*
     Sound.setCategory('Playback');
 
-    eatSound.current = new Sound(require('../../screens/GAMER/Assets/audio/trimmed_yay.mp3'), (error) => {
+    eatSound.current = new Sound(require('../Assets/audio/trimmed_yay.mp3'), (error) => {
       if (error) console.log('Failed to load the eat sound', error);
     });
 
-    backgroundMusic.current = new Sound(require('../../screens/GAMER/Assets/audio/background_music.mp3'), (error) => {
+    backgroundMusic.current = new Sound(require('../Assets/audio/background_music.mp3'), (error) => {
       if (error) {
         console.log('Failed to load the background music', error);
         return;
@@ -134,7 +134,7 @@ const SnakeGameScreen = () => {
       if (!isPaused && !isGameOver && musicEnabled) backgroundMusic.current.play();
     });
 
-    gameOverSound.current = new Sound(require('../../screens/GAMER/Assets/audio/game_over.mp3'), (error) => {
+    gameOverSound.current = new Sound(require('../Assets/audio/game_over.mp3'), (error) => {
       if (error) console.log('Failed to load the game over sound', error);
     });
     */
@@ -329,7 +329,7 @@ const SnakeGameScreen = () => {
   };
 
   return (
-    <ImageBackground source={require('../snake.jpg')} style={{ flex: 1 }}>
+    <ImageBackground source={require('../snakejpg.jpg')} style={{ flex: 1 }}>
       <View style={styles.container}>
         <Modal
           animationType="slide"

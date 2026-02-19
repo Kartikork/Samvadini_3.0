@@ -57,6 +57,15 @@ export const config = {
     projectId: process.env.FIREBASE_PROJECT_ID,
     privateKeyPath: process.env.FIREBASE_PRIVATE_KEY_PATH,
   },
+
+  // Apple Push Notification Service (direct VoIP pushes for iOS killed state)
+  apns: {
+    keyPath: process.env.APNS_KEY_PATH,       // path to .p8 auth key file
+    keyId: process.env.APNS_KEY_ID,           // 10-char Key ID
+    teamId: process.env.APNS_TEAM_ID,         // 10-char Team ID
+    bundleId: process.env.APNS_BUNDLE_ID || 'org.anuvadini.hyped',
+    production: process.env.APNS_PRODUCTION === 'true',
+  },
   
   // TURN Server
   turn: {

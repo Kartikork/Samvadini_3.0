@@ -18,6 +18,7 @@ target 'hyped' do
   config = use_native_modules!
   
   pod 'GoogleUtilities', :modular_headers => true
+  pod 'RNCallKeep', :path => '../node_modules/react-native-callkeep'
 
   use_react_native!(
     :path => config[:reactNativePath],

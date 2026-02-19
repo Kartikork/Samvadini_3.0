@@ -69,3 +69,10 @@ export const fcmTokenKey = (userId) => {
   return `${REDIS_KEYS.FCM_TOKEN}:${userId}`;
 };
 
+/**
+ * Generate VoIP push token key (iOS PushKit, separate from FCM token)
+ */
+export const voipTokenKey = (userId) => {
+  return `${REDIS_KEYS.VOIP_TOKEN}:${userId}`;
+};
+

@@ -10,7 +10,8 @@ export default function CallOverlay() {
   // Outgoing calls use navigation to CallScreen instead
   const shouldShow = 
     call.direction === 'incoming' && 
-    (call.state === 'CONNECTED' || call.state === 'ENDING' || call.state === 'ENDED');
+    (call.state === 'CONNECTED' || call.state === 'ENDING' || call.state === 'ENDED' ||
+     call.state === 'ACCEPTING' || call.state === 'CONNECTING');
 
   if (!shouldShow) {
     return null;

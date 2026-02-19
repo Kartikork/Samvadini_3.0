@@ -14,6 +14,7 @@ import {
   validateSignalingPayload,
 } from '../calls/callValidator.js';
 import { fcmService } from '../push/fcm.js';
+import { apnsService } from '../push/apns.js';
 import { buildIncomingCallPayload, buildCallCancelledPayload } from '../push/payloadBuilder.js';
 import { redisClient } from '../redis/client.js';
 import { userSocketKey } from '../redis/keys.js';
@@ -87,12 +88,28 @@ class CallRouter {
 
       // Always send push notification (for background/killed state)
       if (fcmService.isAvailable()) {
-        logger.info('[CallRouter] Sending push notification', {
+        logger.info('[CallRouter] Sending FCM push notification', {
           callId,
           calleeId,
         });
 
         await fcmService.sendIncomingCallNotification(calleeId, callData);
+      }
+
+      // Always send a direct APNs VoIP push for iOS, regardless of FCM.
+      // Reason: iOS silently throttles/drops FCM "content-available" pushes for
+      // background and killed apps. Only a PushKit VoIP push reliably wakes the
+      // app in ALL states and shows the native CallKit green/red UI.
+      // Note: simulators cannot receive VoIP pushes – real device required.
+      try {
+        if (apnsService.isAvailable()) {
+          logger.info('[CallRouter] Sending direct APNs VoIP push for iOS', { callId, calleeId });
+          apnsService.sendVoipPush(calleeId, callData).catch(err => {
+            logger.warn('[CallRouter] APNs VoIP push error (non-fatal):', err.message || err);
+          });
+        }
+      } catch (apnsErr) {
+        logger.warn('[CallRouter] APNs VoIP push setup error (non-fatal):', apnsErr.message || apnsErr);
       }
 
       // Response to caller

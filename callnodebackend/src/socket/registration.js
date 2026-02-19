@@ -6,6 +6,7 @@
 import { redisClient } from '../redis/client.js';
 import { userSessionKey, userSocketKey, socketUserKey } from '../redis/keys.js';
 import { fcmService } from '../push/fcm.js';
+import { apnsService } from '../push/apns.js';
 import { SOCKET_EVENTS, ERROR_CODES, TTL } from '../utils/constants.js';
 import logger from '../utils/logger.js';
 
@@ -20,7 +21,7 @@ class RegistrationHandler {
    */
   async handleRegister(socket, data) {
     try {
-      const { userId, deviceId, platform, fcmToken } = data;
+      const { userId, deviceId, platform, fcmToken, voipToken } = data;
 
       // Validate
       if (!userId) {
@@ -77,6 +78,12 @@ class RegistrationHandler {
         logger.warn('[Registration] No FCM token provided', { userId });
       }
 
+      // Register VoIP token if provided (iOS PushKit – killed-state calls)
+      if (voipToken && platform === 'ios') {
+        await apnsService.registerVoipToken(userId, voipToken);
+        logger.info('[Registration] VoIP token registered', { userId });
+      }
+
       // Mark socket as registered
       socket.userId = userId;
       socket.isRegistered = true;
@@ -113,6 +120,24 @@ class RegistrationHandler {
         message: 'Registration failed',
       });
     }
+  }
+
+  /**
+   * Handle VoIP token registration (iOS PushKit – killed state calls)
+   * Called from the app after react-native-callkeep emits the 'registration' event.
+   */
+  async handleRegisterVoipToken(socket, data) {
+    const userId = socket.userId;
+    if (!userId || !socket.isRegistered) {
+      logger.warn('[Registration] VoIP token registration ignored – socket not registered', { socketId: socket.id });
+      return;
+    }
+    const { voipToken } = data || {};
+    if (!voipToken) {
+      logger.warn('[Registration] Empty VoIP token', { userId });
+      return;
+    }
+    await apnsService.registerVoipToken(userId, voipToken);
   }
 
   /**
@@ -260,6 +285,11 @@ export const setupRegistrationHandlers = (io, socket) => {
   // Register event
   socket.on(SOCKET_EVENTS.REGISTER, async (data) => {
     await handler.handleRegister(socket, data);
+  });
+
+  // VoIP token registration (iOS PushKit – killed state)
+  socket.on(SOCKET_EVENTS.REGISTER_VOIP_TOKEN, async (data) => {
+    await handler.handleRegisterVoipToken(socket, data);
   });
 
   // Unregister event

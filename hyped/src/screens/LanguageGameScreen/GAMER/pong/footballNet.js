@@ -48,9 +48,9 @@ export default function PongBricks() {
   const buttonClickRef = useRef(null);
   const bgSoundRef = useRef(null);
 
-  const collisionSoundFile = require('../../screens/GAMER/Assets/brick_smash_sound.mp3');
-  const buttonClickFile = require('../../screens/GAMER/Assets/button.mp3');
-  const bgSoundFile = require('../../screens/GAMER/Assets/Bg_pong.mp3');
+  const collisionSoundFile = require('../Assets/brick_smash_sound.mp3');
+  const buttonClickFile = require('../Assets/button.mp3');
+  const bgSoundFile = require('../Assets/Bg_pong.mp3');
   const fireworkGif = require('./fireworks.gif');
   const backgroundGif = require('./giphy.gif');
 

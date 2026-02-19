@@ -29,17 +29,27 @@ class AppLifecycleServiceClass {
       });
     } else {
       console.warn('[AppLifecycleService] ⚠️ Navigation not ready, will retry...');
-      // Retry after navigation is ready
       setTimeout(() => {
         if (this.navigationRef?.isReady()) {
-          console.log('[AppLifecycleService] 🧭 Navigating to Call screen (retry)...');
           this.navigationRef.navigate('Call', {
             callId,
             peerId: callerId,
             isVideo: callType === 'video',
           });
-        } else {
-          console.warn('[AppLifecycleService] ⚠️ Navigation still not ready after retry');
+        }
+      }, 1000);
+    }
+  }
+
+  /** iOS: Navigate to IncomingCall screen (profile + slide answer/reject) when user tapped notification body */
+  navigateToIncomingCallScreen(): void {
+    if (this.navigationRef?.isReady()) {
+      console.log('[AppLifecycleService] 🧭 Navigating to IncomingCall screen...');
+      this.navigationRef.navigate('IncomingCall', {});
+    } else {
+      setTimeout(() => {
+        if (this.navigationRef?.isReady()) {
+          this.navigationRef.navigate('IncomingCall', {});
         }
       }, 1000);
     }
@@ -146,7 +156,6 @@ class AppLifecycleServiceClass {
     // Handle pending action
     if (pendingAction === 'accept') {
       console.log('[AppLifecycleService] ✅ Auto-accepting call from cold start...');
-      // Wait a bit more to ensure WebRTC service is ready
       await new Promise(resolve => setTimeout(resolve, 500));
       try {
         await CallManager.acceptCall(activeCall.callId);
@@ -154,8 +163,17 @@ class AppLifecycleServiceClass {
         console.log('[AppLifecycleService] ✅ Call accept initiated successfully');
       } catch (error) {
         console.error('[AppLifecycleService] ❌ Failed to accept call:', error);
-        // Don't clear pending action on error, let user retry
       }
+      // Navigate to Call screen after accept
+      setTimeout(() => {
+        if (this.navigationRef?.isReady()) {
+          this.navigationRef.navigate('Call', {
+            callId: activeCall.callId,
+            peerId: activeCall.callerId,
+            isVideo: activeCall.callType === 'video',
+          });
+        }
+      }, 1500);
     } else if (pendingAction === 'reject') {
       console.log('[AppLifecycleService] ❌ Auto-rejecting call from cold start...');
       try {
@@ -164,38 +182,13 @@ class AppLifecycleServiceClass {
       } catch (error) {
         console.error('[AppLifecycleService] ❌ Failed to reject call:', error);
       }
-      return; // Don't navigate if rejecting
+      return;
     } else {
-      console.log('[AppLifecycleService] ⚠️ No pending action found, but showing call to user...');
-      // No pending action, but call exists - show it to user
-      // They can accept/reject manually
-    }
-
-    // Navigate to CallScreen
-    if (shouldNavigate) {
-      setTimeout(() => {
-        if (this.navigationRef?.isReady()) {
-          console.log('[AppLifecycleService] 🧭 Navigating to Call screen...');
-          this.navigationRef.navigate('Call', {
-            callId: activeCall.callId,
-            peerId: activeCall.callerId,
-            isVideo: activeCall.callType === 'video',
-          });
-        } else {
-          console.warn('[AppLifecycleService] ⚠️ Navigation not ready, will retry...');
-          // Retry after navigation is ready
-          setTimeout(() => {
-            if (this.navigationRef?.isReady()) {
-              console.log('[AppLifecycleService] 🧭 Navigating to Call screen (retry)...');
-              this.navigationRef.navigate('Call', {
-                callId: activeCall.callId,
-                peerId: activeCall.callerId,
-                isVideo: activeCall.callType === 'video',
-              });
-            }
-          }, 1500);
-        }
-      }, 1500); // Wait for navigation to be fully ready
+      // iOS: No pending action = user tapped notification body → show IncomingCall screen (profile + slide answer/reject)
+      console.log('[AppLifecycleService] 📱 Opening IncomingCall screen (notification body tap)...');
+      if (shouldNavigate) {
+        setTimeout(() => this.navigateToIncomingCallScreen(), 1500);
+      }
     }
   }
 

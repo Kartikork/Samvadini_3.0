@@ -3,12 +3,14 @@ import messaging, { type FirebaseMessagingTypes } from '@react-native-firebase/m
 import notifee, {
   AndroidCategory,
   AndroidImportance,
+  AndroidStyle,
   EventType,
   Notification,
 } from '@notifee/react-native';
 import { Platform } from 'react-native';
 import { PersistenceService } from '../PersistenceService';
-import type { IncomingCallPayload, PendingCallAction } from '../../types/call';
+import { CallKeepService } from '../CallKeepService';
+import type { CallType, IncomingCallPayload, PendingCallAction, PersistedCall } from '../../types/call';
 import { buildPersistedCall, normalizeCallType, normalizeTimestamp } from '../../utils/call';
 import { chatAPI } from '../../api';
 import { store } from '../../state/store';
@@ -34,6 +36,8 @@ class NotificationServiceClass {
   private backgroundHandlersRegistered = false;
   private incomingHandler?: (payload: IncomingCallPayload, options?: { skipNotification?: boolean }) => void;
   private actionHandler?: (action: PendingCallAction, callId: string) => void;
+  /** iOS: when user taps notification body (not Accept/Reject), open app and show incoming call UI */
+  private notificationBodyTapHandler?: (payload: IncomingCallPayload) => void;
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
@@ -78,6 +82,18 @@ class NotificationServiceClass {
         console.log('[NotificationService] 🔔 Foreground action pressed:', detail.pressAction?.id);
         await this.handleAction(detail.notification, detail.pressAction?.id);
       }
+      // On iOS, tapping the notification body fires PRESS (not ACTION_PRESS)
+      // Open incoming call UI (profile + slide answer/reject), do NOT auto-accept
+      if (type === EventType.PRESS && Platform.OS === 'ios') {
+        const data = detail.notification?.data as Record<string, any> | undefined;
+        if (data?.type === 'incoming_call') {
+          const payload = toIncomingCallPayload(data as Record<string, string | number | undefined>);
+          if (payload) {
+            console.log('[NotificationService] 🔔 iOS notification body tapped – opening incoming call UI');
+            this.notificationBodyTapHandler?.(payload);
+          }
+        }
+      }
     });
     
     // Check for initial notification immediately when app opens (handles cold start from notification)
@@ -100,13 +116,13 @@ class NotificationServiceClass {
           // During cold start, just save the action - don't call handleAction yet
           // AppLifecycleService will handle it after services are initialized
           if (actionId === 'CALL_ACCEPT' || actionId === 'accept') {
-            const data = initialNotification.notification?.data;
+            const data = initialNotification.notification?.data as Record<string, unknown> | undefined;
             if (data?.callId) {
-              const callData = {
+              const callData: PersistedCall = {
                 callId: String(data.callId),
                 callerId: String(data.callerId),
                 callerName: data.callerName ? String(data.callerName) : 'Unknown',
-                callType: data.callType === 'video' ? 'video' : 'audio',
+                callType: (data.callType === 'video' ? 'video' : 'audio') as CallType,
                 timestamp: data.timestamp ? Number(data.timestamp) : Date.now(),
                 expiresAt: Date.now() + 60000,
               };
@@ -123,15 +139,14 @@ class NotificationServiceClass {
           }
         } else if (initialNotification.notification?.data?.type === 'incoming_call') {
           // Notification body was tapped (not action button)
-          // Just ensure call data is saved
           console.log('[NotificationService] ℹ️ Notification body tapped, saving call data');
-          const data = initialNotification.notification.data;
+          const data = initialNotification.notification.data as Record<string, unknown>;
           if (data.callId) {
-            const callData = {
+            const callData: PersistedCall = {
               callId: String(data.callId),
               callerId: String(data.callerId),
               callerName: data.callerName ? String(data.callerName) : 'Unknown',
-              callType: data.callType === 'video' ? 'video' : 'audio',
+              callType: (data.callType === 'video' ? 'video' : 'audio') as CallType,
               timestamp: data.timestamp ? Number(data.timestamp) : Date.now(),
               expiresAt: Date.now() + 60000,
             };
@@ -161,6 +176,14 @@ class NotificationServiceClass {
     notifee.onBackgroundEvent(async ({ type, detail }) => {
       if (type === EventType.ACTION_PRESS) {
         await this.handleAction(detail.notification, detail.pressAction?.id);
+      }
+      // On iOS, tapping notification body from background fires PRESS – do NOT auto-accept
+      // Call data is already persisted; app will open and show incoming call UI via initial notification
+      if (type === EventType.PRESS && Platform.OS === 'ios') {
+        const data = detail.notification?.data as Record<string, any> | undefined;
+        if (data?.type === 'incoming_call') {
+          console.log('[NotificationService] 🔔 iOS bg notification body tapped – app will open to incoming call UI');
+        }
       }
     });
   }
@@ -214,10 +237,14 @@ class NotificationServiceClass {
     await PersistenceService.saveActiveCall(persisted);
     console.log('[NotificationService] ✅ Call persisted to AsyncStorage');
 
-    await this.showIncomingCallNotification(persisted);
-    console.log('[NotificationService] 🔔 Notification displayed');
-
-    this.incomingHandler?.(payload, { skipNotification: true });
+    // On iOS the socket INCOMING_CALL event fires displayIncomingCall via handleIncomingNotification
+    // (CallManager path). If FCM onMessage also arrives for the same call, we must NOT call
+    // displayIncomingCall a second time — iOS ends the duplicate UUID immediately.
+    // The incomingHandler below (CallManager) will call showIncomingCallNotification which
+    // already deduplicates via _voipReportedCallIds + _displayedCallIds.
+    // So here we just fire the handler and let it handle the notification display.
+    this.incomingHandler?.(payload, { skipNotification: false });
+    console.log('[NotificationService] 🔔 Incoming call handler called');
   }
 
   async handleAction(notification: Notification | undefined, actionId?: string): Promise<void> {
@@ -274,6 +301,23 @@ class NotificationServiceClass {
   }
 
   async showIncomingCallNotification(payload: IncomingCallPayload | ReturnType<typeof buildPersistedCall>): Promise<void> {
+    // iOS: Try to set up CallKit if not already done (in case setup was called before native module loaded)
+    if (Platform.OS === 'ios') {
+      // Attempt setup in case it hasn't run yet
+      if (!CallKeepService.isAvailable()) {
+        await CallKeepService.setup().catch(() => {});
+      }
+      if (CallKeepService.isAvailable()) {
+        CallKeepService.displayIncomingCall({
+          callId: payload.callId,
+          callerId: payload.callerId,
+          callerName: payload.callerName,
+          callType: payload.callType,
+        });
+        return;
+      }
+    }
+
     const title = payload.callerName ? `${payload.callerName} is calling` : 'Incoming call';
     const body = payload.callType === 'video' ? 'Video call' : 'Audio call';
 
@@ -302,7 +346,7 @@ class NotificationServiceClass {
             title: 'Accept',
             pressAction: { 
               id: ACTION_ACCEPT,
-              launchActivity: 'default',  // ✅ Launch app when Accept is tapped
+              launchActivity: 'default',  // Launch app when Accept is tapped
             },
           },
           {
@@ -313,6 +357,7 @@ class NotificationServiceClass {
             },
           },
         ],
+        style: { type: AndroidStyle.BIGTEXT, text: body },
         autoCancel: true,
         ongoing: true,  // Prevent swipe-away (call notification)
         showTimestamp: true,
@@ -320,14 +365,14 @@ class NotificationServiceClass {
       },
       ios: {
         sound: 'default',
-        critical: true,  // Critical alerts bypass Do Not Disturb
-        criticalVolume: 1.0,  // Maximum volume for critical alerts
-        categoryId: 'CALL_INVITATION',  // Category for action buttons
-        attachments: [],
+        interruptionLevel: 'timeSensitive',
+        categoryId: 'CALL_INVITATION',
         foregroundPresentationOptions: {
           alert: true,
           badge: true,
           sound: true,
+          banner: true,
+          list: true,
         },
       },
     });
@@ -360,7 +405,13 @@ class NotificationServiceClass {
 
   private async requestPermissions(): Promise<void> {
     if (Platform.OS === 'ios') {
-      await messaging().requestPermission();
+      const authStatus = await messaging().requestPermission();
+      console.log('[NotificationService] iOS permission status:', authStatus);
+
+      if (!messaging().isDeviceRegisteredForRemoteMessages) {
+        await messaging().registerDeviceForRemoteMessages();
+        console.log('[NotificationService] ✅ Device registered for remote messages');
+      }
     }
     await notifee.requestPermission();
   }
@@ -375,7 +426,11 @@ class NotificationServiceClass {
       });
     }
     
-    // Set up iOS notification categories with actions
+    // Set up iOS notification categories with actions (notification tray)
+    // These appear when user long-presses / pulls down the notification banner.
+    // Both actions have foreground:true so the app launches and handles them via
+    // notifee.onForegroundEvent / notifee.onBackgroundEvent ACTION_PRESS events.
+    // Decline is also marked destructive (red) on iOS.
     if (Platform.OS === 'ios') {
       await notifee.setNotificationCategories([
         {
@@ -383,19 +438,24 @@ class NotificationServiceClass {
           actions: [
             {
               id: ACTION_ACCEPT,
-              title: 'Accept',
-              foreground: true,  // Open app when tapped
+              title: '✅ Accept',
+              // foreground:true → app opens to foreground so CallManager can connect
+              foreground: true,
             },
             {
               id: ACTION_REJECT,
-              title: 'Decline',
-              foreground: false,  // Handle in background
-              destructive: true,  // Red button
+              title: '❌ Decline',
+              // foreground:false → handled in background; app does NOT come to foreground
+              foreground: false,
+              destructive: true, // Red button on iOS
             },
           ],
+          allowInCarPlay: true,
+          // intentIdentifiers allows Siri / CarPlay to classify these
+          intentIdentifiers: [],
         },
       ]);
-      console.log('[NotificationService] ✅ iOS notification categories configured');
+      console.log('[NotificationService] ✅ iOS notification categories configured (Accept + red Decline)');
     }
   }
 
@@ -411,6 +471,12 @@ class NotificationServiceClass {
       }
 
       console.log('[NotificationService] Getting FCM token...');
+
+      if (Platform.OS === 'ios' && !messaging().isDeviceRegisteredForRemoteMessages) {
+        await messaging().registerDeviceForRemoteMessages();
+        console.log('[NotificationService] ✅ Device registered for remote messages (from getFcmToken)');
+      }
+
       const fcmtoken = await messaging().getToken();
       console.log('[NotificationService] FCM token retrieved:', fcmtoken ? 'success' : 'null');
 
@@ -474,9 +540,11 @@ class NotificationServiceClass {
   registerHandlers(handlers: {
     onIncomingCall?: (payload: IncomingCallPayload, options?: { skipNotification?: boolean }) => void;
     onAction?: (action: PendingCallAction, callId: string) => void;
+    onNotificationBodyTap?: (payload: IncomingCallPayload) => void;
   }): void {
     this.incomingHandler = handlers.onIncomingCall;
     this.actionHandler = handlers.onAction;
+    this.notificationBodyTapHandler = handlers.onNotificationBodyTap;
   }
 }
 

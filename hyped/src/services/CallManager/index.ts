@@ -22,6 +22,7 @@ import { WebRTCService } from '../WebRTCService';
 import { WebRTCMediaService } from '../WebRTCMediaService';
 import { NotificationService } from '../NotificationService';
 import { AppLifecycleService } from '../AppLifecycleService';
+import { CallKeepService } from '../CallKeepService';
 import type { CallState, IncomingCallPayload, PendingCallAction, PersistedCall } from '../../types/call';
 import { buildPersistedCall, isCallExpired } from '../../utils/call';
 
@@ -69,11 +70,18 @@ class CallManagerClass {
     if (!fcmToken) {
       fcmToken = await NotificationService.getFcmToken().catch(() => null);
     }
+
+    // Get cached VoIP token (set by CallKeepService after 'registration' event)
+    // Import inline to avoid circular deps
+    const { CallKeepService } = require('../CallKeepService');
+    const voipToken = Platform.OS === 'ios' ? (CallKeepService.getCachedVoipToken?.() ?? null) : null;
+
     WebRTCService.initialize({
       userId,
       deviceId,
       platform: Platform.OS,
       fcmToken,
+      voipToken,
     });
 
     WebRTCService.on('incoming_call', this.handleIncomingCall);
@@ -89,7 +97,21 @@ class CallManagerClass {
     NotificationService.registerHandlers({
       onIncomingCall: this.handleIncomingNotification.bind(this),
       onAction: this.handleNotificationAction,
+      onNotificationBodyTap: this.handleNotificationBodyTap.bind(this),
     });
+
+    // iOS: Answer/Decline from CallKit (green/red by default)
+    CallKeepService.registerCallbacks({
+      onAnswer: (callUUID) => {
+        this.navigateToCallScreen(callUUID);
+        this.acceptCall(callUUID).catch((e) => console.warn('[CallManager] CallKeep accept failed:', e));
+      },
+      onEndCall: (callUUID) => {
+        this.rejectCall(callUUID).catch((e) => console.warn('[CallManager] CallKeep reject failed:', e));
+      },
+    });
+
+    this.processCallKeepInitialEvents();
 
     WebRTCService.ensureConnected().catch(() => {
       console.warn('[CallManager] Signaling connection pending');
@@ -217,6 +239,13 @@ class CallManagerClass {
     options?: { skipNotification?: boolean }
   ): void {
     const persisted = 'expiresAt' in call ? call : buildPersistedCall(call);
+    console.log('[CallManager] 🔔 handleIncomingNotification:', {
+      callId: persisted.callId,
+      state: this.state,
+      skipNotification: options?.skipNotification,
+      hasCurrentCall: !!this.currentCall,
+      currentCallId: this.currentCall?.callId,
+    });
 
     if (isCallExpired(persisted)) {
       NotificationService.showMissedCallNotification({
@@ -254,14 +283,82 @@ class CallManagerClass {
 
   private handleNotificationAction = async (action: PendingCallAction, callId: string): Promise<void> => {
     if (action === 'accept') {
-      // Navigate to Call screen when accepting from foreground notification
       this.navigateToCallScreen(callId);
-      // Then accept the call
       await this.acceptCall(callId);
     } else {
       await this.rejectCall(callId);
     }
   };
+
+  /** iOS: User tapped notification body → show IncomingCall screen (profile + slide answer/reject) */
+  private handleNotificationBodyTap = (payload: IncomingCallPayload): void => {
+    this.handleIncomingNotification(payload, { skipNotification: true });
+    AppLifecycleService.navigateToIncomingCallScreen();
+  };
+
+  /** Process CallKeep events that fired before JS was ready (e.g. cold start from Answer) */
+  private processCallKeepInitialEvents(): void {
+    if (Platform.OS !== 'ios') return;
+    try {
+      const { NativeModules } = require('react-native');
+      if (NativeModules.RNCallKeep == null) return;
+      const RNCallKeep = require('react-native-callkeep').default;
+      RNCallKeep.getInitialEvents?.().then((events: Array<{ name: string; data?: any }>) => {
+        console.log('[CallManager] CallKeep initial events:', JSON.stringify(events));
+
+        // First pass: restore call state from the incoming push payload.
+        // 'didDisplayIncomingCall' fires on cold/VoIP-push start with the full payload.
+        for (const ev of (events || [])) {
+          if (ev.name === 'RNCallKeepDidDisplayIncomingCall' && ev.data) {
+            const d = ev.data;
+            const callId = d.callUUID || d.callId;
+            const callerId = d.handle || d.callerId || '';
+            // payload is the full dict passed by AppDelegate via reportNewIncomingCall
+            const payload = d.payload || {};
+            const inner = payload.data || payload;
+            const callerName = d.localizedCallerName || inner.callerName || 'Unknown';
+            const callType = (inner.callType === 'video' ? 'video' : 'audio') as 'audio' | 'video';
+
+            if (callId) {
+              console.log('[CallManager] 📞 Restoring call from VoIP push payload:', { callId, callerId, callerName, callType });
+              // Mark as VoIP-reported BEFORE handleIncomingNotification so that
+              // if the socket INCOMING_CALL event also fires, displayIncomingCall is skipped.
+              CallKeepService.markVoipReported(callId);
+              const callData = {
+                callId,
+                callerId,
+                callerName,
+                callType,
+                timestamp: inner.timestamp ? Number(inner.timestamp) : Date.now(),
+                expiresAt: Date.now() + 60000,
+              };
+              // Persist so acceptCall/rejectCall can find it
+              PersistenceService.saveActiveCall(callData).catch(() => {});
+              // Put CallManager into INCOMING_NOTIFICATION state
+              this.handleIncomingNotification(callData, { skipNotification: true });
+            }
+            break;
+          }
+        }
+
+        // Second pass: handle user actions (answer / end) that fired before JS loaded.
+        for (const ev of (events || [])) {
+          if (ev.name === 'RNCallKeepPerformAnswerCallAction' && ev.data?.callUUID) {
+            this.navigateToCallScreen(ev.data.callUUID);
+            this.acceptCall(ev.data.callUUID).catch(() => {});
+          } else if (ev.name === 'RNCallKeepPerformEndCallAction' && ev.data?.callUUID) {
+            this.rejectCall(ev.data.callUUID).catch(() => {});
+          }
+        }
+
+        if (events?.length) RNCallKeep.clearInitialEvents?.();
+      }).catch((err: any) => {
+        console.warn('[CallManager] getInitialEvents error:', err);
+      });
+    } catch {
+      // CallKeep not available
+    }
+  }
 
   private navigateToCallScreen(callId: string): void {
     // Get the call data to pass navigation params
@@ -424,8 +521,12 @@ class CallManagerClass {
   }
 
   public async rejectCall(callId?: string): Promise<void> {
+    console.log('[CallManager] 🚫 rejectCall() called:', { callId, state: this.state, currentCallId: this.currentCall?.callId });
     const call = await this.getOrRestoreCall(callId);
-    if (!call) return;
+    if (!call) {
+      console.log('[CallManager] 🚫 rejectCall: no call found, ignoring');
+      return;
+    }
 
     if (this.state === 'ENDED' || this.state === 'ENDING') return;
 
@@ -500,6 +601,16 @@ class CallManagerClass {
   }
 
   private handleIncomingCall = (payload: IncomingCallPayload): void => {
+    const alreadyVoip = Platform.OS === 'ios' && CallKeepService.isVoipReported(payload.callId);
+    console.log('[CallManager] 📥 Incoming call via SOCKET:', {
+      callId: payload.callId,
+      callerId: payload.callerId,
+      callerName: payload.callerName,
+      callType: payload.callType,
+      alreadyShownViaVoip: alreadyVoip,
+    });
+    // handleIncomingNotification calls showIncomingCallNotification → displayIncomingCall.
+    // displayIncomingCall itself checks _voipReportedCallIds and skips if already shown.
     this.handleIncomingNotification(payload);
   };
 
@@ -607,6 +718,7 @@ class CallManagerClass {
    * CONNECTED → ENDING → ENDED → IDLE
    */
   private async endCallInternal(reason: string): Promise<void> {
+    console.log('[CallManager] 🔚 endCallInternal:', { reason, state: this.state });
     // If already ending or ended, skip
     if (this.state === 'ENDED' || this.state === 'ENDING') return;
 
@@ -824,6 +936,8 @@ class CallManagerClass {
   }
 
   private async cleanupAfterCall(): Promise<void> {
+    const callIdToEnd = this.currentCall?.callId;
+    console.log('[CallManager] 🧹 cleanupAfterCall:', { callIdToEnd, state: this.state, stack: new Error().stack?.split('\n').slice(1, 4).join(' | ') });
     // Cleanup WebRTC media
     try {
       await WebRTCMediaService.endCall();
@@ -834,6 +948,10 @@ class CallManagerClass {
     this.clearDurationTimer();
     if (this.currentCall) {
       NotificationService.clearCallNotification(this.currentCall.callId).catch(() => undefined);
+      if (callIdToEnd) {
+        console.log('[CallManager] 📴 Ending call in CallKit:', callIdToEnd);
+        CallKeepService.endCall(callIdToEnd);
+      }
     }
     this.currentCall = null;
     await PersistenceService.clearCallData();

@@ -277,14 +277,15 @@ export default function SignupScreen() {
       Alert.alert(t.Error, t.AllFieldsAreMandatory);
       return;
     }
-    if (!uniqueUsername || uniqueUsername.length < 3) {
-      Alert.alert(t.Error, t.UsernameRequired);
-      return;
-    }
-    if (!isUsernameValid) {
-      Alert.alert(t.Error, usernameError || 'Please enter or select a valid username');
-      return;
-    }
+    // Unique username validation bypassed
+    // if (!uniqueUsername || uniqueUsername.length < 3) {
+    //   Alert.alert(t.Error, t.UsernameRequired);
+    //   return;
+    // }
+    // if (!isUsernameValid) {
+    //   Alert.alert(t.Error, usernameError || 'Please enter or select a valid username');
+    //   return;
+    // }
     if (!dateOfBirth || !isValidDOB(dateOfBirth)) {
       Alert.alert(t.Error, 'Please enter a valid date of birth (DD/MM/YYYY)');
       return;
@@ -307,12 +308,13 @@ export default function SignupScreen() {
     const [day, month, year] = dateOfBirth.split('/').map(Number);
     const dobDate = new Date(year, month - 1, day);
 
+    const generatedUsername = uniqueUsername || username.trim().toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString(36);
     const postData: UpdateProfileRequest = {
       uniqueId,
       name: username.trim(),
       dateOfBirth: dobDate.toISOString(),
       gender: selectedGender.value,
-      username: uniqueUsername,
+      username: generatedUsername,
     };
     const trimmedReferral = referredBy?.trim();
     if (trimmedReferral) postData.referredBy = trimmedReferral;
@@ -331,7 +333,7 @@ export default function SignupScreen() {
         dispatch(setUserCountryCode(user_settings.desha_suchaka_koda));
       }
       await AsyncStorage.setItem('isRegister', 'true');
-      await AsyncStorage.setItem('uniqueUsername', uniqueUsername);
+      await AsyncStorage.setItem('uniqueUsername', generatedUsername);
       await AsyncStorage.setItem('userName', user_settings?.praman_patrika ?? username.trim());
       if (photo && user_settings?.parichayapatra) {
         await AsyncStorage.setItem('userProfilePhoto', user_settings.parichayapatra);
@@ -460,7 +462,7 @@ export default function SignupScreen() {
 
                     <Text style={styles.formTitle}>{t.Profile}</Text>
 
-                    <View style={styles.inputWrapper}>
+                     <View style={styles.inputWrapper}>
                       <FormInput
                         placeholder={t.Username}
                         value={username}
@@ -468,9 +470,9 @@ export default function SignupScreen() {
                         containerStyle={styles.inputContainer}
                         style={styles.input}
                       />
-                    </View>
+                    </View> 
 
-                    <View style={styles.inputWrapper}>
+                   {/* <View style={styles.inputWrapper}>
                       <View style={styles.usernameInputContainer}>
                         <FormInput
                           placeholder={t.UniqueUsername}
@@ -521,7 +523,7 @@ export default function SignupScreen() {
                           </View>
                         </View>
                       )}
-                    </View>
+                    </View> */}
 
                     <View style={styles.inputWrapper}>
                       <View style={styles.dateInputWrapper}>

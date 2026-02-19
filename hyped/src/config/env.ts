@@ -26,14 +26,15 @@ const envConfigs: Record<Environment, EnvConfig> = {
     Market_Place_API_URL: 'https://anuvadiniaiapi.aicte-india.org/form1/',
     // FCM_URL: 'https://samvadiniprod.aicte-india.org/',
     LRN_URL: 'https://lrn.aicte-india.org',
+    // CALL_SOCKET_URL: 'http://74.225.150.128:8000',
     // API_BASE_URL: 'http://192.168.0.113:4000/api', // Local development server
     // SOCKET_URL: 'ws://192.168.0.113:4000/socket',
     // Socket.IO call signaling server (HTTP is fine, Socket.IO handles protocol upgrade)
     // Make sure the server is accessible and port 8000 is open
-    FCM_URL: 'http://192.168.0.109:4000/',
-    CALL_SOCKET_URL: 'http://74.225.150.128:8000',
-    API_BASE_URL: 'http://192.168.0.109:4000/api', // Local development server
-    SOCKET_URL: 'ws://192.168.0.109:4000/socket',
+    FCM_URL: 'http://192.168.110.114:4000/',
+    CALL_SOCKET_URL: 'http://192.168.110.114:8002',
+    API_BASE_URL: 'http://192.168.110.114:4000/api', // Local development server
+    SOCKET_URL: 'ws://192.168.110.114:4000/socket',
     ENABLE_LOGGING: true,
     REQUEST_TIMEOUT: 30000,
     APP_NAME: 'Hyped Dev',
