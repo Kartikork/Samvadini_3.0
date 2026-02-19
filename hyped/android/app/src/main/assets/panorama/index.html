@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planet Surface</title>
+    <link rel="stylesheet" href="pannellum.css"/>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #panorama {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div id="panorama"></div>
+
+<script type="text/javascript" src="pannellum.js"></script>
+<!-- D:\AICTE\samvadini-2.0\Frontend\android\app\src\main\assets\panorama\index.html -->
+
+<!-- D:\AICTE\samvadini-2.0\Frontend\android\app\src\main\assets\panorama\index.html -->
+
+<script>
+    pannellum.viewer('panorama', {
+        "type": "equirectangular",
+        "panorama": "mars_surface.png",
+        "autoLoad": true,
+        "checkCrossOrigin": false  // <-- ADD THIS LINE
+    });
+</script>
+
+</body>
+</html>
