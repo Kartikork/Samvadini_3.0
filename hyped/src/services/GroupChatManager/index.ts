@@ -61,6 +61,8 @@ export interface GroupMember {
   sakriyamastiva: number; // active flag (1/0)
   contact_name?: string;
   contact_photo?: string;
+  publicKey: string; // encryption key (required for message encryption)
+  privateKey?: string; // decryption key
 }
 
 export interface GroupChannel {
@@ -581,6 +583,197 @@ class GroupChatManagerClass {
   }
 
   /**
+   * Send location message to group
+   * location data format: latitude:longitude (e.g., "37.7749:-122.4194")
+   */
+  public async sendGroupLocationMessage(
+    groupId: string,
+    latitude: number,
+    longitude: number,
+    _metadata?: any,
+  ): Promise<void> {
+    // 1. Auth / validation
+    if (!this.currentUserId) {
+      console.error('[GroupChatManager] Cannot send location message: no current user ID');
+      throw new Error('User not authenticated');
+    }
+
+    if (!groupId) {
+      console.warn('[GroupChatManager] Cannot send location message, no groupId');
+      return;
+    }
+
+    // Check permission first
+    let permission;
+    try {
+      permission = await hasGroupChatPermission(groupId, this.currentUserId);
+    } catch (error) {
+      console.error('[GroupChatManager] Error checking permission:', error);
+      permission = null;
+    }
+
+    // If permission check failed or returned null, verify user is member
+    if (!permission) {
+      const isMember = await groupDB.isUserMember(groupId, this.currentUserId);
+      if (isMember) {
+        permission = {
+          status: 'Accepted',
+          bhumika: 'Member',
+          sakriyamastiva: 1,
+          onlyAdminsCanMessage: 0,
+        };
+      } else {
+        const groupMetadata = await this.getGroupMetadata(groupId);
+        if (groupMetadata) {
+          permission = {
+            status: 'Accepted',
+            bhumika: 'Member',
+            sakriyamastiva: 1,
+            onlyAdminsCanMessage: 0,
+          };
+        } else {
+          console.error('[GroupChatManager] User is not a member of group:', {
+            groupId,
+            userId: this.currentUserId,
+          });
+          throw new Error('You are not a member of this group');
+        }
+      }
+    }
+
+    // Check if only admins can message
+    if (permission.onlyAdminsCanMessage && permission.bhumika !== 'Admin') {
+      console.error('[GroupChatManager] Only admins can send messages in this group');
+      throw new Error('Only admins can send messages in this group');
+    }
+
+    // 2. Create location data
+    const locationData = {
+      latitude,
+      longitude,
+      address: null,
+      timestamp: new Date().toISOString(),
+    };
+
+    const locationDataStr = JSON.stringify(locationData);
+    const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+    // Create metadata
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const refrenceId = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
+    const basePayload = {
+      samvada_chinha: groupId,
+      pathakah_chinha: this.currentUserId!,
+      vishayah: locationDataStr,  // Send as JSON with metadata
+      sandesha_prakara: 'location',
+      anuvadata_sandesham: false,
+      pratisandeshah: '',
+      refrenceId,
+      samvada_spashtam: null, // Groups don't use blocked IDs
+      kimFwdSandesha: false,
+      preritam_tithih: nowIso,
+      nirastah: 0,
+      avastha: 'sent',
+      disappear_at: null,
+      is_disappearing: false,
+      ukti: locationUrl,  // Store Google Maps URL in caption field for fallback
+      kimTaritaSandesha: false,
+      sthapitam_sandesham: null,
+      sampaditam: false,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      prasaranamId: '',
+    };
+
+    // 3. Insert into local DB first (source of truth)
+    try {
+      await insertGroupMessage({
+        refrenceId,
+        samvada_chinha: groupId,
+        pathakah_chinha: this.currentUserId!,
+        vishayah: locationDataStr,
+        sandesha_prakara: 'location',
+        avastha: 'sent',
+        preritam_tithih: nowIso,
+        nirastah: false,
+        anuvadata_sandesham: false,
+        pratisandeshah: '',
+        kimFwdSandesha: false,
+        ukti: locationUrl,
+        kimTaritaSandesha: false,
+        sthapitam_sandesham: null,
+        sampaditam: false,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        prasaranamId: '',
+      } as any);
+      console.log('[GroupChatManager] Inserted location message into DB:', {
+        groupId,
+        refrenceId,
+        location: locationData,
+      });
+    } catch (error) {
+      console.error('[GroupChatManager] Failed to insert location message into DB:', error);
+    }
+
+    // 4. Get group members' public keys for encryption
+    const groupMembers = await groupDB.getGroupMembers(groupId);
+    const otherMembers = groupMembers.filter(
+      m => m.ekatma_chinha !== this.currentUserId,
+    );
+
+    if (otherMembers.length === 0) {
+      console.warn('[GroupChatManager] No other members in group, cannot encrypt');
+      return;
+    }
+
+    // 5. Encrypt message (required - no plaintext fallback)
+    let encryptedPayload;
+    try {
+      const { encryptMessage } = await import('../../helper/Encryption');
+      const encryptedBody = await encryptMessage(
+        basePayload.vishayah,
+        otherMembers[0].publicKey,
+      );
+      encryptedPayload = {
+        ...basePayload,
+        vishayah: encryptedBody,
+        isGroup: true,
+      };
+      console.log('[GroupChatManager] Location message encrypted successfully');
+    } catch (error) {
+      console.error('[GroupChatManager] Location encryption failed:', error);
+      return;
+    }
+
+    // 6. Send encrypted message via socket FIRST (for real-time delivery)
+    await this.sendViaSocket(encryptedPayload);
+
+    // 7. Send encrypted message to API (for persistence/confirmation)
+    try {
+      const { chatAPI } = await import('../../api/endpoints');
+      const encryptedPayloadWithIP = {
+        ...encryptedPayload,
+        ip_address: 'Unknown',
+      };
+
+      await chatAPI.sendEncryptedMessage(encryptedPayloadWithIP);
+      console.log('[GroupChatManager] Location message sent to API:', {
+        groupId,
+        refrenceId,
+        location: locationData,
+      });
+    } catch (error) {
+      console.error('[GroupChatManager] Error sending location message to API:', error);
+      // Continue even if API call fails - socket send already succeeded
+    }
+  }
+
+  /**
    * Send message via socket (with retry logic) - matching OutgoingMessageManager pattern
    */
   private async sendViaSocket(payload: any): Promise<void> {
@@ -631,7 +824,7 @@ class GroupChatManagerClass {
 
     for (const [refrenceId, payload] of this.pendingMessages.entries()) {
       try {
-        await SocketService.sendMessage(payload);
+        await SocketService.sendMessage(payload as any);
         console.log('[GroupChatManager] Retried message sent:', {
           groupId: payload?.samvada_chinha,
           refrenceId,
@@ -1299,8 +1492,8 @@ class GroupChatManagerClass {
    * Update group last message
    */
   private async updateGroupLastMessage(
-    groupId: string,
-    message: GroupMessage,
+    _groupId: string,
+    _message: GroupMessage,
   ): Promise<void> {
     try {
       // Update group last message via groupDB

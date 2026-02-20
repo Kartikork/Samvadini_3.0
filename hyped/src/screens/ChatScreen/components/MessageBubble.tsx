@@ -10,6 +10,7 @@ import {
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MessageStatusIcon from './MessageStatusIcon';
 import MessageReplyPreview from './MessageReplyPreview';
+import LocationMessageBubble from './LocationMessageBubble';
 
 interface ChatMessage {
   anuvadata_id: number;
@@ -173,6 +174,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   <View style={styles.videoPlaceholder}>
                     <Text style={styles.videoText}>📹 Video</Text>
                   </View>
+                ) : message.sandesha_prakara === 'location' ? (
+                  <LocationMessageBubble
+                    locationData={message.vishayah}
+                    isOutgoing={isOutgoing}
+                  />
                 ) : (
                   <View style={styles.documentPlaceholder}>
                     <Text style={styles.documentText}>
@@ -291,6 +297,33 @@ function createStyles(isOutgoing: boolean, isHighlighted: boolean) {
     videoText: {
       fontSize: 14,
       color: '#8696A0',
+    },
+
+    locationContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 12,
+      backgroundColor: isOutgoing ? 'rgba(255, 255, 255, 0.2)' : '#F0F0F0',
+      borderRadius: 6,
+      minWidth: 220,
+    },
+
+    locationContent: {
+      marginLeft: 12,
+      flex: 1,
+    },
+
+    locationTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: isOutgoing ? '#FFFFFF' : '#000000',
+    },
+
+    locationCoords: {
+      fontSize: 12,
+      color: isOutgoing ? 'rgba(255,255,255,0.8)' : '#666666',
+      marginTop: 2,
+      fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     },
 
     documentPlaceholder: {
