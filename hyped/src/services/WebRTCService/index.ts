@@ -125,7 +125,7 @@ class WebRTCServiceClass {
         // VoIP token to the backend (needed for killed-state call wakeup).
         if (Platform.OS === 'ios') {
           CallKeepService.setVoipTokenEmitter((token: string) => {
-            console.log('[WebRTCService] Sending VoIP token to backend');
+            console.log('[WebRTCService] 📤 Sending VoIP token to backend:', token.substring(0, 16) + '…');
             this.socket?.emit(SOCKET_EVENTS.REGISTER_VOIP_TOKEN, { voipToken: token });
           });
         }
@@ -254,12 +254,20 @@ class WebRTCServiceClass {
 
   private registerIfNeeded(): void {
     if (!this.socket || !this.config || this.isRegistered) return;
+    const voipToken = this.config.voipToken || undefined;
+    console.log('[WebRTCService] 📝 Registering with backend', {
+      userId: this.config.userId,
+      platform: this.config.platform,
+      hasFcmToken: !!this.config.fcmToken,
+      hasVoipToken: !!voipToken,
+      voipTokenPrefix: voipToken ? voipToken.substring(0, 16) + '…' : 'NONE ⚠️',
+    });
     this.socket.emit(SOCKET_EVENTS.REGISTER, {
       userId: this.config.userId,
       deviceId: this.config.deviceId,
       platform: this.config.platform,
       fcmToken: this.config.fcmToken || undefined,
-      voipToken: this.config.voipToken || undefined,
+      voipToken,
     });
   }
 

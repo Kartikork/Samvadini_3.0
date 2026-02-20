@@ -78,14 +78,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 extension AppDelegate: PKPushRegistryDelegate {
 
   /// Called when iOS assigns/updates the VoIP push token.
-  /// react-native-callkeep emits a 'registration' event to JS with this token.
+  /// Persists it to NSUserDefaults immediately (synchronously on main queue)
+  /// so the JS layer can read it via Settings.get('voipToken') at startup.
+  /// PushKit fires this callback before React Native finishes loading, so
+  /// the token is always in UserDefaults by the time JS runs.
   func pushRegistry(_ registry: PKPushRegistry,
                     didUpdate pushCredentials: PKPushCredentials,
                     for type: PKPushType) {
     guard type == .voIP else { return }
     let token = pushCredentials.token.map { String(format: "%02x", $0) }.joined()
-    print("[AppDelegate] VoIP push token: \(token.prefix(16))…")
-    // react-native-callkeep handles token registration via its JS 'registration' event
+    print("[AppDelegate] 📲 VoIP token received: \(token.prefix(16))…")
+    UserDefaults.standard.set(token, forKey: "voipToken")
+    UserDefaults.standard.synchronize()
+    print("[AppDelegate] ✅ VoIP token saved to UserDefaults (\(token.count) chars)")
   }
 
   /// Called when a VoIP push arrives – even if the app is completely killed.

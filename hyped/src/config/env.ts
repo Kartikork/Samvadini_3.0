@@ -42,14 +42,19 @@ const envConfigs: Record<Environment, EnvConfig> = {
       '?sp=racwdl&st=2025-12-02T09:15:41Z&se=2026-03-20T17:30:41Z&spr=https&sv=2024-11-04&sr=c&sig=S8%2Bu1KJqnlz%2FtkdU4qkxguFZg8xK5vY3YuRzr02alQ8%3D',
   },
   staging: {
-    API_BASE_URL: 'https://qasamvadini.aicte-india.org/api',
-    SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
+    // API_BASE_URL: 'https://qasamvadini.aicte-india.org/api',
+    // SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
     Market_Place_API_URL: 'https://marketplace-prod.aicte-india.org/',
-    FCM_URL: 'https://samvadiniprod.aicte-india.org/',
+    // FCM_URL: 'https://samvadiniprod.aicte-india.org/',
     LRN_URL: 'https://lrn.aicte-india.org',
+
+    FCM_URL: 'http://192.168.110.114:4000/',
+    CALL_SOCKET_URL: 'http://192.168.110.114:8002',
+    API_BASE_URL: 'http://192.168.110.114:4000/api', // Local development server
+    SOCKET_URL: 'ws://192.168.110.114:4000/socket',
     // Socket.IO call signaling server (HTTP is fine, Socket.IO handles protocol upgrade)
     // Make sure the server is accessible and port 8000 is open
-    CALL_SOCKET_URL: 'http://74.225.150.128:8000',
+    // CALL_SOCKET_URL: 'http://74.225.150.128:8000',
     ENABLE_LOGGING: true,
     REQUEST_TIMEOUT: 30000,
     APP_NAME: 'Hyped Staging',
@@ -57,14 +62,19 @@ const envConfigs: Record<Environment, EnvConfig> = {
       '?sp=racwdl&st=2025-12-02T09:15:41Z&se=2026-03-20T17:30:41Z&spr=https&sv=2024-11-04&sr=c&sig=S8%2Bu1KJqnlz%2FtkdU4qkxguFZg8xK5vY3YuRzr02alQ8%3D',
   },
   production: {
-    API_BASE_URL: 'https://qasamvadini.aicte-india.org/api',
-    SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
+    // API_BASE_URL: 'https://qasamvadini.aicte-india.org/api',
+    // SOCKET_URL: 'wss://qasamvadini.aicte-india.org/socket',
     Market_Place_API_URL: 'https://marketplace-prod.aicte-india.org/',
-    FCM_URL: 'https://samvadiniprod.aicte-india.org/',
+    // FCM_URL: 'https://samvadiniprod.aicte-india.org/',
     LRN_URL: 'https://lrn.aicte-india.org',
+
+    FCM_URL: 'http://192.168.110.114:4000/',
+    CALL_SOCKET_URL: 'http://192.168.110.114:8002',
+    API_BASE_URL: 'http://192.168.110.114:4000/api', // Local development server
+    SOCKET_URL: 'ws://192.168.110.114:4000/socket',
     // Socket.IO call signaling server (HTTP is fine, Socket.IO handles protocol upgrade)
     // Make sure the server is accessible and port 8000 is open
-    CALL_SOCKET_URL: 'http://74.225.150.128:8000',
+    // CALL_SOCKET_URL: 'http://74.225.150.128:8000',
     ENABLE_LOGGING: false,
     REQUEST_TIMEOUT: 30000,
     APP_NAME: 'Hyped',

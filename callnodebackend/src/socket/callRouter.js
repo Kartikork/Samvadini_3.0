@@ -103,10 +103,18 @@ class CallRouter {
       // Note: simulators cannot receive VoIP pushes – real device required.
       try {
         if (apnsService.isAvailable()) {
-          logger.info('[CallRouter] Sending direct APNs VoIP push for iOS', { callId, calleeId });
-          apnsService.sendVoipPush(calleeId, callData).catch(err => {
-            logger.warn('[CallRouter] APNs VoIP push error (non-fatal):', err.message || err);
+          logger.info('[CallRouter] 🔔 Attempting APNs VoIP push', { callId, calleeId });
+          apnsService.sendVoipPush(calleeId, callData).then(result => {
+            if (result.success) {
+              logger.info('[CallRouter] ✅ APNs VoIP push sent OK', { callId, calleeId });
+            } else {
+              logger.warn('[CallRouter] ❌ APNs VoIP push failed', { callId, calleeId, error: result.error });
+            }
+          }).catch(err => {
+            logger.warn('[CallRouter] ❌ APNs VoIP push error:', err.message || err);
           });
+        } else {
+          logger.warn('[CallRouter] ⚠️  APNs service not available – VoIP push skipped. Check APNS_KEY_PATH/APNS_KEY_ID/APNS_TEAM_ID/APNS_BUNDLE_ID in .env');
         }
       } catch (apnsErr) {
         logger.warn('[CallRouter] APNs VoIP push setup error (non-fatal):', apnsErr.message || apnsErr);

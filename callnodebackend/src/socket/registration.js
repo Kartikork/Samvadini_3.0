@@ -81,7 +81,9 @@ class RegistrationHandler {
       // Register VoIP token if provided (iOS PushKit – killed-state calls)
       if (voipToken && platform === 'ios') {
         await apnsService.registerVoipToken(userId, voipToken);
-        logger.info('[Registration] VoIP token registered', { userId });
+        logger.info('[Registration] ✅ VoIP token registered & stored in Redis', { userId, prefix: voipToken.substring(0, 16) + '…' });
+      } else if (platform === 'ios') {
+        logger.warn('[Registration] ⚠️  iOS device registered WITHOUT VoIP token – kill-state calls will not work', { userId });
       }
 
       // Mark socket as registered
@@ -138,6 +140,7 @@ class RegistrationHandler {
       return;
     }
     await apnsService.registerVoipToken(userId, voipToken);
+    logger.info('[Registration] ✅ VoIP token updated via REGISTER_VOIP_TOKEN event', { userId, prefix: voipToken.substring(0, 16) + '…' });
   }
 
   /**

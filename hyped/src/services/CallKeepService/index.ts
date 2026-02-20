@@ -10,7 +10,7 @@
  *   APNs VoIP push that instantly wakes the app even when killed.
  */
 
-import { NativeModules, Platform } from 'react-native';
+import { NativeModules, Platform, Settings } from 'react-native';
 
 type CallKeepCallbacks = {
   onAnswer: (callUUID: string) => void;
@@ -29,6 +29,8 @@ const _voipReportedCallIds = new Set<string>();
 // Track ALL callIds we've ever called displayIncomingCall for (any path).
 // Guards against socket + FCM both firing for the same call.
 const _displayedCallIds = new Set<string>();
+// Subscription for VoIP token watcher — cleared on each setup() to avoid duplicates.
+let _voipTokenWatchId: number | null = null;
 
 /** Only require CallKeep when native module exists; otherwise library throws NativeEventEmitter(null). */
 function getRNCallKeep(): typeof import('react-native-callkeep').default | null {
@@ -98,21 +100,54 @@ export const CallKeepService = {
         console.log('[CallKeepService] ✅ CallKit ready');
       }
 
-      // 'registration' fires with the PushKit VoIP token.
-      // Forward it to the backend so APNs VoIP pushes can reach a killed app.
-      const regListener = RNCallKeep.addEventListener('registration', ({ token }: { token: string }) => {
-        console.log('[CallKeepService] VoIP token received:', token?.substring(0, 16) + '…');
-        _cachedVoipToken = token; // cache in case socket isn't connected yet
-        if (_emitVoipToken && token) {
-          _emitVoipToken(token);
-        }
-      });
-      if (regListener) listeners.push(regListener);
+      // ─── VoIP Token via UserDefaults / Settings API ────────────────────────
+      // AppDelegate.pushRegistry(_:didUpdate:for:) fires synchronously on the
+      // main queue BEFORE React Native finishes loading. It writes the token to
+      // NSUserDefaults. Settings is RN's iOS-only wrapper around NSUserDefaults
+      // and reads it synchronously here via Settings.get('voipToken').
+      //
+      // This covers:
+      //   1. Every launch after the first — token already in UserDefaults ✅
+      //   2. First-ever launch: watchKeys catches the late-arriving token
+      //   3. Belt-and-suspenders: 3-second retry for any race condition
 
-      // 'didDisplayIncomingCall' fires (as a live event) whenever AppDelegate calls
-      // RNCallKeep.reportNewIncomingCall – i.e. a VoIP push was delivered.
-      // Mark the callId so displayIncomingCall skips it and avoids a double-registration
-      // that causes iOS to immediately fire endCall.
+      if (_voipTokenWatchId !== null) {
+        Settings.clearWatch(_voipTokenWatchId);
+        _voipTokenWatchId = null;
+      }
+
+      const sendVoipToken = (token: string) => {
+        if (token && token !== _cachedVoipToken) {
+          console.log('[CallKeepService] 📌 VoIP token:', token.substring(0, 16) + '…');
+          _cachedVoipToken = token;
+          if (_emitVoipToken) _emitVoipToken(token);
+        }
+      };
+
+      // 1. Synchronous read from UserDefaults
+      const storedToken = Settings.get('voipToken') as string | null;
+      if (storedToken) {
+        sendVoipToken(storedToken);
+      } else {
+        console.log('[CallKeepService] ⏳ No VoIP token in UserDefaults yet — watching…');
+      }
+
+      // 2. Watch for late arrival (very first install, PushKit races RN load)
+      _voipTokenWatchId = Settings.watchKeys(['voipToken'], () => {
+        const t = Settings.get('voipToken') as string | null;
+        if (t) sendVoipToken(t);
+      });
+
+      // 3. Retry after 3s as a final fallback
+      setTimeout(() => {
+        const t = Settings.get('voipToken') as string | null;
+        if (t) sendVoipToken(t);
+      }, 3000);
+
+      // ─── didDisplayIncomingCall ───────────────────────────────────────────
+      // Fires when AppDelegate calls RNCallKeep.reportNewIncomingCall (VoIP push).
+      // Mark the callId so displayIncomingCall skips it to avoid double-registration
+      // (iOS fires endCall immediately if the same UUID is registered twice).
       const displayListener = RNCallKeep.addEventListener('didDisplayIncomingCall', (data: any) => {
         const callId = data?.callUUID || data?.callId;
         if (callId) {
