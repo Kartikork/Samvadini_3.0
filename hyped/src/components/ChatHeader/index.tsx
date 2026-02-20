@@ -40,31 +40,45 @@ const ChatHeader = memo<ChatHeaderProps>(function ChatHeader({
 
   const activeChat = useAppSelector(state => state.activeChat);
   const chatId =
-    activeChat.chatId ??
+    activeChat.chat?.samvada_chinha ??
     chatIdProp ??
     (route.params as { chatId?: string })?.chatId ??
     '';
   const chatFromDb = useChatById(chatId);
 
   const title = useMemo(() => {
-    if (activeChat.chatId === chatId) return activeChat.username;
+    if (activeChat.chat?.samvada_chinha === chatId) {
+      return (
+        activeChat.chat?.contact_name ??
+        activeChat.chat?.samvada_nama ??
+        'Unknown'
+      );
+    }
     return chatFromDb?.contact_name ?? chatFromDb?.samvada_nama ?? 'Unknown';
-  }, [activeChat.chatId, activeChat.username, chatId, chatFromDb]);
+  }, [activeChat.chat?.samvada_chinha, activeChat.chat?.contact_name, activeChat.chat?.samvada_nama, chatId, chatFromDb]);
 
   const avatarUrl = useMemo(() => {
-    if (activeChat.chatId === chatId) return activeChat.avatar;
+    if (activeChat.chat?.samvada_chinha === chatId) {
+      return activeChat.chat?.contact_photo ?? activeChat.chat?.samuha_chitram ?? null;
+    }
     return chatFromDb?.contact_photo ?? chatFromDb?.samuha_chitram ?? null;
-  }, [activeChat.chatId, activeChat.avatar, chatId, chatFromDb]);
+  }, [activeChat.chat?.samvada_chinha, activeChat.chat?.contact_photo, activeChat.chat?.samuha_chitram, chatId, chatFromDb]);
 
   const isGroup = useMemo(() => {
-    if (activeChat.chatId === chatId) return activeChat.isGroup;
+    if (activeChat.chat?.samvada_chinha === chatId) {
+      return activeChat.chat?.prakara === 'Group';
+    }
     return chatFromDb?.prakara === 'Group';
-  }, [activeChat.chatId, activeChat.isGroup, chatId, chatFromDb]);
+  }, [activeChat.chat?.samvada_chinha, activeChat.chat?.prakara, chatId, chatFromDb?.prakara]);
 
   const receiverId = useMemo(() => {
     if (isGroup) return null;
-    return chatFromDb?.contact_uniqueId || null;
-  }, [isGroup, chatFromDb]);
+    return (
+      activeChat.chat?.contact_uniqueId ??
+      chatFromDb?.contact_uniqueId ??
+      null
+    );
+  }, [isGroup, activeChat.chat?.contact_uniqueId, chatFromDb]);
 
   const avatarSource = useMemo((): ImageSourcePropType | null => {
     const url = getImageUrlWithSas(avatarUrl ?? undefined);

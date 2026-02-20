@@ -45,7 +45,10 @@ class OutgoingMessageManagerClass {
     // When socket connects, try to flush pending messages
     SocketService.on('connected', () => {
       this.flushQueue().catch(err =>
-        console.error('[OutgoingMessageManager] flushQueue on connect error:', err),
+        console.error(
+          '[OutgoingMessageManager] flushQueue on connect error:',
+          err,
+        ),
       );
     });
   }
@@ -77,7 +80,8 @@ class OutgoingMessageManagerClass {
       replyMessage?: any;
       blockedIds?: string[];
       disappearTime?: { disappear_at: string | null; is_disappearing: boolean };
-    }
+      activeChat?: any; // Full chat object from Redux
+    },
   ): Promise<void> {
     const trimmed = text.trim();
     if (!trimmed) {
@@ -88,7 +92,9 @@ class OutgoingMessageManagerClass {
     const { auth } = store.getState();
     const currentUserId = auth.uniqueId;
     if (!currentUserId) {
-      console.warn('[OutgoingMessageManager] Cannot send message, no current user id');
+      console.warn(
+        '[OutgoingMessageManager] Cannot send message, no current user id',
+      );
       return;
     }
 
@@ -100,7 +106,9 @@ class OutgoingMessageManagerClass {
     // 2. Create metadata - matching old chatScreen.js payload structure (lines 2216-2239)
     const now = new Date();
     const nowIso = now.toISOString();
-    const refrenceId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const refrenceId = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
 
     // Check if text is URL
     const urlPattern = /^(https?:\/\/|www\.)/i;
@@ -114,9 +122,10 @@ class OutgoingMessageManagerClass {
 
     // Blocked IDs (default: empty array)
     const blockedIds = options?.blockedIds || [];
-    const samvada_spashtam = blockedIds.length > 0 && blockedIds.includes(currentUserId)
-      ? blockedIds
-      : null;
+    const samvada_spashtam =
+      blockedIds.length > 0 && blockedIds.includes(currentUserId)
+        ? blockedIds
+        : null;
 
     // Reply message (pratisandeshah)
     const pratisandeshah = options?.replyMessage
@@ -156,26 +165,33 @@ class OutgoingMessageManagerClass {
     try {
       // 3. Insert into local DB first (source of truth)
       await insertChatMessage(basePayload);
-      console.log('[OutgoingMessageManager] Inserted outgoing message into DB:', {
-        chatId,
-        refrenceId,
-      });
     } catch (error) {
-      console.error('[OutgoingMessageManager] Failed to insert message into DB:', error);
+      console.error(
+        '[OutgoingMessageManager] Failed to insert message into DB:',
+        error,
+      );
       // Even if DB insert fails, we can still try sending, but UI might not show it correctly
     }
 
     // 4. Get other participant's public key (required for encryption)
-    const otherParticipant = await getOtherParticipantPublicKey(chatId, currentUserId);
-    if (!otherParticipant || !otherParticipant.publicKey) {
-      console.error('[OutgoingMessageManager] No public key found for other participant. Cannot send message without encryption.');
-      return;
-    }
+    const otherParticipant = await getOtherParticipantPublicKey(
+      chatId,
+      currentUserId,
+    );
+    // if (!otherParticipant) {
+    //   console.error(
+    //     '[OutgoingMessageManager] No public key found for other participant. Cannot send message without encryption.',
+    //   );
+    //   return;
+    // }
 
     // 5. Encrypt message (required - no plaintext fallback)
     let encryptedPayload;
     try {
-      const encryptedBody = await encryptMessage(basePayload.vishayah, otherParticipant.publicKey);
+      const encryptedBody = await encryptMessage(
+        basePayload.vishayah,
+        otherParticipant.publicKey,
+      );
       encryptedPayload = {
         ...basePayload,
         samvada_spashtam: blockedIds,
@@ -183,9 +199,16 @@ class OutgoingMessageManagerClass {
       };
       console.log('[OutgoingMessageManager] Message encrypted successfully');
     } catch (error) {
-      console.error('[OutgoingMessageManager] Encryption failed. Cannot send message without encryption:', error);
+      console.error(
+        '[OutgoingMessageManager] Encryption failed. Cannot send message without encryption:',
+        error,
+      );
       return;
     }
+    console.log(
+      encryptedPayload,
+      '8888888888888888888888888888888888888888888888888888888888888888888888888888',
+    );
 
     // 6. Send encrypted message via socket FIRST (for real-time delivery)
     await this.sendViaSocket(encryptedPayload);
@@ -197,14 +220,17 @@ class OutgoingMessageManagerClass {
         ...encryptedPayload,
         ip_address: 'Unknown', // TODO: Get actual IP using NetworkInfo if needed
       };
-      
+
       await chatAPI.sendEncryptedMessage(encryptedPayloadWithIP);
       console.log('[OutgoingMessageManager] Encrypted message sent to API:', {
         chatId,
         refrenceId,
       });
     } catch (error) {
-      console.error('[OutgoingMessageManager] Error sending encrypted message to API:', error);
+      console.error(
+        '[OutgoingMessageManager] Error sending encrypted message to API:',
+        error,
+      );
       // Continue even if API call fails - socket send already succeeded
     }
   }
@@ -221,7 +247,7 @@ class OutgoingMessageManagerClass {
       replyMessage?: any;
       blockedIds?: string[];
       disappearTime?: { disappear_at: string | null; is_disappearing: boolean };
-    }
+    },
   ): Promise<void> {
     if (!mediaUrl) return;
 
@@ -229,19 +255,25 @@ class OutgoingMessageManagerClass {
     const { auth } = store.getState();
     const currentUserId = auth.uniqueId;
     if (!currentUserId) {
-      console.warn('[OutgoingMessageManager] Cannot send media message, no current user id');
+      console.warn(
+        '[OutgoingMessageManager] Cannot send media message, no current user id',
+      );
       return;
     }
 
     if (!chatId) {
-      console.warn('[OutgoingMessageManager] Cannot send media message, no chatId');
+      console.warn(
+        '[OutgoingMessageManager] Cannot send media message, no chatId',
+      );
       return;
     }
 
     // metadata
     const now = new Date();
     const nowIso = now.toISOString();
-    const refrenceId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const refrenceId = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
 
     // Reply message (pratisandeshah)
     const pratisandeshah = options?.replyMessage
@@ -280,30 +312,49 @@ class OutgoingMessageManagerClass {
 
     try {
       await insertChatMessage(basePayload);
-      console.log('[OutgoingMessageManager] Inserted outgoing media message into DB:', { chatId, refrenceId });
+      console.log(
+        '[OutgoingMessageManager] Inserted outgoing media message into DB:',
+        { chatId, refrenceId },
+      );
     } catch (error) {
-      console.error('[OutgoingMessageManager] Failed to insert media message into DB:', error);
+      console.error(
+        '[OutgoingMessageManager] Failed to insert media message into DB:',
+        error,
+      );
     }
 
     // Encryption + send similar to text
-    const otherParticipant = await getOtherParticipantPublicKey(chatId, currentUserId);
+    const otherParticipant = await getOtherParticipantPublicKey(
+      chatId,
+      currentUserId,
+    );
     if (!otherParticipant || !otherParticipant.publicKey) {
-      console.warn('[OutgoingMessageManager] No public key found for other participant, sending plaintext media');
+      console.warn(
+        '[OutgoingMessageManager] No public key found for other participant, sending plaintext media',
+      );
       await this.sendViaSocket(basePayload);
       return;
     }
 
     let encryptedPayload;
     try {
-      const encryptedBody = await encryptMessage(basePayload.vishayah, otherParticipant.publicKey);
+      const encryptedBody = await encryptMessage(
+        basePayload.vishayah,
+        otherParticipant.publicKey,
+      );
       encryptedPayload = {
         ...basePayload,
         samvada_spashtam: options?.blockedIds || null,
         vishayah: encryptedBody,
       };
-      console.log('[OutgoingMessageManager] Media message encrypted successfully');
+      console.log(
+        '[OutgoingMessageManager] Media message encrypted successfully',
+      );
     } catch (error) {
-      console.error('[OutgoingMessageManager] Media encryption failed, sending plaintext as fallback:', error);
+      console.error(
+        '[OutgoingMessageManager] Media encryption failed, sending plaintext as fallback:',
+        error,
+      );
       encryptedPayload = {
         ...basePayload,
         samvada_spashtam: options?.blockedIds || null,
@@ -312,10 +363,19 @@ class OutgoingMessageManagerClass {
     }
 
     try {
-      await chatAPI.sendEncryptedMessage({ ...encryptedPayload, ip_address: 'Unknown' });
-      console.log('[OutgoingMessageManager] Encrypted media message sent to API:', { chatId, refrenceId });
+      await chatAPI.sendEncryptedMessage({
+        ...encryptedPayload,
+        ip_address: 'Unknown',
+      });
+      console.log(
+        '[OutgoingMessageManager] Encrypted media message sent to API:',
+        { chatId, refrenceId },
+      );
     } catch (error) {
-      console.error('[OutgoingMessageManager] Error sending encrypted media to API:', error);
+      console.error(
+        '[OutgoingMessageManager] Error sending encrypted media to API:',
+        error,
+      );
     }
 
     await this.sendViaSocket(encryptedPayload);
@@ -334,18 +394,22 @@ class OutgoingMessageManagerClass {
       replyMessage?: any;
       blockedIds?: string[];
       disappearTime?: { disappear_at: string | null; is_disappearing: boolean };
-    }
+    },
   ): Promise<void> {
     // 1. Auth / validation
     const { auth } = store.getState();
     const currentUserId = auth.uniqueId;
     if (!currentUserId) {
-      console.warn('[OutgoingMessageManager] Cannot send location message, no current user id');
+      console.warn(
+        '[OutgoingMessageManager] Cannot send location message, no current user id',
+      );
       return;
     }
 
     if (!chatId) {
-      console.warn('[OutgoingMessageManager] Cannot send location message, no chatId');
+      console.warn(
+        '[OutgoingMessageManager] Cannot send location message, no chatId',
+      );
       return;
     }
 
@@ -363,7 +427,9 @@ class OutgoingMessageManagerClass {
     // Create metadata
     const now = new Date();
     const nowIso = now.toISOString();
-    const refrenceId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const refrenceId = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
 
     // Disappear time (default: not disappearing)
     const disappearTime = options?.disappearTime || {
@@ -373,9 +439,10 @@ class OutgoingMessageManagerClass {
 
     // Blocked IDs (default: empty array)
     const blockedIds = options?.blockedIds || [];
-    const samvada_spashtam = blockedIds.length > 0 && blockedIds.includes(currentUserId)
-      ? blockedIds
-      : null;
+    const samvada_spashtam =
+      blockedIds.length > 0 && blockedIds.includes(currentUserId)
+        ? blockedIds
+        : null;
 
     // Reply message (pratisandeshah)
     const pratisandeshah = options?.replyMessage
@@ -391,7 +458,7 @@ class OutgoingMessageManagerClass {
     const basePayload = {
       samvada_chinha: chatId,
       pathakah_chinha: currentUserId,
-      vishayah: locationDataStr,  // Send as JSON with metadata
+      vishayah: locationDataStr, // Send as JSON with metadata
       sandesha_prakara: 'location',
       anuvadata_sandesham: false,
       pratisandeshah,
@@ -403,7 +470,7 @@ class OutgoingMessageManagerClass {
       avastha: 'sent',
       disappear_at: disappearTime.disappear_at,
       is_disappearing: disappearTime.is_disappearing,
-      ukti: locationUrl,  // Store Google Maps URL in caption field for fallback
+      ukti: locationUrl, // Store Google Maps URL in caption field for fallback
       kimTaritaSandesha: false,
       sthapitam_sandesham: null,
       sampaditam: false,
@@ -414,34 +481,53 @@ class OutgoingMessageManagerClass {
 
     try {
       await insertChatMessage(basePayload);
-      console.log('[OutgoingMessageManager] Inserted location message into DB:', {
-        chatId,
-        refrenceId,
-        location: locationData,
-      });
+      console.log(
+        '[OutgoingMessageManager] Inserted location message into DB:',
+        {
+          chatId,
+          refrenceId,
+          location: locationData,
+        },
+      );
     } catch (error) {
-      console.error('[OutgoingMessageManager] Failed to insert location message into DB:', error);
+      console.error(
+        '[OutgoingMessageManager] Failed to insert location message into DB:',
+        error,
+      );
     }
 
     // Get other participant's public key (required for encryption)
-    const otherParticipant = await getOtherParticipantPublicKey(chatId, currentUserId);
+    const otherParticipant = await getOtherParticipantPublicKey(
+      chatId,
+      currentUserId,
+    );
     if (!otherParticipant || !otherParticipant.publicKey) {
-      console.error('[OutgoingMessageManager] No public key found for other participant. Cannot send location message without encryption.');
+      console.error(
+        '[OutgoingMessageManager] No public key found for other participant. Cannot send location message without encryption.',
+      );
       return;
     }
 
     // Encrypt message (required - no plaintext fallback)
     let encryptedPayload;
     try {
-      const encryptedBody = await encryptMessage(basePayload.vishayah, otherParticipant.publicKey);
+      const encryptedBody = await encryptMessage(
+        basePayload.vishayah,
+        otherParticipant.publicKey,
+      );
       encryptedPayload = {
         ...basePayload,
         samvada_spashtam: blockedIds,
         vishayah: encryptedBody,
       };
-      console.log('[OutgoingMessageManager] Location message encrypted successfully');
+      console.log(
+        '[OutgoingMessageManager] Location message encrypted successfully',
+      );
     } catch (error) {
-      console.error('[OutgoingMessageManager] Location encryption failed. Cannot send message without encryption:', error);
+      console.error(
+        '[OutgoingMessageManager] Location encryption failed. Cannot send message without encryption:',
+        error,
+      );
       return;
     }
 
@@ -454,7 +540,7 @@ class OutgoingMessageManagerClass {
         ...encryptedPayload,
         ip_address: 'Unknown',
       };
-      
+
       await chatAPI.sendEncryptedMessage(encryptedPayloadWithIP);
       console.log('[OutgoingMessageManager] Location message sent to API:', {
         chatId,
@@ -462,7 +548,10 @@ class OutgoingMessageManagerClass {
         location: locationData,
       });
     } catch (error) {
-      console.error('[OutgoingMessageManager] Error sending location message to API:', error);
+      console.error(
+        '[OutgoingMessageManager] Error sending location message to API:',
+        error,
+      );
       // Continue even if API call fails - socket send already succeeded
     }
   }
@@ -479,11 +568,16 @@ class OutgoingMessageManagerClass {
           refrenceId: payload.refrenceId,
         });
       } catch (error) {
-        console.error('[OutgoingMessageManager] Socket send failed, enqueuing:', error);
+        console.error(
+          '[OutgoingMessageManager] Socket send failed, enqueuing:',
+          error,
+        );
         this.enqueue(payload);
       }
     } else {
-      console.log('[OutgoingMessageManager] Socket not connected, enqueuing message');
+      console.log(
+        '[OutgoingMessageManager] Socket not connected, enqueuing message',
+      );
       this.enqueue(payload);
     }
   }
@@ -508,7 +602,10 @@ class OutgoingMessageManagerClass {
     if (this.pendingQueue.length === 0) return;
 
     this.isFlushing = true;
-    console.log('[OutgoingMessageManager] Flushing pending queue:', this.pendingQueue.length);
+    console.log(
+      '[OutgoingMessageManager] Flushing pending queue:',
+      this.pendingQueue.length,
+    );
 
     const stillPending: PendingMessage[] = [];
 
@@ -534,10 +631,13 @@ class OutgoingMessageManagerClass {
             lastTriedAt: Date.now(),
           });
         } else {
-          console.error('[OutgoingMessageManager] Dropping message after max retries:', {
-            chatId: item.payload?.samvada_chinha,
-            refrenceId: item.payload?.refrenceId,
-          });
+          console.error(
+            '[OutgoingMessageManager] Dropping message after max retries:',
+            {
+              chatId: item.payload?.samvada_chinha,
+              refrenceId: item.payload?.refrenceId,
+            },
+          );
         }
       }
     }
@@ -548,5 +648,3 @@ class OutgoingMessageManagerClass {
 }
 
 export const OutgoingMessageManager = OutgoingMessageManagerClass.getInstance();
-
-

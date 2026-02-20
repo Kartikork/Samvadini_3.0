@@ -16,11 +16,8 @@ import { SocketService } from '../../../services/SocketService';
 import { OutgoingMessageManager } from '../../../services/OutgoingMessageManager';
 import { GroupChatManager } from '../../../services/GroupChatManager';
 import { useAppSelector } from '../../../state/hooks';
-import PickerModal from '../../../components/EmojiGifStickerPicker/PickerModal';
 import ActionButtons from './ActionButtons';
 import ReplyPreview from './ReplyPreview';
-import LinearGradient from 'react-native-linear-gradient';
-
 
 interface ChatInputProps {
   chatId: string;
@@ -41,13 +38,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [text, setText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const currentUserId = useAppSelector(state => state.auth.uniqueId);
+  const activeChat = useAppSelector(state => state.activeChat);
   const inputRef = useRef<TextInput>(null);
   const isTypingRef = useRef(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerHeight, setPickerHeight] = useState(0);
   const [showActions, setShowActions] = useState(false);
-console.log("chatId==========>", chatId);
 
   /**
    * Handle text change
@@ -59,12 +56,12 @@ console.log("chatId==========>", chatId);
     if (newText.length > 0 && !isTypingRef.current && currentUserId) {
       isTypingRef.current = true;
       SocketService.sendTypingStatus(chatId, currentUserId);
-      
+
       // Clear existing timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      
+
       // Schedule typing stop after 3s
       typingTimeoutRef.current = setTimeout(() => {
         if (isTypingRef.current && currentUserId) {
@@ -103,28 +100,24 @@ console.log("chatId==========>", chatId);
     }
 
     try {
-      console.log('Sending message:', chatId, isSending, currentUserId, 'isGroup:', isGroup);
-      
       if (isGroup) {
         // Use GroupChatManager for group messages
-        await GroupChatManager.sendGroupMessage(
-          chatId,
-          messageText,
-          'text',
-          {
-            replyMessage: replyMessage ? {
-              refrenceId: replyMessage.refrenceId,
-              pathakah_chinha: replyMessage.pathakah_chinha,
-              vishayah: replyMessage.vishayah,
-              sandesha_prakara: replyMessage.sandesha_prakara,
-              ukti: replyMessage.ukti || '',
-            } : undefined,
-          }
-        );
+        await GroupChatManager.sendGroupMessage(chatId, messageText, 'text', {
+          replyMessage: replyMessage
+            ? {
+                refrenceId: replyMessage.refrenceId,
+                pathakah_chinha: replyMessage.pathakah_chinha,
+                vishayah: replyMessage.vishayah,
+                sandesha_prakara: replyMessage.sandesha_prakara,
+                ukti: replyMessage.ukti || '',
+              }
+            : undefined,
+        });
       } else {
         // Use OutgoingMessageManager for 1-to-1 messages
         await OutgoingMessageManager.sendTextMessage(chatId, messageText, {
           replyMessage,
+          activeChat: activeChat.chat,
         });
       }
 
@@ -141,7 +134,16 @@ console.log("chatId==========>", chatId);
     } finally {
       setIsSending(false);
     }
-  }, [text, chatId, isSending, currentUserId, isGroup, onMessageSent, replyMessage, onCancelReply]);
+  }, [
+    text,
+    chatId,
+    isSending,
+    currentUserId,
+    isGroup,
+    onMessageSent,
+    replyMessage,
+    onCancelReply,
+  ]);
 
   /**
    * Handle media attachment
@@ -158,14 +160,17 @@ console.log("chatId==========>", chatId);
   const handleEmojiPicker = () => {
     // Dismiss keyboard and open picker sized like keyboard
     Keyboard.dismiss();
-    const defaultPickerHeight = Math.min(Math.floor(Dimensions.get('window').height * 0.45), 360);
+    const defaultPickerHeight = Math.min(
+      Math.floor(Dimensions.get('window').height * 0.45),
+      360,
+    );
     setPickerHeight(defaultPickerHeight);
     setPickerVisible(true);
   };
 
   const handleEmojiSelected = (emoji: string) => {
     // Append emoji to input and focus input
-    setText((t) => `${t}${emoji}`);
+    setText(t => `${t}${emoji}`);
     // Close picker then focus input so user can continue typing
     setPickerVisible(false);
     setTimeout(() => {
@@ -186,7 +191,11 @@ console.log("chatId==========>", chatId);
 
   const handleStickerSelected = async (sticker: any) => {
     try {
-      await OutgoingMessageManager.sendMediaMessage(chatId, sticker.url, 'sticker');
+      await OutgoingMessageManager.sendMediaMessage(
+        chatId,
+        sticker.url,
+        'sticker',
+      );
       setTimeout(() => onMessageSent?.(), 10);
     } catch (e) {
       console.error('[ChatInput] send sticker error', e);
@@ -221,8 +230,7 @@ console.log("chatId==========>", chatId);
   // Derive reply preview content
   const replyTitle =
     replyMessage &&
-    (replyMessage.is_outgoing ||
-      replyMessage.pathakah_chinha === currentUserId)
+    (replyMessage.is_outgoing || replyMessage.pathakah_chinha === currentUserId)
       ? 'You'
       : replyMessage?.ukti || replyMessage?.senderName || '';
 
@@ -244,76 +252,72 @@ console.log("chatId==========>", chatId);
   }
 
   return (
-   <View style={[styles.container, { paddingBottom: 8 + insets.bottom }]}>
-  {replyMessage && (
-    <ReplyPreview
-      title={replyTitle || 'Replying to'}
-      message={replySnippet || 'Tap message to reply'}
-      onClose={onCancelReply || (() => {})}
-    />
-  )}
-  <View style={styles.inputRow}>
-  <View style={styles.inputWrapper}>
-    {/* Emoji */}
-    <TouchableOpacity
-      style={styles.innerIcon}
-      onPress={handleEmojiPicker}
-      disabled={isSending}
-    >
-      <Icon name="smile-o" size={22} color="#2222222" />
-    </TouchableOpacity>
+    <View style={[styles.container, { paddingBottom: 8 + insets.bottom }]}>
+      {replyMessage && (
+        <ReplyPreview
+          title={replyTitle || 'Replying to'}
+          message={replySnippet || 'Tap message to reply'}
+          onClose={onCancelReply || (() => {})}
+        />
+      )}
+      <View style={styles.inputRow}>
+        <View style={styles.inputWrapper}>
+          {/* Emoji */}
+          <TouchableOpacity
+            style={styles.innerIcon}
+            onPress={handleEmojiPicker}
+            disabled={isSending}
+          >
+            <Icon name="smile-o" size={22} color="#2222222" />
+          </TouchableOpacity>
 
-    {/* Text Input */}
-    <TextInput
-      ref={inputRef}
-      style={styles.input}
-      placeholder="Type a message..."
-      placeholderTextColor="#2222222"
-      value={text}
-      onChangeText={handleTextChange}
-      multiline
-      maxLength={4096}
-      editable={!isSending}
-    />
+          {/* Text Input */}
+          <TextInput
+            ref={inputRef}
+            style={styles.input}
+            placeholder="Type a message..."
+            placeholderTextColor="#2222222"
+            value={text}
+            onChangeText={handleTextChange}
+            multiline
+            maxLength={4096}
+            editable={!isSending}
+          />
 
-    {/* Plus */}
-    <TouchableOpacity
-      style={styles.innerIcon}
-      onPress={handleAttachment}
-      disabled={isSending}
-    >
-      <MaterialIcons name="add" size={22} color="#2222222" />
-    </TouchableOpacity>
-  </View>
+          {/* Plus */}
+          <TouchableOpacity
+            style={styles.innerIcon}
+            onPress={handleAttachment}
+            disabled={isSending}
+          >
+            <MaterialIcons name="add" size={22} color="#2222222" />
+          </TouchableOpacity>
+        </View>
 
-  {/* Send / Mic Button */}
-  <TouchableOpacity
-    style={[
-      styles.actionButton,
-      hasText && styles.actionButtonActive,
-    ]}
-    onPress={hasText ? handleSend : handleVoiceRecord}
-    disabled={hasText ? !canSend : isSending}
-  >
-    {isSending ? (
-      <ActivityIndicator size="small" color="#FFFFFF" />
-    ) : hasText ? (
-      <MaterialIcons name="send" size={20} color="#FFFFFF" />
-    ) : (
-      <MaterialIcons name="mic" size={20} color="#222222" />
-    )}
-  </TouchableOpacity>
+        {/* Send / Mic Button */}
+        <TouchableOpacity
+          style={[styles.actionButton, hasText && styles.actionButtonActive]}
+          onPress={hasText ? handleSend : handleVoiceRecord}
+          disabled={hasText ? !canSend : isSending}
+        >
+          {isSending ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : hasText ? (
+            <MaterialIcons name="send" size={20} color="#FFFFFF" />
+          ) : (
+            <MaterialIcons name="mic" size={20} color="#222222" />
+          )}
+        </TouchableOpacity>
+      </View>
 
-</View>
-
-  {showActions && (
-    <ActionButtons
-      chatId={chatId}
-      isGroup={isGroup}
-      onClose={() => setShowActions(false)}
-    />
-  )}
-  </View>
+      {showActions && (
+        <ActionButtons
+          chatId={chatId}
+          isGroup={isGroup}
+          onClose={() => setShowActions(false)}
+        />
+      )}
+    </View>
   );
 };
 
@@ -332,18 +336,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   inputWrapper: {
- flex: 1,
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: '#ffffff',
-  borderRadius: 24,
-  paddingHorizontal: 8,
-  paddingVertical: 6,
-  marginRight: 8,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    marginRight: 8,
   },
   innerIcon: {
-  padding: 6,
-},
+    padding: 6,
+  },
   iconButton: {
     width: 40,
     height: 40,
@@ -361,19 +365,19 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-  fontSize: 15,
-  maxHeight: 120,
-  paddingHorizontal: 6,
-  paddingVertical: 6,
-  color: '#000',
+    fontSize: 15,
+    maxHeight: 120,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+    color: '#000',
   },
   actionButton: {
-  width: 44,
-  height: 44,
-  borderRadius: 22,
-  backgroundColor: '#ffffff',
-  justifyContent: 'center',
-  alignItems: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionButtonActive: {
     backgroundColor: '#007AFF',

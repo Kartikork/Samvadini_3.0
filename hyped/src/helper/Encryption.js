@@ -87,20 +87,10 @@ export const generateKeys = async (numberOfKeys, keySize = 2048) => {
 export const encryptMessage = async (message, publicKey) => {
   try {
     if (!message || !publicKey) {
-      // Toast.show({
-      //   type: 'success',
-      //   text1: 'Success',
-      //   text2: 'Message and public key are required for encryption',
-      // });
-      throw new Error('Message and public key are required for encryption');
+      return message; // Return the original message if encryption cannot be performed
     }
     return await RsaNative.encrypt(message, publicKey);
   } catch (error) {
-    // Toast.show({
-    //   type: 'success',
-    //   text1: 'Success',
-    //   text2: 'Error encrypting message:',
-    // });
     console.error('Error encrypting message:', error);
     throw error;
   }

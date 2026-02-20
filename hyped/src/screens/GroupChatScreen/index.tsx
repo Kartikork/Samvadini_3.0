@@ -1,6 +1,6 @@
 /**
  * GroupChatScreen - Production-Grade Group Chat UI
- * 
+ *
  * ARCHITECTURE:
  * - Extends ChatScreen pattern for group messaging
  * - Shows sender name + avatar for each message
@@ -8,7 +8,7 @@
  * - Handles group-specific events (member add/remove)
  * - Virtualized list for performance
  * - Offline-first with optimistic updates
- * 
+ *
  * DIFFERENCES FROM 1-TO-1:
  * - Every message shows sender info (name + avatar)
  * - Group header shows member count
@@ -64,7 +64,6 @@ import GroupMessageBubble from './components/GroupMessageBubble';
 import GroupMemberListModal from './components/GroupMemberListModal';
 import LinearGradient from 'react-native-linear-gradient';
 
-
 type GroupChatScreenRouteProp = RouteProp<RootStackParamList, 'GroupChat'>;
 
 // Group message interface
@@ -94,7 +93,7 @@ const GroupChatScreen: React.FC = () => {
   const activeChat = useAppSelector(state => state.activeChat);
   useHardwareBackHandler('ChatList');
   // Group ID from Redux (primary) or route params (fallback)
-  const groupId = activeChat.chatId ?? route.params?.chatId;
+  const groupId = activeChat.chat?.samvada_chinha ?? route.params?.chatId;
   const groupFromDb = useChatById(groupId);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
@@ -151,30 +150,27 @@ const GroupChatScreen: React.FC = () => {
   // ────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (groupId && activeChat.chatId !== groupId) {
+    if (groupId && activeChat.chat?.samvada_chinha !== groupId) {
       dispatch(activeChatActions.setActiveChatId(groupId));
     }
-  }, [groupId, activeChat.chatId, dispatch]);
+  }, [groupId, activeChat.chat?.samvada_chinha, dispatch]);
 
   useEffect(() => {
     if (
       groupId &&
-      activeChat.chatId === groupId &&
-      !activeChat.username &&
+      activeChat.chat?.samvada_chinha === groupId &&
+      !activeChat.chat?.samvada_nama &&
       groupFromDb
     ) {
-      dispatch(
-        activeChatActions.setActiveChat({
-          chatId: groupId,
-          username: groupFromDb.samvada_nama ?? 'Group',
-          avatar: groupFromDb.samuha_chitram ?? null,
-          otherUserId: '',
-          otherUserPhoneNumber: null,
-          isGroup: true,
-        }),
-      );
+      dispatch(activeChatActions.setActiveChat(groupFromDb));
     }
-  }, [groupId, activeChat.chatId, activeChat.username, groupFromDb, dispatch]);
+  }, [
+    groupId,
+    activeChat.chat?.samvada_chinha,
+    activeChat.chat?.samvada_nama,
+    groupFromDb,
+    dispatch,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -188,15 +184,30 @@ const GroupChatScreen: React.FC = () => {
 
   const loadMessages = useCallback(async () => {
     if (!groupId || !currentUserId) {
-      console.warn('[GroupChatScreen] Cannot load messages: missing groupId or currentUserId');
+      console.warn(
+        '[GroupChatScreen] Cannot load messages: missing groupId or currentUserId',
+      );
       return;
     }
 
     try {
-      console.log('[GroupChatScreen] Loading messages for group:', groupId, 'userId:', currentUserId);
+      console.log(
+        '[GroupChatScreen] Loading messages for group:',
+        groupId,
+        'userId:',
+        currentUserId,
+      );
       // fetchGroupMessages requires: (samvada_chinha, uniqueId, limit, offset)
-      const loadedMessages = await fetchGroupMessages(groupId, currentUserId, 20, 0);
-      console.log('[GroupChatScreen] Loaded messages count:', loadedMessages.length);
+      const loadedMessages = await fetchGroupMessages(
+        groupId,
+        currentUserId,
+        20,
+        0,
+      );
+      console.log(
+        '[GroupChatScreen] Loaded messages count:',
+        loadedMessages.length,
+      );
 
       if (loadedMessages && loadedMessages.length > 0) {
         const transformedMessages = loadedMessages.map((msg: GroupMessage) => ({
@@ -242,7 +253,12 @@ const GroupChatScreen: React.FC = () => {
     try {
       const offset = messages.length;
       // fetchGroupMessages requires: (samvada_chinha, uniqueId, limit, offset)
-      const olderMessages = await fetchGroupMessages(groupId, currentUserId, 50, offset);
+      const olderMessages = await fetchGroupMessages(
+        groupId,
+        currentUserId,
+        50,
+        offset,
+      );
 
       if (olderMessages.length > 0) {
         const transformed = olderMessages.map((msg: GroupMessage) => ({
@@ -271,7 +287,12 @@ const GroupChatScreen: React.FC = () => {
     try {
       // fetchGroupMessages requires: (samvada_chinha, uniqueId, limit, offset)
       const latest = await fetchGroupMessages(groupId, currentUserId, 1, 0);
-      console.log('[GroupChatScreen] Latest message:', latest, 'groupId:', groupId);
+      console.log(
+        '[GroupChatScreen] Latest message:',
+        latest,
+        'groupId:',
+        groupId,
+      );
 
       if (!latest || latest.length === 0) return;
 
@@ -293,7 +314,10 @@ const GroupChatScreen: React.FC = () => {
 
       setShouldScrollToBottom(true);
     } catch (error) {
-      console.error('[GroupChatScreen] appendLatestMessageFromDb error:', error);
+      console.error(
+        '[GroupChatScreen] appendLatestMessageFromDb error:',
+        error,
+      );
     }
   }, [groupId, currentUserId]);
 
@@ -303,11 +327,11 @@ const GroupChatScreen: React.FC = () => {
 
   useEffect(() => {
     if (!groupId) return;
-    console.log("groupId=======>", groupId);
+    console.log('groupId=======>', groupId);
 
     const handleNewMessage = async (payload: any) => {
       const incomingGroupId = payload?.samvada_chinha || payload?.chatId;
-      console.log("incomingGroupId=======>", incomingGroupId, groupId);
+      console.log('incomingGroupId=======>', incomingGroupId, groupId);
 
       // Only handle messages for this group
       if (incomingGroupId !== groupId) return;
@@ -342,12 +366,12 @@ const GroupChatScreen: React.FC = () => {
           type === 'pin'
             ? { sthapitam_sandesham: 1 }
             : type === 'unPin'
-              ? { sthapitam_sandesham: 0 }
-              : type === 'star'
-                ? { kimTaritaSandesha: 1 }
-                : type === 'unStar'
-                  ? { kimTaritaSandesha: 0 }
-                  : {};
+            ? { sthapitam_sandesham: 0 }
+            : type === 'star'
+            ? { kimTaritaSandesha: 1 }
+            : type === 'unStar'
+            ? { kimTaritaSandesha: 0 }
+            : {};
       }
 
       setMessages(prev =>
@@ -375,7 +399,10 @@ const GroupChatScreen: React.FC = () => {
       console.log('[GroupChatScreen] Group update received:', payload);
 
       // Refresh group metadata
-      const updatedGroup = await GroupChatManager.getGroupMetadata(groupId, true);
+      const updatedGroup = await GroupChatManager.getGroupMetadata(
+        groupId,
+        true,
+      );
       if (updatedGroup) {
         dispatch(
           activeChatActions.setActiveChat({
@@ -438,11 +465,7 @@ const GroupChatScreen: React.FC = () => {
   // ────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (
-      shouldScrollToBottom &&
-      messages.length > 0 &&
-      flashListRef.current
-    ) {
+    if (shouldScrollToBottom && messages.length > 0 && flashListRef.current) {
       flashListRef.current.scrollToEnd({ animated: true });
       setShouldScrollToBottom(false);
     }
@@ -490,10 +513,10 @@ const GroupChatScreen: React.FC = () => {
             action === 'pin'
               ? 'pin'
               : action === 'unpin'
-                ? 'unPin'
-                : action === 'star'
-                  ? 'star'
-                  : 'unStar',
+              ? 'unPin'
+              : action === 'star'
+              ? 'star'
+              : 'unStar',
           groupId,
           currentUserId: currentUserId ?? '',
           selectedMessages,
@@ -531,7 +554,6 @@ const GroupChatScreen: React.FC = () => {
     [groupId, selectedMessages, clearSelection],
   );
 
-
   // ────────────────────────────────────────────────────────────
   // RENDER HELPERS
   // ────────────────────────────────────────────────────────────
@@ -553,7 +575,9 @@ const GroupChatScreen: React.FC = () => {
       return (
         <View>
           {showDateSeparator && (
-            <DateSeparator timestamp={new Date(item.preritam_tithih).getTime()} />
+            <DateSeparator
+              timestamp={new Date(item.preritam_tithih).getTime()}
+            />
           )}
           <GroupMessageBubble
             message={item}
@@ -570,12 +594,12 @@ const GroupChatScreen: React.FC = () => {
       );
     },
     [
-        messages,
-        selectedMessageIds,
-        isSelectionMode,
-        handleMessageLongPress,
-        toggleMessageSelection,
-        handleMeasureMessage,
+      messages,
+      selectedMessageIds,
+      isSelectionMode,
+      handleMessageLongPress,
+      toggleMessageSelection,
+      handleMeasureMessage,
     ],
   );
 
@@ -620,8 +644,8 @@ const GroupChatScreen: React.FC = () => {
       {/* Group Header */}
       <GroupChatHeader
         groupId={groupId}
-        groupName={activeChat.username || 'Group'}
-        groupAvatar={activeChat.avatar}
+        groupName={activeChat.chat?.samvada_nama || 'Group'}
+        groupAvatar={activeChat.chat?.samuha_chitram}
         onMemberListPress={() => setShowMemberList(true)}
         onBackPress={() => navigation.goBack()}
       />
@@ -639,50 +663,47 @@ const GroupChatScreen: React.FC = () => {
       )}
 
       {/* Messages List */}
-           <LinearGradient
-              colors={['#FEE7F8', '#FEF7EA',]}
-              style={{ flex: 1 }}
-            >
-      <AnyFlashList
-        ref={flashListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={keyExtractor}
-        estimatedItemSize={80}
-        onEndReached={loadMoreMessages}
-        onEndReachedThreshold={0.5}
-        ListHeaderComponent={renderListHeader}
-        ListFooterComponent={renderListFooter}
-        contentContainerStyle={styles.messageList}
-        viewabilityConfig={viewabilityConfigRef.current}
-      />
-
-      {/* Reaction Picker */}
-      <MessageReactionPicker
-        visible={isReactionPickerVisible}
-        onClose={closeReactionPicker}
-        onSelectReaction={emoji => {
-          if (!reactionTargetMessageId) return;
-          // TODO: Persist selected emoji reaction for reactionTargetMessageId
-        }}
-        messagePosition={reactionPickerPosition || undefined}
-        isSelfMessage={isSelfTargetMessage}
-      />
-
-      {/* Chat Input */}
-      {groupId && (
-        <ChatInput
-          chatId={groupId}
-          isGroup={true}
-          replyMessage={replyMessage}
-          onCancelReply={() => setReplyMessage(null)}
-          onMessageSent={() => {
-            // Refresh messages after sending
-            appendLatestMessageFromDb();
-          }}
+      <LinearGradient colors={['#FEE7F8', '#FEF7EA']} style={{ flex: 1 }}>
+        <AnyFlashList
+          ref={flashListRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={keyExtractor}
+          estimatedItemSize={80}
+          onEndReached={loadMoreMessages}
+          onEndReachedThreshold={0.5}
+          ListHeaderComponent={renderListHeader}
+          ListFooterComponent={renderListFooter}
+          contentContainerStyle={styles.messageList}
+          viewabilityConfig={viewabilityConfigRef.current}
         />
-      )}
-</LinearGradient>
+
+        {/* Reaction Picker */}
+        <MessageReactionPicker
+          visible={isReactionPickerVisible}
+          onClose={closeReactionPicker}
+          onSelectReaction={emoji => {
+            if (!reactionTargetMessageId) return;
+            // TODO: Persist selected emoji reaction for reactionTargetMessageId
+          }}
+          messagePosition={reactionPickerPosition || undefined}
+          isSelfMessage={isSelfTargetMessage}
+        />
+
+        {/* Chat Input */}
+        {groupId && (
+          <ChatInput
+            chatId={groupId}
+            isGroup={true}
+            replyMessage={replyMessage}
+            onCancelReply={() => setReplyMessage(null)}
+            onMessageSent={() => {
+              // Refresh messages after sending
+              appendLatestMessageFromDb();
+            }}
+          />
+        )}
+      </LinearGradient>
       {/* Member List Modal */}
       <GroupMemberListModal
         visible={showMemberList}
@@ -731,4 +752,3 @@ const styles = StyleSheet.create({
 });
 
 export default GroupChatScreen;
-

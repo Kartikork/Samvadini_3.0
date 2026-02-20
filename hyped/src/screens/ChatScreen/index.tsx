@@ -39,7 +39,6 @@ import {
 } from './helpers/messageActions';
 import LinearGradient from 'react-native-linear-gradient';
 
-
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
 // Message interface matching existing schema
@@ -67,7 +66,7 @@ const ChatScreen: React.FC = () => {
   const activeChat = useAppSelector(state => state.activeChat);
   useHardwareBackHandler('ChatList');
   // Chat ID from Redux (primary) or route params (fallback)
-  const chatId = activeChat.chatId ?? route.params.chatId;
+  const chatId = activeChat.chat?.samvada_chinha ?? route.params.chatId;
   const chatFromDb = useChatById(chatId);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -118,28 +117,22 @@ const ChatScreen: React.FC = () => {
   });
 
   useEffect(() => {
-    if (chatId && activeChat.chatId !== chatId) {
+    if (chatId && activeChat.chat?.samvada_chinha !== chatId) {
       dispatch(activeChatActions.setActiveChatId(chatId));
     }
-  }, [chatId, activeChat.chatId, dispatch]);
+  }, [chatId, activeChat.chat?.samvada_chinha, dispatch]);
 
   useEffect(() => {
     if (
       chatId &&
-      activeChat.chatId === chatId &&
-      !activeChat.username &&
+      activeChat.chat?.samvada_chinha === chatId &&
+      !activeChat.chat?.contact_name &&
+      !activeChat.chat?.samvada_nama &&
       chatFromDb
     ) {
-      dispatch(
-        activeChatActions.setActiveChat({
-          chatId,
-          username: chatFromDb.contact_name ?? chatFromDb.samvada_nama ?? '',
-          avatar: chatFromDb.contact_photo ?? chatFromDb.samuha_chitram ?? null,
-          isGroup: chatFromDb.prakara === 'Group',
-        }),
-      );
+      dispatch(activeChatActions.setActiveChat(chatFromDb));
     }
-  }, [chatId, activeChat.chatId, activeChat.username, chatFromDb, dispatch]);
+  }, [chatId, activeChat.chat, chatFromDb, dispatch]);
 
   useEffect(() => {
     return () => {
@@ -284,12 +277,12 @@ const ChatScreen: React.FC = () => {
           type === 'pin'
             ? { sthapitam_sandesham: 1 }
             : type === 'unPin'
-              ? { sthapitam_sandesham: 0 }
-              : type === 'star'
-                ? { kimTaritaSandesha: 1 }
-                : type === 'unStar'
-                  ? { kimTaritaSandesha: 0 }
-                  : {};
+            ? { sthapitam_sandesham: 0 }
+            : type === 'star'
+            ? { kimTaritaSandesha: 1 }
+            : type === 'unStar'
+            ? { kimTaritaSandesha: 0 }
+            : {};
       }
 
       setMessages(prev =>
@@ -355,10 +348,10 @@ const ChatScreen: React.FC = () => {
             action === 'pin'
               ? 'pin'
               : action === 'unpin'
-                ? 'unPin'
-                : action === 'star'
-                  ? 'star'
-                  : 'unStar',
+              ? 'unPin'
+              : action === 'star'
+              ? 'star'
+              : 'unStar',
           chatId,
           selectedMessages,
           setMessages: setMessages as any,
@@ -502,11 +495,7 @@ const ChatScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#FEE7F8', '#FEF7EA',]}
-        style={{ flex: 1 }}
-      >
-
+      <LinearGradient colors={['#FEE7F8', '#FEF7EA']} style={{ flex: 1 }}>
         {/* Selection bar (overlays header) */}
         {isSelectionMode && (
           <MessageActionsBar

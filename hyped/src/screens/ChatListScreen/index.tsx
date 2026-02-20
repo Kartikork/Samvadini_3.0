@@ -417,16 +417,7 @@ export default function ChatListScreen() {
         const chat = chats.find(c => c.samvada_chinha === chatId);
         if (chat) {
           if (chat.prakara === 'Group') {
-            dispatch(
-              activeChatActions.setActiveChat({
-                chatId: chat.samvada_chinha,
-                username: chat.samvada_nama,
-                avatar: chat.samuha_chitram ?? null,
-                otherUserId: '',
-                otherUserPhoneNumber: null,
-                isGroup: true,
-              }),
-            );
+            dispatch(activeChatActions.setActiveChat(chat));
             navigation.navigate('GroupChat', {
               chatId: chat.samvada_chinha,
               groupName: chat.samvada_nama,
@@ -446,22 +437,7 @@ export default function ChatListScreen() {
             } else {
               blockedList = undefined;
             }
-            dispatch(
-              activeChatActions.setActiveChat({
-                chatId: chat.samvada_chinha,
-                username: chat.contact_name ?? '',
-                avatar: chat.contact_photo ?? null,
-                otherUserId: chat.pathakah_chinha ?? '',
-                BlockedUser: blockedList,
-                request: chat.status ?? null,
-                hidePhoneNumber: !!chat.hidePhoneNumber,
-                otherUserPhoneNumber:
-                  chat.contact_number != null
-                    ? String(chat.contact_number)
-                    : null,
-                isGroup: false,
-              }),
-            );
+            dispatch(activeChatActions.setActiveChat(chat));
 
             navigation.navigate('Chat', {
               chatId: chat.samvada_chinha,
@@ -551,7 +527,6 @@ export default function ChatListScreen() {
   const renderItem = useCallback(
     ({ item }: { item: any }) => {
       const isSelected = isChatSelected(item.samvada_chinha);
-
       return (
         <ChatListItem
           chat={item}

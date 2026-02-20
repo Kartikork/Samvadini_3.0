@@ -353,7 +353,7 @@ export const getOtherParticipantPublicKey = async (chatId, currentUserId) => {
                     `SELECT tcb.ekatma_chinha, tcb.publicKey, tcq.samvada_chinha_id
                     FROM td_chat_qutubminar_211 tcq
                     INNER JOIN td_chat_bhagwah_211 tcb ON tcb.samvada_chinha_id = tcq.samvada_chinha_id
-                    WHERE tcq.samvada_chinha = ? AND tcb.ekatma_chinha != ? AND tcb.sakriyamastiva = 1
+                    WHERE tcq.samvada_chinha = ? AND tcb.ekatma_chinha != ?
                     LIMIT 1`,
                     [chatId, currentUserId],
                     (_, results) => {

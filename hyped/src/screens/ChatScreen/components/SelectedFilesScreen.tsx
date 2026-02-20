@@ -58,7 +58,9 @@ const Checkbox: React.FC<CheckboxProps> = React.memo(
 const SelectedFilesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const uniqueId = useAppSelector(state => state.auth.uniqueId);
-  const activeChatId = useAppSelector(state => state.activeChat.chatId);
+  const activeChatId = useAppSelector(
+    state => state.activeChat.chat?.samvada_chinha,
+  );
   const route = useRoute<any>();
   const { assets = [], onComplete } = (route.params ||
     {}) as SelectedFilesRouteParams;
