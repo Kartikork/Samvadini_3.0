@@ -25,7 +25,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Toast from 'react-native-toast-message';
-
+import ImageCropPicker from 'react-native-image-crop-picker';
+import DatePicker from 'react-native-date-picker';
+import axios from 'axios';
+import { env } from '../../../config/env';
+import { useUsernameSuggestions } from '../../../hooks/useUsernameSuggestions';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GradientBackground } from '../../../components/GradientBackground';
@@ -33,6 +37,7 @@ import { Footer } from '../../../components/Footer';
 import { FormInput } from '../../../components/shared';
 import { useAppSelector, useAppDispatch } from '../../../state/hooks';
 import { setUserCountryCode } from '../../../state/countrySlice';
+import { setAuthData, setUserProfile } from '../../../state/authSlice';
 import { getAppTranslations } from '../../../translations';
 import { userAPI } from '../../../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -45,16 +50,6 @@ import type { UpdateProfileRequest } from '../../../api/endpoints';
 import { hypedLogo } from '../../../assets';
 
 const { width, height } = Dimensions.get('window');
-
-// Username validation
-const USERNAME_REGEX = /^[a-zA-Z0-9._]+$/;
-function validateUsernameFormat(u: string): string | null {
-  if (!u || u.length < 3) return 'Username must be at least 3 characters';
-  if (!USERNAME_REGEX.test(u)) return 'Only letters, numbers, dots, and underscores allowed';
-  if (/^[._]|[._]$/.test(u)) return 'Cannot start or end with dot or underscore';
-  if (/[._]{2,}/.test(u)) return 'Cannot have consecutive dots or underscores';
-  return null;
-}
 
 function formatDOBInput(text: string): string {
   let cleaned = text.replace(/\D/g, '');
@@ -123,30 +118,22 @@ export default function SignupScreen() {
   const lang = useAppSelector((state) => state.language.lang);
   const isMountedRef = useRef(true);
   const scrollRef = useRef<ScrollView>(null);
-  const usernameCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const [keyboardShown, setKeyboardShown] = useState(false);
   const [username, setUsername] = useState('');
   const [photo, setPhoto] = useState('');
   const [referredBy, setReferredBy] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeField, setActiveField] = useState(true);
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedGender, setSelectedGender] = useState<{ label: string; value: string } | null>(null);
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [dateOfBirthError, setDateOfBirthError] = useState('');
-  const [uniqueUsername, setUniqueUsername] = useState('');
-  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
-  const [isUsernameLoading, setIsUsernameLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
-  const [usernameError, setUsernameError] = useState('');
-  const [isUsernameValid, setIsUsernameValid] = useState(false);
 
   const screenHeight = Dimensions.get('window').height;
   const dynamicMarginTop = screenHeight * 0.1;
   const t = useMemo(() => getAppTranslations(lang), [lang]);
+  const contentStyle = useMemo(() => [styles.content, { marginTop: dynamicMarginTop }], [dynamicMarginTop]);
 
   const GENDER_OPTIONS = useMemo(
     () => [
@@ -161,7 +148,6 @@ export default function SignupScreen() {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
-      if (usernameCheckTimeout.current) clearTimeout(usernameCheckTimeout.current);
     };
   }, []);
 
@@ -174,89 +160,21 @@ export default function SignupScreen() {
     return () => sub.remove();
   }, [navigation]);
 
-  useEffect(() => {
-    const onShow = () => {
-      setKeyboardShown(true);
-      setTimeout(() => {
-        try {
-          scrollRef.current?.scrollToEnd({ animated: true });
-        } catch (_) {}
-      }, 50);
-    };
-    const onHide = () => setKeyboardShown(false);
-    const showSub = Keyboard.addListener('keyboardDidShow', onShow);
-    const hideSub = Keyboard.addListener('keyboardDidHide', onHide);
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
 
-  const checkUsernameAvailability = useCallback(async (usernameToCheck: string) => {
-    const formatErr = validateUsernameFormat(usernameToCheck);
-    if (formatErr) {
-      setUsernameError(formatErr);
-      setIsUsernameValid(false);
-      return;
-    }
-    try {
-      setIsUsernameLoading(true);
-      const { api } = await import('../../../api/axios.instance');
-      const res = await api.post<{ success?: boolean; available?: boolean }>('api/username/check', {
-        username: usernameToCheck,
-      });
-      if (res.data?.available) {
-        setUsernameError('');
-        setIsUsernameValid(true);
-      } else {
-        setUsernameError('Username is already taken');
-        setIsUsernameValid(false);
-      }
-    } catch (_) {
-      setUsernameError('Unable to verify username');
-      setIsUsernameValid(false);
-    } finally {
-      setIsUsernameLoading(false);
-    }
-  }, []);
-
-  const handleUsernameChange = useCallback(
-    (text: string) => {
-      const cleaned = text.toLowerCase().replace(/\s/g, '');
-      setUniqueUsername(cleaned);
-      setIsUsernameValid(false);
-      setUsernameError('');
-      if (usernameCheckTimeout.current) clearTimeout(usernameCheckTimeout.current);
-      if (cleaned.length >= 3) {
-        usernameCheckTimeout.current = setTimeout(() => checkUsernameAvailability(cleaned), 500);
-      }
-    },
-    [checkUsernameAvailability]
-  );
-
-  const selectUsername = useCallback((selected: string) => {
-    setUniqueUsername(selected);
-    setIsUsernameValid(true);
-    setUsernameError('');
-  }, []);
-
-  const fetchUsernameSuggestions = useCallback(async (name: string) => {
-    if (!name || name.length < 2) {
-      setUsernameSuggestions([]);
-      return;
-    }
-    try {
-      const { api } = await import('../../../api/axios.instance');
-      const res = await api.post<{ success?: boolean; suggestions?: string[] }>('/username/suggestions', {
-        name,
-      });
-      if (res?.data?.success && Array.isArray(res.data.suggestions)) {
-        setUsernameSuggestions(res.data.suggestions);
-      }
-    } catch (_) {
-      setUsernameSuggestions([]);
-    }
-  }, []);
+  // Username suggestion / availability hook
+  const {
+    uniqueUsername,
+    setUniqueUsername,
+    usernameSuggestions,
+    isUsernameLoading,
+    usernameError,
+    isUsernameValid,
+    handleUsernameChange,
+    selectSuggestion,
+    fetchUsernameSuggestions,
+    checkUsernameAvailability,
+    clearSuggestions,
+  } = useUsernameSuggestions('');
 
   useEffect(() => {
     if (username.length >= 2) {
@@ -317,7 +235,6 @@ export default function SignupScreen() {
     const trimmedReferral = referredBy?.trim();
     if (trimmedReferral) postData.referredBy = trimmedReferral;
     if (photo) postData.imageUrl = photo;
-
     try {
       setIsLoading(true);
       const response = await userAPI.updateProfile(postData);
@@ -338,31 +255,49 @@ export default function SignupScreen() {
       } else {
         await AsyncStorage.removeItem('userProfilePhoto');
       }
- // Step 2: Bootstrap the app (orchestrated flow)
- setLoadingMessage('Setting up app...');
- console.log('[SignupScreen] Step 2: Starting app bootstrap...');
- 
- /**
-  * AppBootstrap Flow:
-  * 1. Save auth token to Redux ✓ (already done in LoginScreen)
-  * 2. PARALLEL: User Profile API + Local DB setup
-  * 3. PARALLEL: ChatManager.initialize() + CallManager.initialize()
-  * 4. Socket connect
-  * 5. Join Phoenix Channel (chat:user:id)
-  * 6. App Ready
-  */
- const bootstrapResult = await AppBootstrap.bootstrapAfterSignup(
-   token,
-   uniqueId,
-   true // isNewUser
- );
+      try {
+        const returnedUniqueId = user?.ekatma_chinha ?? uniqueId ?? '';
+        const mappedUserSettings = {
+          is_register: user_settings?.is_register,
+          janma_tithi: user_settings?.janma_tithi,
+          linga: user_settings?.linga,
+          durasamparka_sankhya: user_settings?.durasamparka_sankhya ?? user?.durasamparka_sankhya,
+          parichayapatra: user_settings?.parichayapatra ?? user?.parichayapatra,
+          upayogakarta_nama: user_settings?.upayogakarta_nama ?? user?.upayogakarta_nama,
+          praman_patrika: user_settings?.praman_patrika ?? user?.praman_patrika,
+          ekatma_chinha: user?.ekatma_chinha ?? user_settings?.ekatma_chinha,
+          dhwani: user_settings?.dhwani ?? null,
+          durasamparka_gopaniya: user_settings?.durasamparka_gopaniya,
+          desha_suchaka_koda: user_settings?.desha_suchaka_koda,
+        };
 
- if (!bootstrapResult.success) {
-   console.warn('[SignupScreen] Bootstrap warning:', bootstrapResult.error);
-   // Continue anyway - app can recover
- }
+        // token is expected to be present from login; keep it as-is
+        dispatch(setAuthData({ token: token ?? '', uniqueId: returnedUniqueId ?? '', userSettings: mappedUserSettings }));
 
- console.log('[SignupScreen] Bootstrap complete, navigating to Home');
+        const profile = {
+          name: user_settings?.praman_patrika ?? user?.praman_patrika ?? user?.upayogakarta_nama,
+          avatar: user_settings?.parichayapatra ?? user?.parichayapatra ?? '',
+          phone: user?.durasamparka_sankhya ?? '',
+          email: user?.dootapatra ?? '',
+          username: uniqueUsername,
+          status: user?.status ?? '',
+        };
+        dispatch(setUserProfile(profile));
+      } catch (e) {
+        console.warn('[SignupScreen] Error saving auth/profile to Redux', e);
+      }
+
+      // Step 2: Bootstrap the app (orchestrated flow)
+      setLoadingMessage('Setting up app...');
+      const bootstrapResult = await AppBootstrap.bootstrapAfterSignup(
+        token,
+        uniqueId,
+        true // isNewUser
+      );
+
+      if (!bootstrapResult.success) {
+        console.warn('[SignupScreen] Bootstrap warning:', bootstrapResult.error);
+      }
 
       navigation.reset({
         index: 0,
@@ -391,27 +326,130 @@ export default function SignupScreen() {
     t,
     dispatch,
     navigation,
+    uniqueId,
+    token,
   ]);
 
   const handlePhotoUpload = useCallback(() => {
     Alert.alert(t.choosePhoto, t.selectPhoto, [
-      { text: t.takePhoto, onPress: () => {} },
-      { text: t.chooseFromGallery, onPress: () => {} },
+      {
+        text: t.takePhoto,
+        onPress: () => {
+          ImageCropPicker.openCamera({
+            width: 1200,
+            height: 1200,
+            cropping: true,
+            includeBase64: false,
+            mediaType: 'photo',
+            cropperToolbarTitle: t.edit || 'Edit',
+            hideBottomControls: false,
+            compressImageQuality: 0.9,
+          })
+            .then(image => {
+              if (isMountedRef.current) {
+                setImageUrl(image.path);
+              }
+              uploadImage(image.path);
+            })
+            .catch(err => {
+              if (err && err.message && !err.message.toLowerCase().includes('cancel')) {
+                console.error('[SignupScreen] Camera error', err);
+                Toast.show({ type: 'error', text1: t.error, text2: t.failedTakePhoto });
+              }
+            });
+        },
+      },
+      {
+        text: t.chooseFromGallery,
+        onPress: () => {
+          ImageCropPicker.openPicker({
+            width: 1200,
+            height: 1200,
+            cropping: true,
+            includeBase64: false,
+            mediaType: 'photo',
+            cropperToolbarTitle: t.edit || 'Edit',
+            hideBottomControls: false,
+            compressImageQuality: 0.9,
+          })
+            .then(image => {
+              if (isMountedRef.current) {
+                setImageUrl(image.path);
+              }
+              uploadImage(image.path);
+            })
+            .catch(err => {
+              if (err && err.message && !err.message.toLowerCase().includes('cancel')) {
+                console.error('[SignupScreen] Picker error', err);
+                Toast.show({ type: 'error', text1: t.error, text2: t.failedPickImage });
+              }
+            });
+        },
+      },
       { text: t.cancel, style: 'cancel' },
     ]);
   }, [t]);
 
+  const uploadImage = useCallback(
+    async (imageUri: string) => {
+      try {
+        setIsLoading(true);
+        setLoadingMessage('Uploading...');
+
+        const formData = new FormData();
+        // On iOS the uri may need file:// prefix, but ImageCropPicker returns usable path on both platforms
+        formData.append('file', {
+          uri: imageUri,
+          type: 'image/jpeg',
+          name: `upload_${Date.now()}.jpg`,
+        } as any);
+
+        const uploadUrl = `${env.API_BASE_URL.replace(/\/$/, '')}/chat/upload-media`;
+        const response = await axios.post(uploadUrl, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Accept: 'application/json',
+          },
+          onUploadProgress: (progressEvent) => {
+            try {
+              const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
+              setLoadingMessage(`Uploading ${percent}%`);
+            } catch (_) {}
+          },
+        });
+        const serverUrl =
+          response?.data?.fileUrl || response?.data?.data?.fileUrl || response?.data?.data || null;
+        if (!serverUrl) {
+          throw new Error('Invalid server response');
+        }
+
+        if (isMountedRef.current) {
+          setPhoto(serverUrl);
+          setImageUrl(serverUrl);
+        }
+      } catch (error) {
+        console.error('[SignupScreen] Error uploading image', error);
+        Toast.show({ type: 'error', text1: t.error, text2: t.failedUploadImage || 'Upload failed' });
+      } finally {
+        if (isMountedRef.current) {
+          setIsLoading(false);
+          setLoadingMessage('');
+        }
+      }
+    },
+    [t],
+  );
+
   const onOpenDatePicker = useCallback(() => setShowDatePicker(true), []);
   const toggleGenderDropdown = useCallback(() => {
     Keyboard.dismiss();
-    setActiveField(false);
     setTimeout(() => setShowGenderDropdown((prev) => !prev), 80);
   }, []);
 
   return (
     <>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior='padding'
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
@@ -425,11 +463,10 @@ export default function SignupScreen() {
             >
               <TouchableWithoutFeedback
                 onPress={() => {
-                  setActiveField(false);
                   Keyboard.dismiss();
                 }}
               >
-                <View style={[styles.content, { marginTop: dynamicMarginTop }]}>
+                <View style={contentStyle}>
                   <Image
                     source={hypedLogo}
                     style={styles.logo}
@@ -438,7 +475,7 @@ export default function SignupScreen() {
                     <View style={styles.userImg}>
                       {imageUrl ? (
                         <>
-                          <Image source={{ uri: imageUrl }} style={styles.uploadedPhoto} />
+                          <Image source={{ uri: imageUrl + env.SAS_KEY}} style={styles.uploadedPhoto} />
                           <TouchableOpacity style={[styles.button, styles.uploadButton]} onPress={handlePhotoUpload}>
                             <Icon name="camera-flip-outline" size={30} color="#fff" />
                           </TouchableOpacity>
@@ -504,18 +541,22 @@ export default function SignupScreen() {
                         <View style={styles.suggestionContainer}>
                           <View style={styles.suggestionHeader}>
                             <Icon name="lightbulb-outline" size={16} color="#4fc6b2" />
-                            <Text style={styles.suggestionTitle}>{t.TrySuggestions}</Text>
+                            <Text style={styles.suggestionTitle}>
+                              {t.TrySuggestions || 'Try these:'}
+                            </Text>
                           </View>
                           <View style={styles.suggestionButtons}>
-                            {usernameSuggestions.map((s, i) => (
+                            {usernameSuggestions.map((suggestion, index) => (
                               <TouchableOpacity
-                                key={i}
+                                key={index}
                                 style={styles.suggestionChip}
-                                onPress={() => selectUsername(s)}
+                                onPress={() => selectSuggestion(suggestion)}
                                 activeOpacity={0.7}
                               >
                                 <Icon name="at" size={14} color="#4fc6b2" style={styles.suggestionChipIcon} />
-                                <Text style={styles.suggestionChipText}>{s}</Text>
+                                <Text style={styles.suggestionChipText}>
+                                  {suggestion}
+                                </Text>
                               </TouchableOpacity>
                             ))}
                           </View>
@@ -632,23 +673,26 @@ export default function SignupScreen() {
           </SafeAreaView>
         </GradientBackground>
 
-        {showDatePicker && (
-          <TouchableWithoutFeedback onPress={() => setShowDatePicker(false)}>
-            <View style={styles.datePickerOverlay}>
-              <View style={styles.datePickerPlaceholder}>
-                <TouchableOpacity
-                  style={styles.datePickerClose}
-                  onPress={() => setShowDatePicker(false)}
-                >
-                  <Text>Close</Text>
-                </TouchableOpacity>
-                <Text style={styles.datePickerHint}>Enter date as DD/MM/YYYY in the field above</Text>
-              </View>
-            </View>
-          </TouchableWithoutFeedback>
-        )}
+        <DatePicker
+          modal
+          open={showDatePicker}
+          date={parsedDOBForPicker}
+          mode="date"
+          onConfirm={(date: Date) => {
+            setShowDatePicker(false);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            setDateOfBirth(`${day}/${month}/${year}`);
+            setDateOfBirthError('');
+          }}
+          onCancel={() => setShowDatePicker(false)}
+          maximumDate={new Date()}
+          minimumDate={new Date(1900, 0, 1)}
+          theme="light"
+        />
       </KeyboardAvoidingView>
-      {!keyboardShown && <Footer />}
+      <Footer />
     </>
   );
 }

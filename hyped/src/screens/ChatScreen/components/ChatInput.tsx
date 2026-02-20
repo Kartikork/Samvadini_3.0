@@ -14,16 +14,20 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { SocketService } from '../../../services/SocketService';
 import { OutgoingMessageManager } from '../../../services/OutgoingMessageManager';
+import { GroupChatManager } from '../../../services/GroupChatManager';
 import { useAppSelector } from '../../../state/hooks';
 import PickerModal from '../../../components/EmojiGifStickerPicker/PickerModal';
 import ActionButtons from './ActionButtons';
 import ReplyPreview from './ReplyPreview';
+import LinearGradient from 'react-native-linear-gradient';
+
 
 interface ChatInputProps {
   chatId: string;
   onMessageSent?: () => void;
   replyMessage?: any;
   onCancelReply?: () => void;
+  isGroup?: boolean; // If true, use GroupChatManager instead of OutgoingMessageManager
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -31,6 +35,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onMessageSent,
   replyMessage,
   onCancelReply,
+  isGroup = false,
 }) => {
   const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
@@ -42,6 +47,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerHeight, setPickerHeight] = useState(0);
   const [showActions, setShowActions] = useState(false);
+console.log("chatId==========>", chatId);
 
   /**
    * Handle text change
@@ -97,10 +103,30 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
 
     try {
-      console.log('Sending message:', chatId, isSending, currentUserId);
-      await OutgoingMessageManager.sendTextMessage(chatId, messageText, {
-        replyMessage,
-      });
+      console.log('Sending message:', chatId, isSending, currentUserId, 'isGroup:', isGroup);
+      
+      if (isGroup) {
+        // Use GroupChatManager for group messages
+        await GroupChatManager.sendGroupMessage(
+          chatId,
+          messageText,
+          'text',
+          {
+            replyMessage: replyMessage ? {
+              refrenceId: replyMessage.refrenceId,
+              pathakah_chinha: replyMessage.pathakah_chinha,
+              vishayah: replyMessage.vishayah,
+              sandesha_prakara: replyMessage.sandesha_prakara,
+              ukti: replyMessage.ukti || '',
+            } : undefined,
+          }
+        );
+      } else {
+        // Use OutgoingMessageManager for 1-to-1 messages
+        await OutgoingMessageManager.sendTextMessage(chatId, messageText, {
+          replyMessage,
+        });
+      }
 
       // Message sent successfully - trigger refresh in ChatScreen
       // Give DB a moment to ensure message is committed
@@ -115,7 +141,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     } finally {
       setIsSending(false);
     }
-  }, [text, chatId, isSending, currentUserId, onMessageSent, replyMessage, onCancelReply]);
+  }, [text, chatId, isSending, currentUserId, isGroup, onMessageSent, replyMessage, onCancelReply]);
 
   /**
    * Handle media attachment
@@ -234,7 +260,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       onPress={handleEmojiPicker}
       disabled={isSending}
     >
-      <Icon name="smile-o" size={22} color="#666" />
+      <Icon name="smile-o" size={22} color="#2222222" />
     </TouchableOpacity>
 
     {/* Text Input */}
@@ -242,7 +268,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       ref={inputRef}
       style={styles.input}
       placeholder="Type a message..."
-      placeholderTextColor="#999"
+      placeholderTextColor="#2222222"
       value={text}
       onChangeText={handleTextChange}
       multiline
@@ -256,7 +282,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       onPress={handleAttachment}
       disabled={isSending}
     >
-      <MaterialIcons name="add" size={22} color="#666" />
+      <MaterialIcons name="add" size={22} color="#2222222" />
     </TouchableOpacity>
   </View>
 
@@ -274,13 +300,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
     ) : hasText ? (
       <MaterialIcons name="send" size={20} color="#FFFFFF" />
     ) : (
-      <MaterialIcons name="mic" size={20} color="#666666" />
+      <MaterialIcons name="mic" size={20} color="#222222" />
     )}
   </TouchableOpacity>
+
 </View>
 
   {showActions && (
     <ActionButtons
+      chatId={chatId}
+      isGroup={isGroup}
       onClose={() => setShowActions(false)}
     />
   )}
@@ -294,9 +323,9 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     paddingHorizontal: 8,
     paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
+    // backgroundColor: '#FFFFFF',
+    // borderTopWidth: 1,
+    // borderTopColor: '#E5E5E5',
   },
   inputRow: {
     flexDirection: 'row',
@@ -306,7 +335,7 @@ const styles = StyleSheet.create({
  flex: 1,
   flexDirection: 'row',
   alignItems: 'center',
-  backgroundColor: '#F0F0F0',
+  backgroundColor: '#ffffff',
   borderRadius: 24,
   paddingHorizontal: 8,
   paddingVertical: 6,
@@ -342,7 +371,7 @@ const styles = StyleSheet.create({
   width: 44,
   height: 44,
   borderRadius: 22,
-  backgroundColor: '#E0E0E0',
+  backgroundColor: '#ffffff',
   justifyContent: 'center',
   alignItems: 'center',
   },

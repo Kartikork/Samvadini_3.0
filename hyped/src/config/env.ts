@@ -26,13 +26,11 @@ const envConfigs: Record<Environment, EnvConfig> = {
     Market_Place_API_URL: 'https://anuvadiniaiapi.aicte-india.org/form1/',
     FCM_URL: 'https://samvadiniprod.aicte-india.org/',
     LRN_URL: 'https://lrn.aicte-india.org',
-    API_BASE_URL: 'http://192.168.0.113:4000/api', // Local development server
-    SOCKET_URL: 'ws://192.168.0.113:4000/socket',
+    API_BASE_URL: 'http://192.168.0.110:4000/api', // Local development server
+    SOCKET_URL: 'ws://192.168.0.110:4000/socket',
     // Socket.IO call signaling server (HTTP is fine, Socket.IO handles protocol upgrade)
     // Make sure the server is accessible and port 8000 is open
     CALL_SOCKET_URL: 'http://74.225.150.128:8000',
-    // API_BASE_URL: 'http://192.168.31.13:4000/api', // Local development server
-    // SOCKET_URL: 'ws://192.168.31.13:4000/socket',
     ENABLE_LOGGING: true,
     REQUEST_TIMEOUT: 30000,
     APP_NAME: 'Hyped Dev',
@@ -45,8 +43,7 @@ const envConfigs: Record<Environment, EnvConfig> = {
     Market_Place_API_URL: 'https://marketplace-prod.aicte-india.org/',
     FCM_URL: 'https://samvadiniprod.aicte-india.org/',
     LRN_URL: 'https://lrn.aicte-india.org',
-    // Socket.IO call signaling server (HTTP is fine, Socket.IO handles protocol upgrade)
-    // Make sure the server is accessible and port 8000 is open
+
     CALL_SOCKET_URL: 'http://74.225.150.128:8000',
     ENABLE_LOGGING: true,
     REQUEST_TIMEOUT: 30000,
@@ -60,8 +57,6 @@ const envConfigs: Record<Environment, EnvConfig> = {
     Market_Place_API_URL: 'https://marketplace-prod.aicte-india.org/',
     FCM_URL: 'https://samvadiniprod.aicte-india.org/',
     LRN_URL: 'https://lrn.aicte-india.org',
-    // Socket.IO call signaling server (HTTP is fine, Socket.IO handles protocol upgrade)
-    // Make sure the server is accessible and port 8000 is open
     CALL_SOCKET_URL: 'http://74.225.150.128:8000',
     ENABLE_LOGGING: false,
     REQUEST_TIMEOUT: 30000,

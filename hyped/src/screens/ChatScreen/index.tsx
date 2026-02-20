@@ -37,6 +37,8 @@ import {
   updateMessagesActionState,
   copyMessagesToClipboard,
 } from './helpers/messageActions';
+import LinearGradient from 'react-native-linear-gradient';
+
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -282,12 +284,12 @@ const ChatScreen: React.FC = () => {
           type === 'pin'
             ? { sthapitam_sandesham: 1 }
             : type === 'unPin'
-            ? { sthapitam_sandesham: 0 }
-            : type === 'star'
-            ? { kimTaritaSandesha: 1 }
-            : type === 'unStar'
-            ? { kimTaritaSandesha: 0 }
-            : {};
+              ? { sthapitam_sandesham: 0 }
+              : type === 'star'
+                ? { kimTaritaSandesha: 1 }
+                : type === 'unStar'
+                  ? { kimTaritaSandesha: 0 }
+                  : {};
       }
 
       setMessages(prev =>
@@ -353,10 +355,10 @@ const ChatScreen: React.FC = () => {
             action === 'pin'
               ? 'pin'
               : action === 'unpin'
-              ? 'unPin'
-              : action === 'star'
-              ? 'star'
-              : 'unStar',
+                ? 'unPin'
+                : action === 'star'
+                  ? 'star'
+                  : 'unStar',
           chatId,
           selectedMessages,
           setMessages: setMessages as any,
@@ -500,103 +502,109 @@ const ChatScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Selection bar (overlays header) */}
-      {isSelectionMode && (
-        <MessageActionsBar
-          selectedMessages={selectedMessages}
-          selectedCount={selectedMessageIds.length}
-          hasPinnedMessages={hasPinnedMessages}
-          hasStarredMessages={hasStarredMessages}
-          onCloseSelection={clearSelection}
-          onActionPress={handleMessageAction}
-        />
-      )}
-
-      <ChatHeader
-        chatId={chatId}
-        showCallButton
-        showVideoButton
-        onMenuPress={handleMenuPress}
-      />
-
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      <LinearGradient
+        colors={['#FEE7F8', '#FEF7EA',]}
+        style={{ flex: 1 }}
       >
-        <View style={styles.flex}>
-          {/* Connection status indicator */}
-          {!SocketService.isConnected() && (
-            <View style={styles.connectionBanner}>
-              <Text style={styles.connectionText}>Reconnecting...</Text>
-            </View>
-          )}
 
-          {/* Message list */}
-          <AnyFlashList
-            ref={flashListRef}
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={keyExtractor}
-            estimatedItemSize={80}
-            // Load older messages when user scrolls to TOP
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            ListHeaderComponent={renderListHeader}
-            ListFooterComponent={renderListFooter}
-            onViewableItemsChanged={onViewableItemsChanged}
-            viewabilityConfig={viewabilityConfigRef.current}
-            getItemType={getItemType}
-            onContentSizeChange={() => {
-              // On first layout after initial load, jump to bottom without animation
-              if (
-                !hasDoneInitialScrollRef.current &&
-                messages.length > 0 &&
-                flashListRef.current
-              ) {
-                try {
-                  flashListRef.current.scrollToIndex({
-                    index: messages.length - 1,
-                    animated: false,
-                  });
-                  hasDoneInitialScrollRef.current = true;
-                } catch (error) {
-                  console.warn(
-                    '[ChatScreen] initial scrollToIndex failed:',
-                    error,
-                  );
+        {/* Selection bar (overlays header) */}
+        {isSelectionMode && (
+          <MessageActionsBar
+            selectedMessages={selectedMessages}
+            selectedCount={selectedMessageIds.length}
+            hasPinnedMessages={hasPinnedMessages}
+            hasStarredMessages={hasStarredMessages}
+            onCloseSelection={clearSelection}
+            onActionPress={handleMessageAction}
+          />
+        )}
+
+        <ChatHeader
+          chatId={chatId}
+          showCallButton
+          showVideoButton
+          onMenuPress={handleMenuPress}
+        />
+
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        >
+          <View style={styles.flex}>
+            {/* Connection status indicator */}
+            {!SocketService.isConnected() && (
+              <View style={styles.connectionBanner}>
+                <Text style={styles.connectionText}>Reconnecting...</Text>
+              </View>
+            )}
+
+            {/* Message list */}
+            <AnyFlashList
+              ref={flashListRef}
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={keyExtractor}
+              estimatedItemSize={80}
+              // Load older messages when user scrolls to TOP
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              ListHeaderComponent={renderListHeader}
+              ListFooterComponent={renderListFooter}
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={viewabilityConfigRef.current}
+              getItemType={getItemType}
+              onContentSizeChange={() => {
+                // On first layout after initial load, jump to bottom without animation
+                if (
+                  !hasDoneInitialScrollRef.current &&
+                  messages.length > 0 &&
+                  flashListRef.current
+                ) {
+                  try {
+                    flashListRef.current.scrollToIndex({
+                      index: messages.length - 1,
+                      animated: false,
+                    });
+                    hasDoneInitialScrollRef.current = true;
+                  } catch (error) {
+                    console.warn(
+                      '[ChatScreen] initial scrollToIndex failed:',
+                      error,
+                    );
+                  }
                 }
-              }
-            }}
-            // Performance optimizations
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={10}
-            windowSize={5}
-            initialNumToRender={20}
-            updateCellsBatchingPeriod={50}
-          />
+              }}
+              // Performance optimizations
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              windowSize={5}
+              initialNumToRender={20}
+              updateCellsBatchingPeriod={50}
+            />
 
-          {/* Chat input */}
-          <ChatInput
-            chatId={chatId}
-            onMessageSent={appendLatestMessageFromDb}
-            replyMessage={replyMessage ?? undefined}
-            onCancelReply={() => setReplyMessage(null)}
-          />
+            {/* Chat input */}
+            <ChatInput
+              chatId={chatId}
+              onMessageSent={appendLatestMessageFromDb}
+              replyMessage={replyMessage ?? undefined}
+              onCancelReply={() => setReplyMessage(null)}
+            />
 
-          {/* Full reaction picker (over message) */}
-          <MessageReactionPicker
-            visible={isReactionPickerVisible}
-            onClose={closeReactionPicker}
-            onSelectReaction={emoji => {
-              if (!reactionTargetMessageId) return;
-              // TODO: Persist selected emoji reaction for reactionTargetMessageId
-            }}
-            messagePosition={reactionPickerPosition || undefined}
-            isSelfMessage={isSelfTargetMessage}
-          />
-        </View>
-      </KeyboardAvoidingView>
+            {/* Full reaction picker (over message) */}
+            <MessageReactionPicker
+              visible={isReactionPickerVisible}
+              onClose={closeReactionPicker}
+              onSelectReaction={emoji => {
+                if (!reactionTargetMessageId) return;
+                // TODO: Persist selected emoji reaction for reactionTargetMessageId
+              }}
+              messagePosition={reactionPickerPosition || undefined}
+              isSelfMessage={isSelfTargetMessage}
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </LinearGradient>
     </View>
   );
 };

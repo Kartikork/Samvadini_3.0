@@ -10,12 +10,13 @@ import {
 import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { axiosConn } from '../../storage/helper/Config';
 import GlobalBottomNavigation from '../GlobalBottomNavigation/index';
 import { useUnreadChatsCount } from '../../hooks/useUnreadChatsCount';
 import { getAppTranslations } from '../../translations';
 import { useNavigation } from '@react-navigation/native';
+import { env } from '../../config';
+import axios from 'axios';
+import { useAppSelector } from '../../state/hooks';
 
 const ICON_SIZE = 26;
 
@@ -36,6 +37,7 @@ const BottomNavigation = ({
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const unreadChatsCount = useUnreadChatsCount();
   const [isNewStatus, setIsNewStatus] = useState(false);
+  const uniqueId = useAppSelector(state => state.auth.uniqueId);
 
   const t = getAppTranslations(lang);
 
@@ -54,16 +56,14 @@ const BottomNavigation = ({
     };
   }, []);
 
-  // useEffect(() => {
-  //   checkNewStatus();
-  // }, []);
+  useEffect(() => {
+    checkNewStatus();
+  }, []);
 
   const checkNewStatus = async () => {
     try {
-      const myId = await AsyncStorage.getItem('uniqueId');
-      const response = await axiosConn(
-        'get',
-        `status/check-status?my_id=${myId}`,
+      const response = await axios.get(
+        `${env.API_BASE_URL}/status/check-status?my_id=${uniqueId}`,
       );
       if (response.status === 200) {
         setIsNewStatus(

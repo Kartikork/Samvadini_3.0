@@ -1,26 +1,5 @@
-/**
- * ChatListItem Component (Highly Optimized)
- * 
- * PERFORMANCE:
- * - React.memo prevents unnecessary re-renders
- * - Stable props (no inline functions)
- * - Minimal calculations in render
- * - Lazy image loading
- * 
- * CRITICAL:
- * - Only re-renders when chat data or selection state changes
- * - Parent passes stable callback refs
- */
-
 import React, { memo, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  ViewStyle,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ChatListItem as ChatListItemType } from '../hooks/useChatListData';
 import { getImageUrlWithSas } from '../../../config/env';
@@ -37,239 +16,255 @@ interface Props {
  * ChatListItem - Memoized for performance
  * Only re-renders when props change
  */
-export const ChatListItem = memo<Props>(({
-  chat,
-  isSelected,
-  onPress,
-  onLongPress,
-  isSelectionMode
-}) => {
-  // ============================================
-  // MEMOIZED COMPUTED VALUES (No re-calculation)
-  // ============================================
+export const ChatListItem = memo<Props>(
+  ({ chat, isSelected, onPress, onLongPress, isSelectionMode }) => {
+    // ============================================
+    // MEMOIZED COMPUTED VALUES (No re-calculation)
+    // ============================================
 
-  /**
-   * Avatar source (memoized) - with SAS key for Azure Blob Storage
-   */
-  const avatarSource = useMemo(() => {
-    if (chat.prakara === 'Group' && chat.samuha_chitram) {
-      const imageUrl = getImageUrlWithSas(chat.samuha_chitram);
-      return imageUrl ? { uri: imageUrl } : null;
-    }
-    if (chat.contact_photo) {
-      const imageUrl = getImageUrlWithSas(chat.contact_photo);
-      return imageUrl ? { uri: imageUrl } : null;
-    }
-    return null;
-  }, [chat.prakara, chat.samuha_chitram, chat.contact_photo]);
+    /**
+     * Avatar source (memoized) - with SAS key for Azure Blob Storage
+     */
+    const avatarSource = useMemo(() => {
+      if (chat.prakara === 'Group' && chat.samuha_chitram) {
+        const imageUrl = getImageUrlWithSas(chat.samuha_chitram);
+        return imageUrl ? { uri: imageUrl } : null;
+      }
+      if (chat.contact_photo) {
+        const imageUrl = getImageUrlWithSas(chat.contact_photo);
+        return imageUrl ? { uri: imageUrl } : null;
+      }
+      return null;
+    }, [chat.prakara, chat.samuha_chitram, chat.contact_photo]);
 
-  /**
-   * Avatar icon (memoized)
-   */
-  const avatarIcon = useMemo(() => {
-    if (chat.is_private_room) return 'lock';
-    if (chat.prakara === 'Broadcast') return 'bullhorn';
-    if (chat.prakara === 'Group') return 'account-group';
-    return 'account';
-  }, [chat.is_private_room, chat.prakara]);
+    /**
+     * Avatar icon (memoized)
+     */
+    const avatarIcon = useMemo(() => {
+      if (chat.is_private_room) return 'lock';
+      if (chat.prakara === 'Broadcast') return 'bullhorn';
+      if (chat.prakara === 'Group') return 'account-group';
+      return 'account';
+    }, [chat.is_private_room, chat.prakara]);
 
-  /**
-   * Formatted time (memoized)
-   */
-  const formattedTime = useMemo(() => {
-    if (!chat.lastMessageDate) return '';
+    /**
+     * Formatted time (memoized)
+     */
+    const formattedTime = useMemo(() => {
+      if (!chat.lastMessageDate) return '';
 
-    const date = new Date(chat.lastMessageDate);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const date = new Date(chat.lastMessageDate);
+      const now = new Date();
+      const diff = now.getTime() - date.getTime();
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (days === 0) {
-      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    } else if (days === 1) {
-      return 'Yesterday';
-    } else if (days < 7) {
-      return date.toLocaleDateString('en-US', { weekday: 'short' });
-    } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-  }, [chat.lastMessageDate]);
+      if (days === 0) {
+        return date.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      } else if (days === 1) {
+        return 'Yesterday';
+      } else if (days < 7) {
+        return date.toLocaleDateString('en-US', { weekday: 'short' });
+      } else {
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+        });
+      }
+    }, [chat.lastMessageDate]);
 
-  /**
-   * Message preview (memoized)
-   */
-  const messagePreview = useMemo(() => {
-    if (chat.isDeleted) return '🚫 This message was deleted';
-    if (!chat.lastMessage) return 'No messages yet';
+    /**
+     * Message preview (memoized)
+     */
+    const messagePreview = useMemo(() => {
+      if (chat.isDeleted) return '🚫 This message was deleted';
+      if (!chat.lastMessage) return 'No messages yet';
 
-    const senderPrefix = chat.prakara === 'Group' && chat.lastSender
-      ? 'You: '
-      : '';
+      const senderPrefix =
+        chat.prakara === 'Group' && chat.lastSender ? 'You: ' : '';
 
-    // Media type indicators
-    if (chat.lastMessageType?.startsWith('image/')) return `${senderPrefix}📷 Photo`;
-    if (chat.lastMessageType?.startsWith('video/')) return `${senderPrefix}🎥 Video`;
-    if (chat.lastMessageType?.startsWith('audio/')) return `${senderPrefix}🎵 Audio`;
-    if (chat.lastMessageType?.startsWith('application/')) return `${senderPrefix}📄 Document`;
-    if (chat.lastMessageType === 'location') return `${senderPrefix}📍 Location`;
-    if (chat.lastMessageType === 'gif') return `${senderPrefix}GIF`;
-    if (chat.lastMessageType === 'sticker') return `${senderPrefix}Sticker`;
+      // Media type indicators
+      if (chat.lastMessageType?.startsWith('image/'))
+        return `${senderPrefix}📷 Photo`;
+      if (chat.lastMessageType?.startsWith('video/'))
+        return `${senderPrefix}🎥 Video`;
+      if (chat.lastMessageType?.startsWith('audio/'))
+        return `${senderPrefix}🎵 Audio`;
+      if (chat.lastMessageType?.startsWith('application/'))
+        return `${senderPrefix}📄 Document`;
+      if (chat.lastMessageType === 'location')
+        return `${senderPrefix}📍 Location`;
+      if (chat.lastMessageType === 'gif') return `${senderPrefix}GIF`;
+      if (chat.lastMessageType === 'sticker') return `${senderPrefix}Sticker`;
 
-    return `${senderPrefix}${chat.lastMessage}`;
-  }, [chat.isDeleted, chat.lastMessage, chat.lastMessageType, chat.prakara, chat.lastSender]);
+      return `${senderPrefix}${chat.lastMessage}`;
+    }, [
+      chat.isDeleted,
+      chat.lastMessage,
+      chat.lastMessageType,
+      chat.prakara,
+      chat.lastSender,
+    ]);
 
-  /**
-   * Status icon (memoized)
-   */
-  const statusIcon = useMemo(() => {
-    if (!chat.lastMessageAvastha) return null;
+    /**
+     * Status icon (memoized)
+     */
+    const statusIcon = useMemo(() => {
+      if (!chat.lastMessageAvastha) return null;
 
-    switch (chat.lastMessageAvastha) {
-      case 'sent':
-        return <Icon name="check" size={16} color="#999" />;
-      case 'delivered':
-        return <Icon name="check-all" size={16} color="#999" />;
-      case 'read':
-        return <Icon name="check-all" size={16} color="#028BD3" />;
-      default:
-        return null;
-    }
-  }, [chat.lastMessageAvastha]);
+      switch (chat.lastMessageAvastha) {
+        case 'sent':
+          return <Icon name="check" size={16} color="#999" />;
+        case 'delivered':
+          return <Icon name="check-all" size={16} color="#999" />;
+        case 'read':
+          return <Icon name="check-all" size={16} color="#028BD3" />;
+        default:
+          return null;
+      }
+    }, [chat.lastMessageAvastha]);
 
-  /**
-   * Display name (memoized)
-   */
-  const displayName = useMemo(() => {
-    let name = chat.samvada_nama || chat.contact_name || 'Unknown';
-    if (chat.samvadaspashtah === 1) {
-      name = `🗄️ ${name}`;
-    }
-    return name;
-  }, [chat.samvada_nama, chat.contact_name, chat.samvadaspashtah]);
+    /**
+     * Display name (memoized)
+     */
+    const displayName = useMemo(() => {
+      let name = chat.samvada_nama || chat.contact_name || 'Unknown';
+      if (chat.samvadaspashtah === 1) {
+        name = `🗄️ ${name}`;
+      }
+      return name;
+    }, [chat.samvada_nama, chat.contact_name, chat.samvadaspashtah]);
 
-  /**
-   * Unread badge text (memoized)
-   */
-  const unreadBadgeText = useMemo(() => {
-    if (chat.unread_count === 0) return '';
-    return chat.unread_count > 99 ? '99+' : chat.unread_count.toString();
-  }, [chat.unread_count]);
+    /**
+     * Unread badge text (memoized)
+     */
+    const unreadBadgeText = useMemo(() => {
+      if (chat.unread_count === 0) return '';
+      return chat.unread_count > 99 ? '99+' : chat.unread_count.toString();
+    }, [chat.unread_count]);
 
-  // ============================================
-  // STABLE CALLBACKS (No re-creation)
-  // ============================================
+    // ============================================
+    // STABLE CALLBACKS (No re-creation)
+    // ============================================
 
-  const handlePress = useCallback(() => {
-    onPress(chat.samvada_chinha);
-  }, [onPress, chat.samvada_chinha]);
+    const handlePress = useCallback(() => {
+      onPress(chat.samvada_chinha);
+    }, [onPress, chat.samvada_chinha]);
 
-  const handleLongPress = useCallback(() => {
-    onLongPress(chat.samvada_chinha);
-  }, [onLongPress, chat.samvada_chinha]);
+    const handleLongPress = useCallback(() => {
+      onLongPress(chat.samvada_chinha);
+    }, [onLongPress, chat.samvada_chinha]);
 
-  // ============================================
-  // RENDER
-  // ============================================
+    // ============================================
+    // RENDER
+    // ============================================
 
-  return (
-    <TouchableOpacity
-      style={[styles.container, isSelected && styles.selected]}
-      onPress={handlePress}
-      onLongPress={handleLongPress}
-      activeOpacity={0.7}
-    >
-      {/* Selection checkbox */}
-      {isSelectionMode && (
-        <View style={styles.checkbox}>
-          <Icon
-            name={isSelected ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
-            size={24}
-            color={isSelected ? '#028BD3' : '#ccc'}
-          />
-        </View>
-      )}
-
-      {/* Avatar */}
-      <View style={styles.avatarContainer}>
-        {avatarSource ? (
-          <Image
-            source={avatarSource}
-            style={styles.avatar}
-            resizeMode="cover"
-          />
-
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Icon name={avatarIcon} size={32} color="#fff" />
+    return (
+      <TouchableOpacity
+        style={[styles.container, isSelected && styles.selected]}
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+        activeOpacity={0.7}
+      >
+        {/* Selection checkbox */}
+        {isSelectionMode && (
+          <View style={styles.checkbox}>
+            <Icon
+              name={
+                isSelected
+                  ? 'checkbox-marked-circle'
+                  : 'checkbox-blank-circle-outline'
+              }
+              size={24}
+              color={isSelected ? '#028BD3' : '#ccc'}
+            />
           </View>
         )}
 
-        {/* Unread badge */}
+        {/* Avatar */}
+        <View style={styles.avatarContainer}>
+          {avatarSource ? (
+            <Image
+              source={avatarSource}
+              style={styles.avatar}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Icon name={avatarIcon} size={32} color="#fff" />
+            </View>
+          )}
 
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
-        {/* Header row */}
-        <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={1}>
-            {displayName}
-          </Text>
-
+          {/* Unread badge */}
         </View>
 
-        {/* Message row */}
-        <View style={styles.messageRow}>
-          <View style={styles.messageContent}>
-            {statusIcon}
-            <Text
-              style={[
-                styles.message,
-                chat.unread_count > 0 && styles.messageUnread
-              ]}
-              numberOfLines={1}
-            >
-              {messagePreview}
+        {/* Content */}
+        <View style={styles.content}>
+          {/* Header row */}
+          <View style={styles.header}>
+            <Text style={styles.name} numberOfLines={1}>
+              {displayName}
             </Text>
           </View>
+
+          {/* Message row */}
+          <View style={styles.messageRow}>
+            <View style={styles.messageContent}>
+              {statusIcon}
+              <Text
+                style={[
+                  styles.message,
+                  chat.unread_count > 0 && styles.messageUnread,
+                ]}
+                numberOfLines={1}
+              >
+                {messagePreview}
+              </Text>
+            </View>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.meta}>
-        <View style={styles.timeSection}>
-          <Text style={styles.time}>{formattedTime}</Text>
-         </View>
-        
-        <View style={styles.timer}>
-        
-         {(chat.is_pinned ?? 0) === 1 && (
-            <Icon name="pin" size={16} color="#028BD3" style={styles.pinIcon} />
-
-          )}
-          {chat.unread_count > 0 && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadText}>{unreadBadgeText}</Text>
-          </View>
-        )}
+        <View style={styles.meta}>
+          <View style={styles.timeSection}>
+            <Text style={styles.time}>{formattedTime}</Text>
           </View>
 
-      </View>
-    </TouchableOpacity>
-  );
-}, (prevProps, nextProps) => {
-  // Custom comparison function for React.memo
-  // Only re-render if these specific props change
-  return (
-    prevProps.chat.samvada_chinha === nextProps.chat.samvada_chinha &&
-    prevProps.chat.lastMessage === nextProps.chat.lastMessage &&
-    prevProps.chat.lastMessageDate === nextProps.chat.lastMessageDate &&
-    prevProps.chat.unread_count === nextProps.chat.unread_count &&
-    prevProps.chat.lastMessageAvastha === nextProps.chat.lastMessageAvastha &&
-    prevProps.chat.is_pinned === nextProps.chat.is_pinned &&
-    prevProps.isSelected === nextProps.isSelected &&
-    prevProps.isSelectionMode === nextProps.isSelectionMode
-  );
-});
+          <View style={styles.timer}>
+            {(chat.is_pinned ?? 0) === 1 && (
+              <Icon
+                name="pin"
+                size={16}
+                color="#028BD3"
+                style={styles.pinIcon}
+              />
+            )}
+            {chat.unread_count > 0 && (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadText}>{unreadBadgeText}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison function for React.memo
+    // Only re-render if these specific props change
+    return (
+      prevProps.chat.samvada_chinha === nextProps.chat.samvada_chinha &&
+      prevProps.chat.lastMessage === nextProps.chat.lastMessage &&
+      prevProps.chat.lastMessageDate === nextProps.chat.lastMessageDate &&
+      prevProps.chat.unread_count === nextProps.chat.unread_count &&
+      prevProps.chat.lastMessageAvastha === nextProps.chat.lastMessageAvastha &&
+      prevProps.chat.is_pinned === nextProps.chat.is_pinned &&
+      prevProps.isSelected === nextProps.isSelected &&
+      prevProps.isSelectionMode === nextProps.isSelectionMode
+    );
+  },
+);
 
 ChatListItem.displayName = 'ChatListItem';
 
@@ -341,15 +336,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   meta: {
-height: 50,                
-  justifyContent: 'space-between', 
+    height: 50,
+    justifyContent: 'space-between',
   },
   timeSection: {
-      alignItems: 'flex-end', 
+    alignItems: 'flex-end',
   },
   timer: {
-  flexDirection: 'row',
-   alignItems: 'flex-end', 
+    flexDirection: 'row',
+    alignItems: 'flex-end',
   },
   pinIcon: {
     marginRight: 4,
@@ -380,4 +375,3 @@ height: 50,
     color: '#666',
   },
 });
-

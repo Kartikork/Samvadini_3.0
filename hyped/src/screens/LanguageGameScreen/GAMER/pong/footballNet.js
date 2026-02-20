@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, PanResponder, TouchableOpacity, Animated, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, PanResponder, TouchableOpacity, Animated, ImageBackground, BackHandler, AppState } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 // import Sound from 'react-native-sound';
 import LinearGradient from 'react-native-linear-gradient';
 // --- CHANGE START ---
@@ -8,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // --- CHANGE END ---
 
 export default function PongBricks() {
+  const navigation = useNavigation();
   const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
   const PADDLE_W = Math.min(120, SCREEN_W * 0.2);
   const PADDLE_H = 18;
@@ -48,9 +50,9 @@ export default function PongBricks() {
   const buttonClickRef = useRef(null);
   const bgSoundRef = useRef(null);
 
-  const collisionSoundFile = require('../../screens/GAMER/Assets/brick_smash_sound.mp3');
-  const buttonClickFile = require('../../screens/GAMER/Assets/button.mp3');
-  const bgSoundFile = require('../../screens/GAMER/Assets/Bg_pong.mp3');
+  // const collisionSoundFile = require('../../screens/GAMER/Assets/brick_smash_sound.mp3');
+  // const buttonClickFile = require('../../screens/GAMER/Assets/button.mp3');
+  // const bgSoundFile = require('../../screens/GAMER/Assets/Bg_pong.mp3');
   const fireworkGif = require('./fireworks.gif');
   const backgroundGif = require('./giphy.gif');
 
@@ -183,7 +185,34 @@ export default function PongBricks() {
   //     bgSoundRef.current?.stop(() => bgSoundRef.current?.release());
   //   };
   // }, []);
-  
+
+  // --- BackHandler and AppState Handling ---
+  useEffect(() => {
+    const handleBackPress = () => {
+      navigation.navigate('LanguageGameScreen');
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      handleBackPress
+    );
+
+    return () => backHandler.remove();
+  }, [navigation]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState.match(/inactive|background/)) {
+        setPaused(true);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   const handleRestart = () => {
     setGameOver(false);
     setScore(0);
@@ -383,7 +412,7 @@ export default function PongBricks() {
               <Text style={styles.btnText}>{paused ? 'Resume' : 'Pause'}</Text>
             </TouchableOpacity>
           </View>
-          
+
           {/* --- CHANGE START (Game Over UI) --- */}
           {gameOver && (
             <View style={styles.gameOverOverlay}>

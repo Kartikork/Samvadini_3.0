@@ -11,8 +11,11 @@
 
 import { insertChatMessage } from '../../storage/sqllite/chat/ChatMessageSchema';
 import { getLastMessage } from '../../storage/sqllite/chat/ChatMessageSchema';
+import { insertGroupMessage } from '../../storage/sqllite/chat/GroupMessageSchema';
+import { fetchGroupMessages } from '../../storage/sqllite/chat/GroupMessageSchema';
 import { decryptMessage } from '../../helper/Encryption';
 import { getEncryptionKey } from '../../storage/sqllite/chat/Participants';
+import { fetchChatBySamvadaChinha } from '../../storage/sqllite/chat/ChatListSchema';
 
 export interface IncomingMessagePayload {
   samvada_chinha: string; // chatId
@@ -95,15 +98,51 @@ export async function handleIncomingMessage(
       return { success: false };
     }
 
+    // Check if this is a group chat
+    const isGroupChat = payload.isGroup || payload.isGroupChat || false;
+    let isGroup = isGroupChat;
+    
+    // If not explicitly marked, check by fetching chat metadata
+    if (!isGroup) {
+      try {
+        const chatMetadata = await fetchChatBySamvadaChinha(chatId);
+        if (chatMetadata && chatMetadata.length > 0) {
+          isGroup = chatMetadata[0].prakara === 'Group';
+        }
+      } catch (error) {
+        console.warn('[MessageHandler] Could not check chat type, assuming 1-to-1:', error);
+      }
+    }
+
     // Check if message already exists (deduplication)
     const dedupStartTime = Date.now();
     try {
-      const lastMessage = await getLastMessage(chatId);
-      timing.deduplicationTime = Date.now() - dedupStartTime;
-      
-      if (lastMessage && lastMessage.refrenceId === refrenceId) {
-        console.log('[MessageHandler] ⚠️ Message already exists, skipping:', refrenceId);
-        return { success: false, timing }; // Message already saved
+      if (isGroup) {
+        // For groups, check the latest group message
+        // fetchGroupMessages(samvada_chinha, uniqueId, limit, offset)
+        const { store } = await import('../../state/store');
+        const currentUserId = store.getState().auth.uniqueId;
+        if (currentUserId) {
+          const groupMessages = await fetchGroupMessages(chatId, currentUserId, 1, 0);
+          timing.deduplicationTime = Date.now() - dedupStartTime;
+          
+          if (groupMessages && groupMessages.length > 0 && groupMessages[0].refrenceId === refrenceId) {
+            console.log('[MessageHandler] ⚠️ Group message already exists, skipping:', refrenceId);
+            return { success: false, timing }; // Message already saved
+          }
+        } else {
+          timing.deduplicationTime = Date.now() - dedupStartTime;
+          console.warn('[MessageHandler] No current user ID for group message deduplication');
+        }
+      } else {
+        // For 1-to-1, use existing check
+        const lastMessage = await getLastMessage(chatId);
+        timing.deduplicationTime = Date.now() - dedupStartTime;
+        
+        if (lastMessage && lastMessage.refrenceId === refrenceId) {
+          console.log('[MessageHandler] ⚠️ Message already exists, skipping:', refrenceId);
+          return { success: false, timing }; // Message already saved
+        }
       }
     } catch (error) {
       timing.deduplicationTime = Date.now() - dedupStartTime;
@@ -191,7 +230,25 @@ export async function handleIncomingMessage(
     // DATABASE INSERT
     // ─────────────────────────────────────────────────────────────
     const dbInsertStartTime = Date.now();
-    await insertChatMessage(messageData);
+    
+    if (isGroup) {
+      // Insert into group messages table
+      await insertGroupMessage({
+        ...messageData,
+        nirastah: messageData.nirastah ? 1 : 0, // Convert boolean to number for group messages
+        kimFwdSandesha: messageData.kimFwdSandesha ? 1 : 0,
+        anuvadata_sandesham: messageData.anuvadata_sandesham ? 1 : 0,
+        kimTaritaSandesha: messageData.kimTaritaSandesha ? 1 : 0,
+        sampaditam: messageData.sampaditam ? 1 : 0,
+        sthapitam_sandesham: messageData.sthapitam_sandesham ? 1 : 0,
+      });
+      console.log('[MessageHandler] ✅ Group message inserted into group table');
+    } else {
+      // Insert into 1-to-1 messages table
+      await insertChatMessage(messageData);
+      console.log('[MessageHandler] ✅ 1-to-1 message inserted into chat table');
+    }
+    
     timing.dbInsertTime = Date.now() - dbInsertStartTime;
 
     // Calculate total time

@@ -140,7 +140,7 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
             onPress={onCloseSelection}
             style={styles.iconButton}
           >
-            <MaterialCommunityIcons name="close" size={22} color="#FFF" />
+            <MaterialCommunityIcons name="close" size={22} color="#000000" />
           </TouchableOpacity>
 
           <Text style={styles.countText}>{selectedCount}</Text>
@@ -187,7 +187,7 @@ const MessageActionsBar: React.FC<MessageActionsBarProps> = ({
               <MaterialCommunityIcons
                 name="dots-vertical"
                 size={22}
-                color="#FFF"
+                color="#000000"
               />
             </TouchableOpacity>
           )}
@@ -243,7 +243,7 @@ interface ActionIconProps {
 
 const ActionIcon = memo(({ name, onPress }: ActionIconProps) => (
   <TouchableOpacity style={styles.iconButton} onPress={onPress}>
-    <MaterialCommunityIcons name={name} size={22} color="#FFF" />
+    <MaterialCommunityIcons name={name} size={22} color="#000000" />
   </TouchableOpacity>
 ));
 
@@ -278,8 +278,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#202C33',
+    paddingVertical: 14,
+    backgroundColor: '#ffffff',
     elevation: 4,
   },
   leftSection: {
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   countText: {
-    color: '#FFF',
+    color: '#000000',
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 4,

@@ -355,8 +355,8 @@ const BikeWashScreen = ({ onBack, onCleanFinished, coins, selectedCharacter, nav
             return true; // Event handled
         };
 
-        // Add the event listener when the component mounts
-        BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+            // Add the event listener when the component mounts and keep subscription
+        const backHandlerSubscription = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
 
         // Remove the event listener when the component unmounts
         return () => {

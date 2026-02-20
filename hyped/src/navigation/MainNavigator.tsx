@@ -23,13 +23,13 @@ import { LanguageSelectionScreen } from '../screens/LanguageSelectionScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
+import GroupChatScreen from '../screens/GroupChatScreen';
 import LanguageGameScreen from '../screens/LanguageGameScreen';
 import ContactDesignScreen from '../screens/ContactDesignScreen';
 import NewContactFormScreen from '../screens/NewContactFormScreen';
 import CreateNewGroupScreen from '../screens/CreateNewGroup';
 import CallScreen from '../screens/CallScreen';
 import SnakeLaddersGame from '../screens/LanguageGameScreen/GAMER/SnakeLaddersGame/SnakeLaddersGame.js';
-const ChatProfile = lazy(() => import('../screens/Profile/ChatProfile.js'));
 const MemoryGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MemoryGame'));
 const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameIntroScreen.js'));
 const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameScreen.js'));
@@ -50,6 +50,13 @@ const chess = lazy(() => import('../screens/LanguageGameScreen/GAMER/Chess/chess
 const pong = lazy(() => import('../screens/LanguageGameScreen/GAMER/pong/footballNet.js'));
 const homescreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/HomeScreen.js'));
 const roomscreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/RoomScreen.js'));
+const LudoWelcomeScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/Screens/WelcomeScreen'));
+const LudoColorSelectionScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/Screens/ColorSelectionScreen'));
+const ludoGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/utils/Index'));
+const Basketball = lazy(() => import('../screens/LanguageGameScreen/GAMER/Basketball/main/BasketBall'));
+const PianoGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/piano/PianoGame'));
+const MathTugOfWar = lazy(() => import('../screens/LanguageGameScreen/GAMER/MathTugOfWar'));
+const ChatProfile = lazy(() => import('../screens/Profile/ChatProfile.js'));
 const PlanetSelectionScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/PlanetSelectionScreen.js'));
 const MiniGamesHubScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGamesHubScreen.js'));
 const MiniGame1 = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGame1.js'));
@@ -61,6 +68,7 @@ const TalkingTom = lazy(() => import('../screens/LanguageGameScreen/GAMER/Talkin
 
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
+import LocationShareScreen from '../screens/ChatScreen/components/LocationShareScreen';
 
 // Loader Component
 const ScreenLoader = () => {
@@ -91,8 +99,6 @@ const LazyScreen = (Component: React.LazyExoticComponent<any>) => {
 const CallHistoryScreen = LazyScreen(
   lazy(() => import('../screens/CallHistoryScreen')),
 );
-
-const StatusScreen = LazyScreen(lazy(() => import('../screens/StatusScreen')));
 
 const JobScreen = LazyScreen(
   lazy(() => import('../screens/CategoryScreen/JobScreen')),
@@ -153,6 +159,18 @@ const UpdateReminder = LazyScreen(
 const SharePlannerCount = LazyScreen(
   lazy(() => import('../screens/DailyPlanner/SharePlannerCount')),
 );
+const StatusScreen = LazyScreen(
+  lazy(() => import('../screens/StatusScreen/StatusScreen.js')),
+);
+const ViewStatus = LazyScreen(
+  lazy(() => import('../screens/StatusScreen/ViewStatus.js')),
+);
+const ViewMyStatus = LazyScreen(
+  lazy(() => import('../screens/StatusScreen/ViewMyStatus.js')),
+);
+const StatusEditor = LazyScreen(
+  lazy(() => import('../screens/StatusScreen/StatusEditor.js')),
+);
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -164,6 +182,9 @@ export type RootStackParamList = {
   ChatList: undefined;
   CallHistory: undefined;
   StatusScreen: undefined;
+  ViewStatus: undefined;
+  ViewMyStatus: undefined;
+  StatusEditor: undefined;
   JobScreen: undefined;
   JobsDetailsScreen: undefined;
   LanguageGameScreen: undefined;
@@ -186,8 +207,18 @@ export type RootStackParamList = {
   CarromGame: undefined;
   TipCat: undefined;
   crossword: undefined;
+  pong: undefined;
+  chess: undefined;
+  homescreen: undefined;
+  roomscreen: undefined;
   MazeGame: undefined;
   SliceGame: undefined;
+  Basketball: undefined;
+  PianoGame: undefined;
+  MathTugOfWar: undefined;
+  LudoWelcomeScreen: undefined;
+  LudoColorSelectionScreen: undefined;
+  ludoGame: { gameMode: string; playerColors: string[] };
   LRNScreen: undefined;
   DailyPlanner: undefined;
   AddPlan: undefined;
@@ -204,10 +235,7 @@ export type RootStackParamList = {
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
   SelectedFiles: { assets: any[] } | undefined;
-  pong: undefined;
-  chess: undefined;
-  homescreen: undefined;
-  roomscreen: undefined;
+  LocationShare: { chatId: string; isGroup?: boolean };
   PlanetSelectionScreen: undefined;
   MiniGamesHubScreen: undefined;
   MiniGame1: undefined;
@@ -297,6 +325,21 @@ export default function MainNavigator() {
         <Stack.Screen
           name="StatusScreen"
           component={StatusScreen}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="ViewStatus"
+          component={ViewStatus}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="ViewMyStatus"
+          component={ViewMyStatus}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="StatusEditor"
+          component={StatusEditor}
           options={commonHeaderOptions}
         />
         <Stack.Screen
@@ -397,6 +440,15 @@ export default function MainNavigator() {
         />
 
         <Stack.Screen
+          name="LocationShare"
+          component={LocationShareScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+
+        <Stack.Screen
           name="ContactDesignScreen"
           component={ContactDesignScreen}
           options={commonHeaderOptions}
@@ -456,7 +508,7 @@ export default function MainNavigator() {
           component={SnakeLaddersGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
-        
+
 
         <Stack.Screen
           name="MemoryGame"
@@ -516,7 +568,7 @@ export default function MainNavigator() {
           component={DrumGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
-        <Stack.Screen
+                <Stack.Screen
           name="CarromGame"
           component={CarromGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
@@ -540,6 +592,43 @@ export default function MainNavigator() {
           name="SliceGame"
           component={SliceGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="Basketball"
+          component={Basketball}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="PianoGame"
+          component={PianoGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="MathTugOfWar"
+          component={MathTugOfWar}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="LudoWelcomeScreen"
+          component={LudoWelcomeScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="LudoColorSelectionScreen"
+          component={LudoColorSelectionScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="ludoGame"
+          component={ludoGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+
+        {/* Group Chat Screen */}
+        <Stack.Screen
+          name="GroupChat"
+          component={GroupChatScreen}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="PlanetSelectionScreen"
@@ -583,7 +672,6 @@ export default function MainNavigator() {
         />
 
         {/* TODO: Add these screens
-        <Stack.Screen name="GroupChat" component={GroupChatScreen} />
         <Stack.Screen name="Call" component={CallScreen} />
         <Stack.Screen name="IncomingCall" component={IncomingCallScreen} />
         */}

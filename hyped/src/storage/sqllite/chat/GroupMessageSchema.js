@@ -1,10 +1,10 @@
 import SQLite from 'react-native-sqlite-storage';
 import { downloadFile } from '../../helper/Helper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getEncryptionKey } from './Participants';
 import { decryptMessage } from '../../../helper/Encryption';
 import { SocketService } from '../../../services/SocketService';
 import { getRandomLayout } from '../../../helper/MessageLayout';
+import { store } from '../../../state/store';
 
 SQLite.enablePromise(true);
 
@@ -203,13 +203,7 @@ export const hasGroupChatPermission = async (samvada_chinha, uniqueId) => {
 // Main insert function
 export const insertGroupMessage = async (data) => {
   try {
-    const uniqueId = await AsyncStorage.getItem("uniqueId");
-    const hasPermission = await hasGroupChatPermission(data.samvada_chinha, uniqueId);
     const layout = getRandomLayout();
-    if (!hasPermission) {
-      console.log("Don't have permission");
-      return;
-    }
 
     const db = await openDatabase();
     db.transaction((tx) => {
@@ -979,6 +973,84 @@ export const updateAvasthaByRefrenceId = async (refrenceId, newAvastha) => {
     return true;
   } catch (error) {
     console.error("Error while updating avastha:", error);
+    return false;
+  }
+};
+
+/**
+ * Update group message fields by refrenceId
+ * @param {string} refrenceId - The message reference ID
+ * @param {object} updates - Object containing fields to update (e.g., { avastha: 'sent' })
+ */
+export const updateGroupMessage = async (refrenceId, updates) => {
+  if (!refrenceId || !updates || typeof updates !== 'object') {
+    console.error('[updateGroupMessage] Invalid parameters:', { refrenceId, updates });
+    return false;
+  }
+
+  try {
+    const db = await openDatabase();
+    const updateFields = [];
+    const updateValues = [];
+
+    // Build dynamic update query based on provided updates
+    if (updates.avastha !== undefined) {
+      updateFields.push('avastha = ?');
+      updateValues.push(updates.avastha);
+    }
+    if (updates.vishayah !== undefined) {
+      updateFields.push('vishayah = ?');
+      updateValues.push(updates.vishayah);
+    }
+    if (updates.reaction !== undefined) {
+      updateFields.push('reaction = ?');
+      updateValues.push(updates.reaction);
+    }
+    if (updates.reaction_by !== undefined) {
+      updateFields.push('reaction_by = ?');
+      updateValues.push(updates.reaction_by);
+    }
+    if (updates.reaction_details !== undefined) {
+      updateFields.push('reaction_details = ?');
+      updateValues.push(serializeReactionMap(updates.reaction_details));
+    }
+    if (updates.reaction_summary !== undefined) {
+      updateFields.push('reaction_summary = ?');
+      updateValues.push(serializeReactionMap(updates.reaction_summary));
+    }
+    if (updates.sthapitam_sandesham !== undefined) {
+      updateFields.push('sthapitam_sandesham = ?');
+      updateValues.push(updates.sthapitam_sandesham);
+    }
+    if (updates.kimTaritaSandesha !== undefined) {
+      updateFields.push('kimTaritaSandesha = ?');
+      updateValues.push(updates.kimTaritaSandesha);
+    }
+    if (updates.nirastah !== undefined) {
+      updateFields.push('nirastah = ?');
+      updateValues.push(updates.nirastah);
+    }
+
+    if (updateFields.length === 0) {
+      console.warn('[updateGroupMessage] No valid fields to update');
+      return false;
+    }
+
+    // Always update the updatedAt timestamp
+    updateFields.push('updatedAt = datetime("now")');
+    updateValues.push(refrenceId);
+
+    const updateQuery = `UPDATE td_gchat_redfort_213 
+                         SET ${updateFields.join(', ')} 
+                         WHERE refrenceId = ?;`;
+
+    await db.transaction(async (tx) => {
+      await tx.executeSql(updateQuery, updateValues);
+    });
+
+    return true;
+  } catch (error) {
+    console.error('[updateGroupMessage] Error updating group message:', error);
     return false;
   }
 };

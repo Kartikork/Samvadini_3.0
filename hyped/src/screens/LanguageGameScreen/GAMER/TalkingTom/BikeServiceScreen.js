@@ -72,8 +72,8 @@ const BikeServiceScreen = ({ onBack, onServiceFinished, coins, selectedCharacter
       return true; // Always return true to prevent default back button behavior (exiting app)
     };
 
-    // Add event listener for back press
-    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    // Add event listener for back press and keep the subscription
+    const backHandlerSubscription = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
 
     // Clean up event listener when component unmounts
     return () => {

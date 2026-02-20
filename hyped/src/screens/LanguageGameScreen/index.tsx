@@ -56,7 +56,7 @@ const hp = (percentage: number) => {
 };
 
 import snakeladder from '../../screens/LanguageGameScreen/GAMER/icons/snakeladder_icon.jpg';
-const LanguageGamesScreen = ({ navigation }) => {
+const LanguageGamesScreen = ({ navigation }: { navigation: any }) => {
   const [sourceLanguage, setSourceLanguage] = useState('english');
   const [isLoading, setIsLoading] = useState(true);
   const [showCountdownModal, setShowCountdownModal] = useState(false);
@@ -66,7 +66,7 @@ const LanguageGamesScreen = ({ navigation }) => {
 
   const countdownInterval = useRef(null);
 
-  const generateScatterPosition = useCallback((index) => {
+  const generateScatterPosition = useCallback((index: number) => {
     const basePositions = [
       { x: -150, y: -250 },
       { x: 180, y: -200 },
@@ -98,7 +98,7 @@ const LanguageGamesScreen = ({ navigation }) => {
           { icon: carrom_icon, image: require('../../screens/LanguageGameScreen/GAMER/CarromGame/carrom_icon.png'), title: 'CarromGame', route: 'CarromGame' },
           { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/Chess/chess.png'), title: 'Chess', route: 'chess' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/space_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/space_icon.png'), title: 'Space Exploration', route: 'PlanetSelectionScreen' },
-          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), title: 'Ludo', route: 'WelcomeScreen' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/ludo_icon_new.png'), title: 'Ludo', route: 'LudoWelcomeScreen' },
           { icon: Pongicon1, image: require('../../screens/LanguageGameScreen/GAMER/icons/slingshot.png'), title: 'Space Shooter', route: 'BalloonShootingGame' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/car_logo.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/car_logo.png'), title: 'Car Race', route: 'CarGame' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/gilli.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/gilli.png'), title: 'Gilli Danda', route: 'TipCat' },
@@ -118,7 +118,7 @@ const LanguageGamesScreen = ({ navigation }) => {
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/drum_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/drum_icon.png'), title: 'DrumGame', route: 'DrumGame' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/pianologo.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/pianologo.png'), title: 'Piano Game', route: 'PianoGame' },
           { icon: require('../../screens/LanguageGameScreen/GAMER/icons/talkingtom_icon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/talkingtom_icon.png'), title: 'Talking Tom', route: 'TalkingTom' },
-          // { icon: require('./Assets/hill_climb_icon.png'), image: require('./Assets/hill_climb_icon.png'), title: 'Hill Climb', route: 'HillClimbGame' },
+          { icon: require('../../screens/LanguageGameScreen/GAMER/icons/mathicon.png'), image: require('../../screens/LanguageGameScreen/GAMER/icons/mathicon.png'), title: 'Math Tug of War', route: 'MathTugOfWar' },
         ]
       },
       {
@@ -175,7 +175,7 @@ const LanguageGamesScreen = ({ navigation }) => {
         localCoins = 5000; // Default to 5000 coins
         try {
           await AsyncStorage.setItem('snakeGameTotalCoins', JSON.stringify(localCoins));
-        } catch (e) {
+        } catch (e: any) {
           console.warn('Failed to persist default coins locally.', e?.message || e);
         }
         setTotalCoins(localCoins);
@@ -296,8 +296,7 @@ const LanguageGamesScreen = ({ navigation }) => {
               </View>
 
 
-              {Array(Math.ceil(section.items.length / 2))
-                .fill()
+              {Array.from({ length: Math.ceil(section.items.length / 2) })
                 .map((_, rowIndex) => (
                   <View key={rowIndex} style={styles.row}>
                     {section.items.slice(rowIndex * 2, rowIndex * 2 + 2).map((game) => (
