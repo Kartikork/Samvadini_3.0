@@ -200,6 +200,9 @@ const ViewMyStatus = LazyScreen(
 const StatusEditor = LazyScreen(
   lazy(() => import('../screens/StatusScreen/StatusEditor.js')),
 );
+const MediaDocsScreen = LazyScreen(
+  lazy(() => import('../screens/ChatScreen/components/MediaDocsScreen.js')),
+);
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -245,6 +248,7 @@ export type RootStackParamList = {
   CreateEvents: undefined;
   DetailsScreen: undefined;
   ChatProfile: undefined;
+  MediaDocsScreen: undefined;
   Chat: { chatId: string };
   GroupChat: { chatId: string; groupName: string };
   Call: { callId: string; peerId: string; isVideo: boolean };
@@ -356,6 +360,11 @@ export default function MainNavigator() {
         <Stack.Screen
           name="JobsDetailsScreen"
           component={JobsDetailsScreen}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="MediaDocsScreen"
+          component={MediaDocsScreen}
           options={commonHeaderOptions}
         />
         <Stack.Screen

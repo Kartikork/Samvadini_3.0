@@ -39,6 +39,7 @@ export { default as userIcon } from './images/user-icon.png';
 export { default as cameraIcon } from './images/camera.png';
 export { default as backArrowIcon } from './images/back-arrow-icon.png';
 export { default as groupIcons } from './images/groupIcons.png';
+export { default as locationIcons } from './images/location.jpg';
 export { default as educationGroupIcons } from './images/event/education.jpg';
 
 // Icons

@@ -197,7 +197,7 @@ const ChatProfile = () => {
                     <TouchableOpacity
                         style={styles.mediaTitleRow}
                         onPress={() =>
-                            navigation.navigate('MediaScreen', { chatId, type: 'Chat' })
+                            navigation.navigate('MediaDocsScreen', { chatId, type: 'Chat' })
                         }>
                         <Text style={styles.sectionTitle}>
                             {translations?.mediaLinkDocs ?? 'Media, Links, Docs'}

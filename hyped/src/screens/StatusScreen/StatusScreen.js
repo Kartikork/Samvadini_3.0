@@ -23,6 +23,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { env } from '../../config';
 import { userIcon, cameraIcon } from '../../assets';
 import { useAppSelector } from '../../state/hooks';
+import useHardwareBackHandler from '../../helper/UseHardwareBackHandler';
 
 const StatusAvatar = ({ media, size = 60, allViewed }) => {
   const ringCount = media.length;
@@ -115,6 +116,7 @@ const StatusScreen = ({ navigation }) => {
   const [myContacts, setMyContacts] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  useHardwareBackHandler("Dashboard");
 
   useEffect(() => {
     const fetchInit = async () => {
