@@ -4,9 +4,11 @@
  */
 
 import { redisClient } from '../redis/client.js';
-import { userSessionKey, userSocketKey, socketUserKey } from '../redis/keys.js';
+import { userSessionKey, userSocketKey, socketUserKey, reconnectGraceKey } from '../redis/keys.js';
 import { fcmService } from '../push/fcm.js';
-import { SOCKET_EVENTS, ERROR_CODES, TTL } from '../utils/constants.js';
+import { callStore } from '../calls/callStore.js';
+import { callTimeoutManager } from '../calls/callTimeouts.js';
+import { SOCKET_EVENTS, ERROR_CODES, TTL, CALL_STATES } from '../utils/constants.js';
 import logger from '../utils/logger.js';
 
 class RegistrationHandler {
@@ -38,6 +40,18 @@ class RegistrationHandler {
           success: true,
           message: 'Already registered',
         });
+      }
+
+      // Handle duplicate connection — disconnect old socket for same user
+      const existingSocketId = await redisClient.get(userSocketKey(userId));
+      if (existingSocketId && existingSocketId !== socket.id) {
+        logger.info('[Registration] Duplicate connection, disconnecting old socket', {
+          userId,
+          oldSocketId: existingSocketId,
+          newSocketId: socket.id,
+        });
+        this.io.to(existingSocketId).emit('force_disconnect', { reason: 'New session from another device' });
+        this.io.in(existingSocketId).disconnectSockets(true);
       }
 
       // Store user session in Redis
@@ -91,6 +105,38 @@ class RegistrationHandler {
 
       // Join personal room for targeted messages
       socket.join(userId);
+
+      // Check for reconnect grace — rejoin active call if disconnected briefly
+      try {
+        const graceKey = reconnectGraceKey(userId);
+        const graceCallId = await redisClient.get(graceKey);
+        
+        if (graceCallId) {
+          await redisClient.del(graceKey);
+          const call = await callStore.getCall(graceCallId);
+          
+          if (call && (call.state === CALL_STATES.ACCEPTED || call.state === CALL_STATES.RINGING)) {
+            await callStore.setUserActiveCall(userId, graceCallId);
+            
+            socket.emit(SOCKET_EVENTS.REJOIN_CALL, { callId: graceCallId, call });
+            
+            const otherUserId = call.callerId === userId ? call.calleeId : call.callerId;
+            this.io.to(otherUserId).emit(SOCKET_EVENTS.PEER_RECONNECTED, {
+              callId: graceCallId,
+              userId,
+            });
+            
+            callTimeoutManager.clearTimeout(`grace:${graceCallId}`);
+            
+            logger.info('[Registration] User rejoined call after reconnect', {
+              userId,
+              callId: graceCallId,
+            });
+          }
+        }
+      } catch (graceError) {
+        logger.error('[Registration] Reconnect grace check failed:', graceError);
+      }
 
       logger.info('[Registration] User registered', {
         userId,
@@ -209,10 +255,53 @@ class RegistrationHandler {
    */
   async handleDisconnect(socket) {
     try {
+      const userId = socket.userId;
+
       logger.info('[Registration] Socket disconnecting', {
         socketId: socket.id,
-        userId: socket.userId,
+        userId,
       });
+
+      // Check for active call — start grace period instead of ending immediately
+      if (userId) {
+        try {
+          const activeCall = await callStore.findActiveCallForUser(userId);
+          
+          if (activeCall) {
+            const otherUserId = activeCall.callerId === userId
+              ? activeCall.calleeId
+              : activeCall.callerId;
+
+            // Set reconnect grace in Redis
+            await redisClient.set(
+              reconnectGraceKey(userId),
+              activeCall.callId,
+              TTL.RECONNECT_GRACE
+            );
+
+            // Notify other party about unstable connection
+            this.io.to(otherUserId).emit(SOCKET_EVENTS.PEER_CONNECTION_UNSTABLE, {
+              callId: activeCall.callId,
+              userId,
+            });
+
+            // Start grace timeout — will end call if user doesn't reconnect
+            callTimeoutManager.startReconnectGraceTimeout(
+              activeCall.callId,
+              this.io,
+              userId,
+              otherUserId
+            );
+
+            logger.info('[Registration] Grace period started for active call', {
+              userId,
+              callId: activeCall.callId,
+            });
+          }
+        } catch (callError) {
+          logger.error('[Registration] Active call check failed on disconnect:', callError);
+        }
+      }
 
       // Use cleanup (preserves FCM token for push notifications when app is killed)
       await this.handleDisconnectCleanup(socket);
@@ -251,11 +340,24 @@ class RegistrationHandler {
   }
 }
 
+// Shared singleton instance across all socket connections
+let sharedHandler = null;
+
+/**
+ * Get or create shared registration handler
+ */
+export const getRegistrationHandler = (io) => {
+  if (!sharedHandler) {
+    sharedHandler = new RegistrationHandler(io);
+  }
+  return sharedHandler;
+};
+
 /**
  * Setup registration handlers
  */
 export const setupRegistrationHandlers = (io, socket) => {
-  const handler = new RegistrationHandler(io);
+  const handler = getRegistrationHandler(io);
 
   // Register event
   socket.on(SOCKET_EVENTS.REGISTER, async (data) => {

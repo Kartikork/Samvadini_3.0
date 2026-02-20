@@ -76,6 +76,7 @@ export const config = {
     ringTimeout: parseInt(process.env.CALL_RING_TIMEOUT, 10) || 45000,
     maxDuration: parseInt(process.env.CALL_MAX_DURATION, 10) || 3600000,
     ttl: parseInt(process.env.CALL_TTL, 10) || 60,
+    reconnectGrace: parseInt(process.env.CALL_RECONNECT_GRACE, 10) || 15000,
   },
   
   // Logging

@@ -69,3 +69,25 @@ export const fcmTokenKey = (userId) => {
   return `${REDIS_KEYS.FCM_TOKEN}:${userId}`;
 };
 
+/**
+ * Generate user active call key
+ */
+export const userActiveCallKey = (userId) => {
+  return `${REDIS_KEYS.USER_ACTIVE_CALL}:${userId}`;
+};
+
+/**
+ * Generate call pair lock key for glare detection
+ */
+export const callPairLockKey = (userId1, userId2) => {
+  const sorted = [userId1, userId2].sort();
+  return `${REDIS_KEYS.CALL_PAIR_LOCK}:${sorted[0]}:${sorted[1]}`;
+};
+
+/**
+ * Generate reconnect grace key
+ */
+export const reconnectGraceKey = (userId) => {
+  return `${REDIS_KEYS.RECONNECT_GRACE}:${userId}`;
+};
+

@@ -4,7 +4,7 @@
  */
 
 import { redisClient } from '../redis/client.js';
-import { callKey, callTimeoutKey } from '../redis/keys.js';
+import { callKey, callTimeoutKey, userActiveCallKey } from '../redis/keys.js';
 import { createCall, isCallExpired } from './callTypes.js';
 import { CALL_STATES, TTL } from '../utils/constants.js';
 import logger from '../utils/logger.js';
@@ -19,6 +19,10 @@ class CallStore {
       
       // Store call in Redis with TTL
       await redisClient.set(callKey(callId), call, TTL.CALL_RINGING);
+      
+      // Track active call for both users (for busy detection)
+      await this.setUserActiveCall(callerId, callId);
+      await this.setUserActiveCall(calleeId, callId);
       
       logger.info('[CallStore] Call created', { callId, callerId, calleeId, callType });
       
@@ -41,10 +45,12 @@ class CallStore {
         return null;
       }
 
-      // Check if expired
-      if (isCallExpired(call, 60000)) {
-        logger.warn('[CallStore] Call expired', { callId });
+      // Only expire ringing calls after 60s — accepted calls use Redis TTL (7200s)
+      if (call.state === CALL_STATES.RINGING && isCallExpired(call, 60000)) {
+        logger.warn('[CallStore] Ringing call expired', { callId });
         await this.deleteCall(callId);
+        await this.clearUserActiveCall(call.callerId);
+        await this.clearUserActiveCall(call.calleeId);
         return null;
       }
       
@@ -76,10 +82,14 @@ class CallStore {
         await redisClient.set(callKey(callId), call, TTL.CALL_ACTIVE);
       } else if (newState === CALL_STATES.ENDED || 
                  newState === CALL_STATES.CANCELLED ||
-                 newState === CALL_STATES.REJECTED) {
+                 newState === CALL_STATES.REJECTED ||
+                 newState === CALL_STATES.TIMEOUT) {
         call.endedAt = Date.now();
         // Set shorter TTL for ended calls (for potential recovery)
         await redisClient.set(callKey(callId), call, 30);
+        // Clear active call tracking for both users
+        await this.clearUserActiveCall(call.callerId);
+        await this.clearUserActiveCall(call.calleeId);
       } else {
         await redisClient.set(callKey(callId), call, TTL.CALL_RINGING);
       }
@@ -160,13 +170,71 @@ class CallStore {
   }
 
   /**
+   * Set active call for user (for busy detection)
+   */
+  async setUserActiveCall(userId, callId) {
+    try {
+      await redisClient.set(userActiveCallKey(userId), callId, TTL.CALL_ACTIVE);
+    } catch (error) {
+      logger.error('[CallStore] Failed to set user active call:', error);
+    }
+  }
+
+  /**
+   * Get active call ID for user
+   */
+  async getUserActiveCall(userId) {
+    try {
+      const callId = await redisClient.get(userActiveCallKey(userId));
+      if (!callId) return null;
+      
+      // Verify the call still exists and is active
+      const call = await this.getCall(callId);
+      if (!call || (call.state !== CALL_STATES.RINGING && call.state !== CALL_STATES.ACCEPTED)) {
+        await this.clearUserActiveCall(userId);
+        return null;
+      }
+      
+      return callId;
+    } catch (error) {
+      logger.error('[CallStore] Failed to get user active call:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Clear active call for user
+   */
+  async clearUserActiveCall(userId) {
+    try {
+      await redisClient.del(userActiveCallKey(userId));
+    } catch (error) {
+      logger.error('[CallStore] Failed to clear user active call:', error);
+    }
+  }
+
+  /**
+   * Find active call object for a user
+   */
+  async findActiveCallForUser(userId) {
+    try {
+      const callId = await this.getUserActiveCall(userId);
+      if (!callId) return null;
+      return await this.getCall(callId);
+    } catch (error) {
+      logger.error('[CallStore] Failed to find active call for user:', error);
+      return null;
+    }
+  }
+
+  /**
    * Cleanup expired calls
    * This is automatically handled by Redis TTL, but can be called manually
    */
   async cleanupExpiredCalls() {
     try {
       const pattern = 'call:*';
-      const keys = await redisClient.keys(pattern);
+      const keys = await redisClient.scan(pattern);
       
       let cleaned = 0;
       for (const key of keys) {

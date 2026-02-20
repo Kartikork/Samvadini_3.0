@@ -16,8 +16,8 @@ import {
 import { fcmService } from '../push/fcm.js';
 import { buildIncomingCallPayload, buildCallCancelledPayload } from '../push/payloadBuilder.js';
 import { redisClient } from '../redis/client.js';
-import { userSocketKey } from '../redis/keys.js';
-import { SOCKET_EVENTS, ERROR_CODES, CALL_STATES } from '../utils/constants.js';
+import { userSocketKey, callPairLockKey } from '../redis/keys.js';
+import { SOCKET_EVENTS, ERROR_CODES, CALL_STATES, TTL } from '../utils/constants.js';
 import logger from '../utils/logger.js';
 
 class CallRouter {
@@ -44,6 +44,37 @@ class CallRouter {
       if (!validation.valid) {
         logger.warn('[CallRouter] Call initiation validation failed', validation.errors);
         return this.sendError(callback, validation.errors[0]);
+      }
+
+      // Check if caller is already in a call
+      const callerActiveCall = await callStore.getUserActiveCall(callerId);
+      if (callerActiveCall) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.CALLER_BUSY,
+          message: 'You are already in a call',
+        });
+      }
+
+      // Check if callee is busy (already in a call)
+      const calleeActiveCall = await callStore.getUserActiveCall(calleeId);
+      if (calleeActiveCall) {
+        socket.emit(SOCKET_EVENTS.CALL_BUSY, { calleeId, reason: 'User is busy on another call' });
+        return this.sendError(callback, {
+          code: ERROR_CODES.CALLEE_BUSY,
+          message: 'Callee is busy on another call',
+        });
+      }
+
+      // Glare detection: prevent A-calls-B and B-calls-A simultaneously
+      const sortedIds = [callerId, calleeId].sort();
+      const lockKey = callPairLockKey(sortedIds[0], sortedIds[1]);
+      const lockAcquired = await redisClient.setNX(lockKey, callerId, TTL.CALL_PAIR_LOCK);
+      if (!lockAcquired) {
+        logger.warn('[CallRouter] Call collision (glare) detected', { callerId, calleeId });
+        return this.sendError(callback, {
+          code: ERROR_CODES.CALL_COLLISION,
+          message: 'Call collision — the other user may be calling you',
+        });
       }
 
       // Check if callee is online
@@ -140,6 +171,9 @@ class CallRouter {
 
       // Update call state
       await callStore.acceptCall(callId);
+
+      // Start max call duration timeout
+      callTimeoutManager.startMaxDurationTimeout(callId, this.io, call.callerId, call.calleeId);
 
       // Notify caller
       this.io.to(call.callerId).emit(SOCKET_EVENTS.CALL_ACCEPT, {
@@ -242,27 +276,48 @@ class CallRouter {
 
       const call = validation.call;
 
-      // Clear any timeouts
-      callTimeoutManager.clearTimeout(callId);
+      // Clear all timeouts related to this call
+      callTimeoutManager.clearAllTimeoutsForCall(callId);
 
       if (call) {
-        // Update call state
-        await callStore.endCall(callId);
-
-        // Notify the other participant
         const otherUserId = call.callerId === userId ? call.calleeId : call.callerId;
 
-        this.io.to(otherUserId).emit(SOCKET_EVENTS.CALL_END, {
-          callId,
-          endedBy: userId,
-          timestamp: Date.now(),
-        });
+        // If call was ringing and ended by caller → cancellation
+        if (call.state === CALL_STATES.RINGING && call.callerId === userId) {
+          await callStore.cancelCall(callId);
 
-        logger.info('[CallRouter] Call ended', {
-          callId,
-          endedBy: userId,
-          otherUser: otherUserId,
-        });
+          // Send cancel push for callee in background/killed state
+          if (fcmService.isAvailable()) {
+            await fcmService.sendCallCancelledNotification(call.calleeId, callId);
+          }
+
+          this.io.to(otherUserId).emit(SOCKET_EVENTS.CALL_CANCELLED, {
+            callId,
+            reason: 'Caller cancelled',
+            timestamp: Date.now(),
+          });
+
+          logger.info('[CallRouter] Call cancelled by caller', {
+            callId,
+            callerId: userId,
+            calleeId: otherUserId,
+          });
+        } else {
+          // Normal call end
+          await callStore.endCall(callId);
+
+          this.io.to(otherUserId).emit(SOCKET_EVENTS.CALL_END, {
+            callId,
+            endedBy: userId,
+            timestamp: Date.now(),
+          });
+
+          logger.info('[CallRouter] Call ended', {
+            callId,
+            endedBy: userId,
+            otherUser: otherUserId,
+          });
+        }
       }
 
       // Response (always success for idempotency)
@@ -304,6 +359,14 @@ class CallRouter {
         });
       }
 
+      // Verify sender is a participant
+      if (call.callerId !== from && call.calleeId !== from) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: 'Not a participant of this call',
+        });
+      }
+
       // Forward SDP offer to recipient
       this.io.to(to).emit(SOCKET_EVENTS.SDP_OFFER, {
         callId,
@@ -336,6 +399,21 @@ class CallRouter {
       const validation = validateSignalingPayload(data);
       if (!validation.valid) {
         return this.sendError(callback, validation.errors[0]);
+      }
+
+      // Verify call exists and sender is participant
+      const call = await callStore.getCall(callId);
+      if (!call) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.CALL_NOT_FOUND,
+          message: 'Call not found',
+        });
+      }
+      if (call.callerId !== from && call.calleeId !== from) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: 'Not a participant of this call',
+        });
       }
 
       // Forward SDP answer to recipient
@@ -372,6 +450,13 @@ class CallRouter {
         return this.sendError(callback, validation.errors[0]);
       }
 
+      // Verify call exists and sender is participant
+      const call = await callStore.getCall(callId);
+      if (call && call.callerId !== from && call.calleeId !== from) {
+        logger.warn('[CallRouter] ICE candidate from non-participant', { callId, from });
+        return;
+      }
+
       // Forward ICE candidate to recipient
       this.io.to(to).emit(SOCKET_EVENTS.ICE_CANDIDATE, {
         callId,
@@ -383,6 +468,47 @@ class CallRouter {
       // No callback needed for ICE candidates (high frequency)
     } catch (error) {
       logger.error('[CallRouter] ICE candidate failed:', error);
+    }
+  }
+
+  /**
+   * Handle ICE restart request (for network switches like WiFi ↔ Mobile)
+   */
+  async handleIceRestart(socket, data, callback) {
+    try {
+      const { callId } = data;
+      const from = socket.userId;
+
+      logger.debug('[CallRouter] ICE restart request', { callId, from });
+
+      const call = await callStore.getCall(callId);
+      if (!call || call.state !== CALL_STATES.ACCEPTED) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.CALL_NOT_FOUND,
+          message: 'No active call found for ICE restart',
+        });
+      }
+
+      if (call.callerId !== from && call.calleeId !== from) {
+        return this.sendError(callback, {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: 'Not a participant of this call',
+        });
+      }
+
+      const otherUserId = call.callerId === from ? call.calleeId : call.callerId;
+
+      this.io.to(otherUserId).emit(SOCKET_EVENTS.ICE_RESTART_NEEDED, {
+        callId,
+        from,
+        timestamp: Date.now(),
+      });
+
+      this.sendSuccess(callback, { message: 'ICE restart requested' });
+
+      logger.info('[CallRouter] ICE restart relayed', { callId, from, to: otherUserId });
+    } catch (error) {
+      logger.error('[CallRouter] ICE restart failed:', error);
     }
   }
 
@@ -445,6 +571,11 @@ export const setupCallRouterHandlers = (io, socket) => {
 
   socket.on(SOCKET_EVENTS.ICE_CANDIDATE, async (data, callback) => {
     await router.handleIceCandidate(socket, data, callback);
+  });
+
+  // Network resilience events
+  socket.on(SOCKET_EVENTS.ICE_RESTART, async (data, callback) => {
+    await router.handleIceRestart(socket, data, callback);
   });
 
   return router;

@@ -223,6 +223,39 @@ class RedisClient {
     const client = this.getClient();
     return await client.decr(key);
   }
+
+  /**
+   * Set if not exists (for distributed locks)
+   */
+  async setNX(key, value, ttl = null) {
+    const client = this.getClient();
+    const serialized = typeof value === 'object' ? JSON.stringify(value) : String(value);
+    
+    if (ttl) {
+      const result = await client.set(key, serialized, { NX: true, EX: ttl });
+      return result === 'OK';
+    } else {
+      const result = await client.setNX(key, serialized);
+      return result;
+    }
+  }
+
+  /**
+   * Scan keys matching pattern (production-safe alternative to KEYS)
+   */
+  async scan(pattern, count = 100) {
+    const client = this.getClient();
+    const keys = [];
+    let cursor = 0;
+    
+    do {
+      const result = await client.scan(cursor, { MATCH: pattern, COUNT: count });
+      cursor = result.cursor;
+      keys.push(...result.keys);
+    } while (cursor !== 0);
+    
+    return keys;
+  }
 }
 
 // Export singleton instance

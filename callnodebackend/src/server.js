@@ -132,7 +132,7 @@ const initializeServices = async () => {
     logger.info('[Server] FCM initialized');
 
     // Initialize Socket.IO
-    const io = initializeSocket(httpServer);
+    const io = await initializeSocket(httpServer);
     logger.info('[Server] Socket.IO initialized');
 
     // Cleanup expired calls periodically (every 5 minutes)

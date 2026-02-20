@@ -37,6 +37,13 @@ export const SOCKET_EVENTS = {
   PING: 'ping',
   PONG: 'pong',
   
+  // Network/Reconnect
+  ICE_RESTART: 'ice_restart',
+  ICE_RESTART_NEEDED: 'ice_restart_needed',
+  PEER_CONNECTION_UNSTABLE: 'peer_connection_unstable',
+  PEER_RECONNECTED: 'peer_reconnected',
+  REJOIN_CALL: 'rejoin_call',
+  
   // Errors
   INVALID_MESSAGE: 'invalid_message',
   UNAUTHORIZED: 'unauthorized',
@@ -81,6 +88,9 @@ export const REDIS_KEYS = {
   CALL: 'call',
   CALL_TIMEOUT: 'timeout:call',
   FCM_TOKEN: 'fcm:token', // FCM token storage
+  USER_ACTIVE_CALL: 'active_call:user',
+  CALL_PAIR_LOCK: 'lock:call_pair',
+  RECONNECT_GRACE: 'grace:reconnect',
 };
 
 /**
@@ -99,6 +109,9 @@ export const ERROR_CODES = {
   CALLEE_BUSY: 'E104',
   CALL_EXPIRED: 'E105',
   CALLER_CANCELLED: 'E106',
+  CALLER_BUSY: 'E107',
+  CALL_COLLISION: 'E108',
+  CALL_SETUP_FAILED: 'E109',
   
   // Auth errors
   INVALID_TOKEN: 'E201',
@@ -128,6 +141,8 @@ export const TTL = {
   CALL_RINGING: 60, // 1 minute
   CALL_ACTIVE: 7200, // 2 hours
   FCM_TOKEN: 2592000, // 30 days (FCM tokens can be long-lived)
+  RECONNECT_GRACE: 15, // 15 seconds grace period for reconnection
+  CALL_PAIR_LOCK: 5, // 5 seconds lock for glare prevention
 };
 
 /**
