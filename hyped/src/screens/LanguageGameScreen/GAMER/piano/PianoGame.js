@@ -11,7 +11,7 @@ import {
   BackHandler,
   AppState,
 } from 'react-native';
-// import Sound from 'react-native-sound';
+import SoundPlayer from 'react-native-sound-player';
 import Piano from './Piano';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -22,34 +22,32 @@ const FALL_DURATION = 3500;
 const notesToPlay = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'];
 
 /* ------------------ AUDIO FILES ------------------ */
-// const soundFiles = {
-//   'C4': require('../Assets/c_note.wav'),
-//   'C#4': require('../Assets/d_note.wav'),
-//   'D4': require('../Assets/f_note.wav'),
-//   'D#4': require('../Assets/g_note.wav'),
-//   'E4': require('../Assets/a_note.wav'),
-//   'F4': require('../Assets/c_note.wav'),
-//   'F#4': require('../Assets/d_note.wav'),
-//   'G4': require('../Assets/f_note.wav'),
-//   'G#4': require('../Assets/g_note.wav'),
-//   'A4': require('../Assets/a_note.wav'),
-//   'A#4': require('../Assets/c_note.wav'),
-//   'B4': require('../Assets/d_note.wav'),
-// };
-
-const soundCache = {};
-
-const preloadSounds = () => {
-  // Object.keys(soundFiles).forEach(note => {
-  //   const s = new Sound(soundFiles[note], error => {
-  //     if (error) {
-  //       console.log('Error loading sound:', note, error);
-  //     } else {
-  //       soundCache[note] = s;
-  //     }
-  //   });
-  // });
+// All note sounds are stored in android/app/src/main/res/raw as .mp3 or .wav files.
+// Map note names to sound file base names (without extension):
+const noteToSoundFile = {
+  'C4': { name: 'c_note', ext: 'wav' },
+  'C#4': { name: 'd_note', ext: 'wav' },
+  'D4': { name: 'f_note', ext: 'wav' },
+  'D#4': { name: 'g_note', ext: 'wav' },
+  'E4': { name: 'a_note', ext: 'wav' },
+  'F4': { name: 'c_note', ext: 'wav' },
+  'F#4': { name: 'd_note', ext: 'wav' },
+  'G4': { name: 'f_note', ext: 'wav' },
+  'G#4': { name: 'g_note', ext: 'wav' },
+  'A4': { name: 'a_note', ext: 'wav' },
+  'A#4': { name: 'c_note', ext: 'wav' },
+  'B4': { name: 'd_note', ext: 'wav' },
 };
+
+function playNoteSound(note) {
+  const sound = noteToSoundFile[note];
+  if (!sound) return;
+  try {
+    SoundPlayer.playSoundFile(sound.name, sound.ext);
+  } catch (e) {
+    console.log('Failed to play note sound', note, e);
+  }
+}
 
 /* ------------------ MAIN GAME ------------------ */
 export default function PianoGame({ navigation }) {
@@ -178,8 +176,7 @@ export default function PianoGame({ navigation }) {
     if (gameOver) return;
 
     // play sound
-    // const s = soundCache[note];
-    // if (s) s.stop(() => s.play());
+    playNoteSound(note);
 
     // Find playable tiles: those between PLAYABLE_TOP and MISS_Y (i.e. from spawn to bottom)
     // They can be visible or hidden; both are still hittable until MISS_Y

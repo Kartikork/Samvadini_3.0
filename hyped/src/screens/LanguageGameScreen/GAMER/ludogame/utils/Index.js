@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, Dimensions, SafeAreaView, View, StyleSheet, Text, Alert, BackHandler, AppState } from 'react-native';
 import Board from './components/Board';
 import Dice from './components/Dice';
-// import Sound from 'react-native-sound';
+import SoundPlayer from 'react-native-sound-player';
 import { useFocusEffect } from '@react-navigation/native';
 
 import {
@@ -20,17 +20,31 @@ import {
   getReturnPath,
 } from '../utils/gameEngine';
 
-// const pawnMoveSound = new Sound(require('../../Assets/audio/pawn_move2.m4a'), (error) => {
-//   if (error) console.log('Failed to load the pawn move sound', error);
-// });
 
-// const pawnCutSound = new Sound(require('../../../GAMER/Assets/cheer_low.mp3'), (error) => {
-//     if (error) console.log('Failed to load the pawn cut sound', error);
-// });
+// Sound names: 'pawn_move2', 'cheer_low', 'yay' (all .mp3 in android/app/src/main/res/raw)
+const playPawnMoveSound = () => {
+  try {
+    SoundPlayer.playSoundFile('pawn_move2', 'mp3');
+  } catch (e) {
+    console.log('Failed to play pawn move sound', e);
+  }
+};
 
-// const diceSixSound = new Sound(require('../../../GAMER/Assets/audio/yay.mp3'), (error) => {
-//     if (error) console.log('Failed to load the dice six sound', error);
-// });
+const playPawnCutSound = () => {
+  try {
+    SoundPlayer.playSoundFile('cheer_low', 'mp3');
+  } catch (e) {
+    console.log('Failed to play pawn cut sound', e);
+  }
+};
+
+const playDiceSixSound = () => {
+  try {
+    SoundPlayer.playSoundFile('yay', 'mp3');
+  } catch (e) {
+    console.log('Failed to play dice six sound', e);
+  }
+};
 
 
 const { width } = Dimensions.get('window');
@@ -114,7 +128,7 @@ const LudoGame = ({ route, navigation }) => {
       const rollTimer = setTimeout(() => {
         const newDiceValue = rollDice();
         if (newDiceValue === 6) {
-          // diceSixSound.play();
+          playDiceSixSound();
         }
         setGameState(prev => ({ ...prev, diceValue: newDiceValue, isRolling: false }));
         // CORRECT
@@ -153,7 +167,7 @@ const LudoGame = ({ route, navigation }) => {
     setTimeout(() => {
       const newDiceValue = rollDice();
       if (newDiceValue === 6) {
-        // diceSixSound.play();
+        playDiceSixSound();
       }
       const canMove = hasPossibleMoves(currentPlayer, newDiceValue, pawnPositions);
       setGameState(prev => ({ ...prev, diceValue: newDiceValue, isRolling: false }));
@@ -169,7 +183,7 @@ const LudoGame = ({ route, navigation }) => {
   };
 
   const animateReturn = async (player, pawnIndex, path) => {
-    // pawnCutSound.play();
+    playPawnCutSound();
     for (const pos of path) {
       setGameState(prev => {
         const newPositions = JSON.parse(JSON.stringify(prev.pawnPositions));
@@ -178,7 +192,7 @@ const LudoGame = ({ route, navigation }) => {
       });
       await new Promise(res => setTimeout(res, RETURN_ANIMATION_SPEED_MS));
     }
-    // pawnCutSound.stop();
+    // No stop needed for SoundPlayer
   };
 
 
@@ -186,7 +200,7 @@ const LudoGame = ({ route, navigation }) => {
     setIsAnimatingMove(true);
 
     for (const pos of path) {
-      // pawnMoveSound.play();
+      playPawnMoveSound();
       setGameState(prev => {
         const newPositions = JSON.parse(JSON.stringify(prev.pawnPositions));
         newPositions[player][pawnIndex] = pos;

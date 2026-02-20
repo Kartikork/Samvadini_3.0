@@ -3,36 +3,37 @@ import { SafeAreaView, View, Text, StyleSheet, Button, Alert, Modal, BackHandler
 import { useNavigation } from '@react-navigation/native';
 import DrumPad from '../DrumGame/DrumPad';
 // import TrackPlayer, { Capability } from 'react-native-track-player';
+import SoundPlayer from 'react-native-sound-player';
 
 const drumPads = [
   {
     id: 0,
-    soundFile: require('./snare-drum.mp3'),
+    soundName: 'snare-drum',
     label: 'Kick',
     imageFile: require('./drum1.png'),
   },
   {
     id: 1,
-    soundFile: require('./hand-drum.mp3'),
+    soundName: 'hand-drum',
     label: 'Snare',
     imageFile: require('./drum2.png'),
   },
   {
     id: 2,
-    soundFile: require('./kick-drum.mp3'),
+    soundName: 'kick-drum',
     label: 'Hi-Hat',
     imageFile: require('./drum3.png'),
   },
   {
     id: 3,
-    soundFile: require('./clap-drum.mp3'),
+    soundName: 'clap-drum',
     label: 'Tom',
     imageFile: require('./drum5.png'),
     customImageStyle: { height: 120, width: 120 },
   },
   {
     id: 4,
-    soundFile: require('./cymbal-drum.mp3'),
+    soundName: 'cymbal-drum',
     label: 'Cymbal',
     imageFile: require('./drum4.png'),
     customImageStyle: { height: 100, width: 100 },
@@ -156,7 +157,12 @@ const Game = () => {
     };
   }, [isPlaying, lives]); // Rerun effect if lives change to handle game over
 
-  const handlePadPress = (padId) => {
+  const handlePadPress = (padId, soundName) => {
+    // Play drum sound
+    try {
+      SoundPlayer.playSoundFile(soundName, 'mp3');
+    } catch (e) {}
+
     if (!isPlaying) return; // Do nothing if the game is not active
 
     // Player hit the correct pad
@@ -209,10 +215,10 @@ const Game = () => {
 
   const getPadProps = (pad) => ({
     key: pad.id,
-    soundFile: pad.soundFile,
+    soundName: pad.soundName,
     label: pad.label,
     imageFile: pad.imageFile,
-    onPadPress: () => handlePadPress(pad.id),
+    onPadPress: () => handlePadPress(pad.id, pad.soundName),
     isActive: activePad === pad.id,
     customImageStyle: pad.customImageStyle || {},
   });

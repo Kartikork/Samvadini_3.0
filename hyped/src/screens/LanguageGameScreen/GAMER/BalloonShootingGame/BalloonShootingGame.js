@@ -3,7 +3,7 @@ import { View, StyleSheet, Text, TouchableOpacity, ImageBackground, Image, AppSt
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation
 import BalloonWheel from "./BalloonWheel";
 import Slingshot from "./Slingshot";
-// import Sound from 'react-native-sound';
+import SoundPlayer from 'react-native-sound-player';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -14,11 +14,12 @@ const STREAK_THRESHOLD = 3;
 
 // --- Asset Paths ---
 const backgroundImage = require("../../GAMER/BalloonShootingGame/village_background.jpg");
-const backgroundMusicFile = require("../../GAMER/BalloonShootingGame/circus.mp3");
-const balloonPopSoundFile = require("../../GAMER/BalloonShootingGame/balloon-burst.mp3");
-const streakSoundFile = require("../../GAMER/BalloonShootingGame/shabaash.mp3");
-const finalWinSoundFile = require("../../GAMER/BalloonShootingGame/cheer_high.mp3");
-const loseSoundFile = require("../../GAMER/BalloonShootingGame/cheer_low.mp3");
+// Sound files are stored in Android res/raw — play by name (no path)
+const BACKGROUND_MUSIC_NAME = 'circus';
+const POP_SOUND_NAME = 'balloon_burst';
+const STREAK_SOUND_NAME = 'shabaash';
+const FINAL_WIN_SOUND_NAME = 'cheer_high';
+const LOSE_SOUND_NAME = 'cheer_low';
 const winGif = require("../../GAMER/BalloonShootingGame/we-won-1-unscreen.gif");
 const loseGif = require("../../GAMER/BalloonShootingGame/low_score.png");
 
@@ -39,11 +40,7 @@ const BalloonShootingGame = () => {
     const [projectileInterval, setProjectileInterval] = useState(null);
     const [shotId, setShotId] = useState(0); // This will be our component key
 
-    const backgroundMusic = useRef(null);
-    const popSound = useRef(null);
-    const streakSound = useRef(null);
-    const finalWinSound = useRef(null);
-    const loseSound = useRef(null);
+    // We use SoundPlayer for all sounds. No per-sound objects are kept.
     const shotResult = useRef('miss');
     const appState = useRef(AppState.currentState);
     const navigation = useNavigation(); // Get the navigation object
@@ -79,32 +76,28 @@ const BalloonShootingGame = () => {
         );
 
         // --- Sound Initialization ---
-        /*
-        backgroundMusic.current = new Sound(backgroundMusicFile, (error) => {
-            if (error) return console.log('❌ FAILED to load background music', error);
-            backgroundMusic.current.setNumberOfLoops(-1);
-            if (!isMuted) {
-                backgroundMusic.current.play();
+        // Play background music from Android raw if not muted. We'll re-play when it finishes to emulate looping.
+        const onFinished = () => {
+            if (!isMuted && gameState === 'playing') {
+                try { SoundPlayer.playSoundFile(BACKGROUND_MUSIC_NAME, 'mp3'); } catch (e) { console.log('bg replay failed', e); }
             }
-        });
+        };
 
-        popSound.current = new Sound(balloonPopSoundFile, (e) => { if (e) console.log('FAIL load pop sound', e) });
-        streakSound.current = new Sound(streakSoundFile, (e) => { if (e) console.log('FAIL load streak sound', e) });
-        finalWinSound.current = new Sound(finalWinSoundFile, (e) => { if (e) console.log('FAIL load final win sound', e) });
-        loseSound.current = new Sound(loseSoundFile, (e) => { if (e) console.log('FAIL load lose sound', e) });
-        */
+        try {
+            if (!isMuted) SoundPlayer.playSoundFile(BACKGROUND_MUSIC_NAME, 'mp3');
+        } catch (e) {
+            console.log('Failed to start background music', e);
+        }
+        SoundPlayer.addEventListener('FinishedPlaying', onFinished);
 
         return () => {
             // Cleanup listeners
             appStateSubscription.remove();
             backHandler.remove();
 
-            // Release sounds
-            // backgroundMusic.current?.release();
-            // popSound.current?.release();
-            // streakSound.current?.release();
-            // finalWinSound.current?.release();
-            // loseSound.current?.release();
+            // Stop any playing sound and remove listener
+            try { SoundPlayer.stop(); } catch (e) {}
+            SoundPlayer.removeEventListener('FinishedPlaying');
         };
     }, []);
 
@@ -121,23 +114,27 @@ const BalloonShootingGame = () => {
     useEffect(() => {
         if (gameState === 'won' || gameState === 'lost') {
             if (projectileInterval) clearInterval(projectileInterval);
-            backgroundMusic.current?.stop();
+            try { SoundPlayer.stop(); } catch (e) {}
             if (!isMuted) {
-                if (gameState === 'won') finalWinSound.current?.play();
-                else loseSound.current?.play();
+                try {
+                    if (gameState === 'won') SoundPlayer.playSoundFile(FINAL_WIN_SOUND_NAME, 'mp3');
+                    else SoundPlayer.playSoundFile(LOSE_SOUND_NAME, 'mp3');
+                } catch (e) { console.log('end state sound failed', e); }
             }
         }
     }, [gameState, isMuted]);
 
     useEffect(() => {
         if (streakCount >= STREAK_THRESHOLD) {
-            streakSound.current?.play();
+            if (!isMuted) {
+                try { SoundPlayer.playSoundFile(STREAK_SOUND_NAME, 'mp3'); } catch (e) { console.log('streak sound failed', e); }
+            }
         }
     }, [streakCount]);
 
     const playPopSound = () => {
-        if (popSound.current && !isMuted) {
-            popSound.current.stop(() => popSound.current.play());
+        if (!isMuted) {
+            try { SoundPlayer.playSoundFile(POP_SOUND_NAME, 'mp3'); } catch (e) { console.log('pop sound failed', e); }
         }
     };
 
@@ -171,12 +168,11 @@ const BalloonShootingGame = () => {
     const toggleMute = () => {
         const newMuteState = !isMuted;
         setIsMuted(newMuteState);
-        if (backgroundMusic.current) {
-            if (newMuteState) {
-                backgroundMusic.current.setVolume(0);
-            } else {
-                backgroundMusic.current.setVolume(1);
-                if (gameState === 'playing') backgroundMusic.current.play();
+        if (newMuteState) {
+            try { SoundPlayer.stop(); } catch (e) {}
+        } else {
+            if (gameState === 'playing') {
+                try { SoundPlayer.playSoundFile(BACKGROUND_MUSIC_NAME, 'mp3'); } catch (e) {}
             }
         }
     };
@@ -192,8 +188,7 @@ const BalloonShootingGame = () => {
 
     const restartGame = () => {
         // --- FIX: Stop win/loss sounds when restarting ---
-        finalWinSound.current?.stop();
-        loseSound.current?.stop();
+        try { SoundPlayer.stop(); } catch (e) {}
 
         if (projectileInterval) {
             clearInterval(projectileInterval);
@@ -207,8 +202,9 @@ const BalloonShootingGame = () => {
         setShotId(id => id + 1); // Also reset the slingshot on a full game restart
         setStreakCount(0);
 
-        if (backgroundMusic.current && !isMuted) {
-            backgroundMusic.current.stop(() => backgroundMusic.current.play());
+        if (!isMuted) {
+            try { SoundPlayer.stop(); } catch (e) {}
+            try { SoundPlayer.playSoundFile(BACKGROUND_MUSIC_NAME, 'mp3'); } catch (e) {}
         }
     };
 

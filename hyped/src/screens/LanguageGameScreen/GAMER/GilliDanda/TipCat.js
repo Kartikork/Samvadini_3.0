@@ -14,6 +14,7 @@ import {
   BackHandler,
 } from "react-native";
 // import Sound from "react-native-sound";
+import SoundPlayer from 'react-native-sound-player';
 
 const { width, height } = Dimensions.get("window");
 
@@ -25,9 +26,9 @@ const AUDIENCE_LEFT = require("../GilliDanda/audience_left.png");
 const AUDIENCE_RIGHT = require("../GilliDanda/audience_right.png");
 const LOW_SCORE_IMG = require("../GilliDanda/low_score.png");
 
-// sound files
-const CHEER_LOW = require("../GilliDanda/cheer_low.mp3");
-const CHEER_HIGH = require("../GilliDanda/cheer_high.mp3");
+// sound file names (no require, just names)
+const CHEER_LOW = 'cheer_low';
+const CHEER_HIGH = 'cheer_high';
 
 // Sound.setCategory("Playback");
 
@@ -139,13 +140,12 @@ export default function TipCat({ navigation }) {
   }, [isDemo]);
 
   const playCheer = (points) => {
-    /*
-    const file = points > 50 ? CHEER_HIGH : CHEER_LOW;
-    const cheer = new Sound(file, (error) => {
-      if (error) return console.log("Failed to load sound", error);
-      cheer.play(() => cheer.release());
-    });
-    */
+    const soundName = points > 50 ? CHEER_HIGH : CHEER_LOW;
+    try {
+      SoundPlayer.playSoundFile(soundName, 'mp3');
+    } catch (e) {
+      console.log('Failed to play sound', e);
+    }
   };
 
   const handleFirstTap = () => {

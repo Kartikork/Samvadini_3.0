@@ -18,6 +18,7 @@ import { useRoute } from '@react-navigation/native';
 import GraphemeSplitter from 'grapheme-splitter';
 import lessonManifest from '../Crossword/levels.json';
 import { useFocusEffect } from '@react-navigation/native';
+import SoundPlayer from 'react-native-sound-player';
 // import Sound from 'react-native-sound';
 
 import axios from 'axios';
@@ -243,40 +244,41 @@ const Crossword = ({ navigation }) => {
           for (const langKey in allTranslations) {
             if (allTranslations[langKey]?.trim() === translatedName?.trim()) {
               return allTranslations["english"];
-            }
+    // Removed sound state as it is no longer needed
           }
         }
       }
-    }
-    return translatedName;
+    // Removed sound references as they are no longer needed
   };
 
   // --- SOUND TOGGLE FUNCTION ---
   const toggleMusic = () => {
     const newState = !isMusicOn;
     setIsMusicOn(newState);
-
-    /*
-    // Immediately affect background music
-    if (soundRef.current) {
+    try {
       if (newState) {
-        soundRef.current.play();
+        SoundPlayer.playSoundFile('maze_bm', 'mp3');
       } else {
-        soundRef.current.pause();
+        SoundPlayer.stop();
       }
+    } catch (e) {
+      console.log('Sound error:', e);
     }
-    */
   };
 
   useFocusEffect(
     useCallback(() => {
-      /*
-      if (soundRef.current && isMusicOn) {
-        soundRef.current.play();
+      if (isMusicOn) {
+        try {
+          SoundPlayer.playSoundFile('maze_bm', 'mp3');
+        } catch (e) {
+          console.log('Sound error:', e);
+        }
       }
-      */
       return () => {
-        // if (soundRef.current) soundRef.current.pause();
+        try {
+          SoundPlayer.stop();
+        } catch (e) {}
       };
     }, [isMusicOn])
   );
@@ -462,12 +464,12 @@ const Crossword = ({ navigation }) => {
   const handleCellPress = async (x, y) => {
     if (isPausedModalVisible || gameFinished) return;
 
-    /*
-    // UPDATED: Check isMusicOn
-    if (clickSoundRef.current && isMusicOn) {
-        clickSoundRef.current.stop(() => clickSoundRef.current.play());
+    // Play click sound if music is on
+    if (isMusicOn) {
+      try {
+        SoundPlayer.playSoundFile('click', 'mp3');
+      } catch (e) {}
     }
-    */
 
     const currentCell = [x, y];
     if (lockedCells.some(c => isSameCell(c.cell, currentCell))) return;
@@ -507,12 +509,12 @@ const Crossword = ({ navigation }) => {
       setSelectedCells([]);
       setLastSelectedCell(null);
 
-      /*
-      // UPDATED: Check isMusicOn
-      if (correctSound && isMusicOn) {
-        correctSound.play();
+      // Play correct sound if music is on
+      if (isMusicOn) {
+        try {
+          SoundPlayer.playSoundFile('whistle', 'mp3');
+        } catch (e) {}
       }
-      */
 
       if (newFound.length === words.length) {
         setGameFinished(true);

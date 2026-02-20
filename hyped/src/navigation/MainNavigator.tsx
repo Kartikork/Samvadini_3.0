@@ -40,7 +40,7 @@ const TicTacToe = lazy(() => import('../screens/LanguageGameScreen/GAMER/TicTacT
 const NumberSortIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/NumberSortIntroScreen'));
 const SortGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/SortGameScreen'));
 const DrumGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/DrumGame/Game'));
-const CarromGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/CarromGame'));
+const CarromGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/CarromGame/CarromGame.js'));
 const TipCat = lazy(() => import('../screens/LanguageGameScreen/GAMER/GilliDanda/TipCat'));
 const Crossword = lazy(() => import('../screens/LanguageGameScreen/GAMER/Crossword/crossword'));
 const MazeGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MazeGame'));

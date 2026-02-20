@@ -7,6 +7,7 @@ import Matter from 'matter-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // import Sound from 'react-native-sound';
 import LottieView from 'lottie-react-native';
+import SoundPlayer from 'react-native-sound-player';
 
 import Bubble from './Bubble';
 import AimingLine from './AimingLine';
@@ -16,20 +17,9 @@ const BUBBLE_RADIUS = width / 16;
 const COLORS = ['#e63946', '#f1faee', '#a8dadc', '#457b9d', '#1d3557'];
 const SHOOTER_Y = height * 0.80;
 
-/*
-let popSound;
-let backgroundSound; // Moved to a higher scope to be accessible across functions
-Sound.setCategory('Playback');
-
-const loadPopSound = () => {
-    popSound = new Sound(require('./yay.mp3'), (error) => {
-        if (error) {
-            console.log('failed to load the sound', error);
-            return;
-        }
-    });
-};
-*/
+// Sound files are expected to be in Android res/raw — play by resource name only
+const BACKGROUND_MUSIC_NAME = 'background_music';
+const POP_SOUND_NAME = 'yay';
 
 const findMatches = (entities, bubble) => {
     const allBubbles = Object.values(entities).filter(e => e.body && e.body.label === 'bubble');
@@ -119,15 +109,7 @@ const GameSystem = (entities, { touches, time, dispatch }) => {
             setTimeout(() => {
                 const matches = findMatches(entities, projectileEntity);
                 if (matches.length >= 3) {
-                    /*
-                    if (popSound) {
-                        popSound.play((success) => {
-                            if (!success) {
-                                console.log('Sound did not play');
-                            }
-                        });
-                    }
-                    */
+                    try { SoundPlayer.playSoundFile(POP_SOUND_NAME, 'mp3'); } catch (e) { console.log('pop sound failed', e); }
 
                     matches.forEach(id => {
                         const entityKey = Object.keys(entities).find(key => entities[key].body && entities[key].body.id == id);
@@ -172,9 +154,9 @@ const BubbleShooterGame = () => {
         // --- Setup AppState and BackHandler Listeners ---
         const handleAppStateChange = (nextAppState) => {
             if (nextAppState === 'active') {
-                // if (backgroundSound) backgroundSound.play();
+                try { SoundPlayer.playSoundFile(BACKGROUND_MUSIC_NAME, 'mp3'); } catch (e) {}
             } else {
-                // if (backgroundSound) backgroundSound.pause();
+                try { SoundPlayer.stop(); } catch (e) {}
             }
         };
 
@@ -200,6 +182,12 @@ const BubbleShooterGame = () => {
             backgroundSound.play();
         });
         */
+        // Start background music and loop by replaying on FinishedPlaying
+        const onFinished = () => {
+            try { SoundPlayer.playSoundFile(BACKGROUND_MUSIC_NAME, 'mp3'); } catch (e) { console.log('bg replay failed', e); }
+        };
+        try { SoundPlayer.playSoundFile(BACKGROUND_MUSIC_NAME, 'mp3'); } catch (e) { console.log('bg start failed', e); }
+        SoundPlayer.addEventListener('FinishedPlaying', onFinished);
 
         loadHighScore();
         // loadPopSound();
@@ -217,6 +205,8 @@ const BubbleShooterGame = () => {
                 popSound.release();
             }
             */
+            try { SoundPlayer.stop(); } catch (e) {}
+            SoundPlayer.removeEventListener('FinishedPlaying');
             appStateSubscription.remove();
             backHandler.remove();
         };

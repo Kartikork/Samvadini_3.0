@@ -1,27 +1,9 @@
 import React from 'react';
 import { TouchableOpacity, Image, StyleSheet } from 'react-native';
-// import TrackPlayer from 'react-native-track-player';
 
 // Add `customImageStyle` to the props
-const DrumPad = ({ soundFile, label, imageFile, onPadPress, isActive, customImageStyle }) => {
-
-  const handlePress = async () => {
-    /*
-    try {
-      if (soundFile) {
-        await TrackPlayer.reset();
-        await TrackPlayer.add({
-          id: label,
-          url: soundFile,
-          title: label,
-          artist: 'Drum',
-        });
-        await TrackPlayer.play();
-      }
-    } catch (e) {
-      console.log('Error playing drum sound:', e);
-    }
-    */
+const DrumPad = ({ soundName, label, imageFile, onPadPress, isActive, customImageStyle }) => {
+  const handlePress = () => {
     onPadPress();
   };
 
