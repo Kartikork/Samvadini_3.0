@@ -3,6 +3,8 @@ import { updateChatMessage } from '../../../storage/sqllite/chat/ChatMessageSche
 import { updateEditGroupMessages } from '../../../storage/sqllite/chat/GroupMessageSchema';
 import { SocketService } from '../../../services/SocketService';
 import { Clipboard } from 'react-native';
+import axios from 'axios';
+import { env } from '../../../config';
 
 type LocalMessage = {
   refrenceId: string;
@@ -33,9 +35,7 @@ interface GroupUpdateParams {
 }
 
 const getRefrenceIdsFromSelection = (selectedMessages: LocalMessage[]) =>
-  (selectedMessages || [])
-    .map(m => m?.refrenceId)
-    .filter(Boolean) as string[];
+  (selectedMessages || []).map(m => m?.refrenceId).filter(Boolean) as string[];
 
 const applyOptimisticPatch = (
   setMessages: React.Dispatch<React.SetStateAction<LocalMessage[]>>,
@@ -132,7 +132,7 @@ export async function updateMessagesActionState({
     SocketService.sendMessageUpdate(payload);
 
     // backend persistence
-    await axiosConn('post', 'chat/update-message', payload);
+    await axios.post(`${env.API_BASE_URL}/chat/update-message`, payload);
   } catch (error) {
     console.error('[messageActions] Update failed:', error);
   }
@@ -191,7 +191,7 @@ export async function updateGroupMessagesActionState({
     });
 
     // backend persistence
-    await axiosConn('post', 'chat/update-group-message', {
+    await axios.post(`${env.API_BASE_URL}/chat/update-group-message`, {
       referenceIds: refrenceIds,
       type,
       updates,
