@@ -21,7 +21,7 @@ import Emoji from '../components/Emoji';
 import Score from '../components/Score';
 import Vector from '../components/Vector';
 
-// import Sound from 'react-native-sound';
+import SoundPlayer from 'react-native-sound-player';
 import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
@@ -58,6 +58,9 @@ class Basketball extends Component {
 
     this.interval = null;
 
+    // sound event listener handle
+    this.finishedPlayingListener = null;
+
     this.state = {
       x: Dimensions.get('window').width / 2 - radius,
       y: FLOOR_Y,
@@ -74,25 +77,11 @@ class Basketball extends Component {
       scaleAnim: new Animated.Value(0.5),
       // ⚙️ Settings-related states
       showSettings: false,
-      // bgMusicOn: true,
+      bgMusicOn: true,
       effectsOn: true,
     };
 
-    // // sounds
-    // this.scoreSound = new Sound(require('./Assets/Basketball/Truck_horn.mp3'), (error) => {
-    //   if (error) console.log('Failed to load score sound', error);
-    // });
-
-    // this.missSound = new Sound(require('./Assets/Basketball/ayen.mp3'), (error) => {
-    //   if (error) console.log('Failed to load miss sound', error);
-    // });
-
-    // this.bgMusic = new Sound(require('./BirdsChirping.mp3'), (error) => {
-    //   if (!error) {
-    //     this.bgMusic.setNumberOfLoops(-1);
-    //     this.bgMusic.play();
-    //   }
-    // });
+    // sounds are played via react-native-sound-player when needed
   }
 
   componentDidMount() {
@@ -100,19 +89,45 @@ class Basketball extends Component {
 
     // ✅ Handle Android hardware back button
     this.backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      // this.stopAllSounds();
+      this.stopAllSounds();
       if (this.props.navigation) {
         this.props.navigation.goBack();
         return true;
       }
       return false;
     });
+
+    // Listen for finished playing to loop background music if enabled
+    try {
+      this.finishedPlayingListener = SoundPlayer.addEventListener('FinishedPlaying', () => {
+        if (this.state.bgMusicOn) {
+          try {
+            SoundPlayer.playSoundFile('birdschirping', 'mp3');
+          } catch (e) {
+            console.warn('Basketball: failed to replay bg music', e && e.message ? e.message : e);
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('Basketball: failed to add FinishedPlaying listener', e);
+    }
+
+    // start background music if enabled
+    if (this.state.bgMusicOn) this.playBgMusic();
   }
 
   componentWillUnmount() {
     if (this.interval) clearInterval(this.interval);
     // this.stopAllSounds();
+    this.stopAllSounds();
     if (this.backHandler) this.backHandler.remove();
+    try {
+      if (this.finishedPlayingListener && typeof this.finishedPlayingListener.remove === 'function') {
+        this.finishedPlayingListener.remove();
+      }
+    } catch (e) {
+      console.warn('Basketball: error removing FinishedPlaying listener', e);
+    }
   }
 
   // ✅ Stops all sounds when exiting
@@ -131,7 +146,7 @@ class Basketball extends Component {
   // };
 
   playScoreEffect = () => {
-    // if (this.state.effectsOn && this.scoreSound) this.scoreSound.stop(() => this.scoreSound.play());
+    if (this.state.effectsOn) this.playScoreSound();
 
     this.setState({ showCelebration: true }, () => {
       this.state.fadeAnim.setValue(0);
@@ -254,7 +269,7 @@ class Basketball extends Component {
           this.playScoreEffect();
         } else {
           nextState.scored = false;
-          // if (this.state.effectsOn && this.missSound) this.missSound.stop(() => this.missSound.play());
+          if (this.state.effectsOn) this.playMissSound();
         }
       }
     }
@@ -319,14 +334,61 @@ class Basketball extends Component {
   }
 
   // // 🎛️ Settings handlers
-  // toggleBgMusic = (value) => {
-  //   this.setState({ bgMusicOn: value });
-  //   if (value) this.bgMusic.play();
-  // //   else this.bgMusic.pause();
-  // };
+  toggleBgMusic = (value) => {
+    this.setState({ bgMusicOn: value }, () => {
+      if (value) this.playBgMusic();
+      else this.stopBgMusic();
+    });
+  };
 
   toggleEffects = (value) => {
     this.setState({ effectsOn: value });
+  };
+
+  /* Sound helpers using react-native-sound-player */
+  playScoreSound = () => {
+    try {
+      console.log('Basketball: playing score sound truck_horn.mp3');
+      SoundPlayer.playSoundFile('truck_horn', 'mp3');
+    } catch (e) {
+      console.warn('Basketball: failed to play score sound', e && e.message ? e.message : e);
+    }
+  };
+
+  playMissSound = () => {
+    try {
+      console.log('Basketball: playing miss sound ayen.mp3');
+      SoundPlayer.playSoundFile('ayen', 'mp3');
+    } catch (e) {
+      console.warn('Basketball: failed to play miss sound', e && e.message ? e.message : e);
+    }
+  };
+
+  playBgMusic = () => {
+    try {
+      console.log('Basketball: playing background music birdschirping.mp3');
+      SoundPlayer.playSoundFile('birdschirping', 'mp3');
+    } catch (e) {
+      console.warn('Basketball: failed to play bg music', e && e.message ? e.message : e);
+    }
+  };
+
+  stopBgMusic = () => {
+    try {
+      console.log('Basketball: stopping bg music');
+      SoundPlayer.stop();
+    } catch (e) {
+      console.warn('Basketball: failed to stop bg music', e && e.message ? e.message : e);
+    }
+  };
+
+  stopAllSounds = () => {
+    try {
+      console.log('Basketball: stopping all sounds');
+      SoundPlayer.stop();
+    } catch (e) {
+      console.warn('Basketball: failed to stop all sounds', e && e.message ? e.message : e);
+    }
   };
 
   renderSettings() {
@@ -336,12 +398,12 @@ class Basketball extends Component {
         <Text style={styles.settingsTitle}>Settings</Text>
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>Background Music</Text>
-          {/* <Switch
+          <Switch
             value={this.state.bgMusicOn}
             onValueChange={this.toggleBgMusic}
             thumbColor="#fff"
             trackColor={{ false: '#555', true: '#4caf50' }}
-          /> */}
+          />
         </View>
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>Effects</Text>
