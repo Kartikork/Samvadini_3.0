@@ -30,9 +30,9 @@ import fruit_slice_icon from '../../screens/LanguageGameScreen/GAMER/icons/fruit
 
 
 
-import carrom_icon from '../../screens/LanguageGameScreen/GAMER/icons/carrom_icon.png';
-import NumberSort from '../../screens/LanguageGameScreen/GAMER/icons/NumberSort.png';
-import Pongicon1 from '../../screens/LanguageGameScreen/GAMER/icons/Pongicon1.png';
+import carrom_icon from '../LanguageGameScreen/GAMER/icons/carrom_icon.png';
+import NumberSort from '../LanguageGameScreen/GAMER/icons/NumberSort.png';
+import Pongicon1 from '../LanguageGameScreen/GAMER/icons/Pongicon1.png';
 
 interface GameProps {
   icon: any;

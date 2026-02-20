@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-  import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+  import { View, Text, StyleSheet, Pressable, Image, Platform } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MessageReplyPreview from '../../ChatScreen/components/MessageReplyPreview';
 import MessageStatusIcon from '../../ChatScreen/components/MessageStatusIcon';
+import LocationMessageBubble from '../../ChatScreen/components/LocationMessageBubble';
 
 type ReplyMeta = {
   lastRefrenceId: string;
@@ -172,6 +173,14 @@ const GroupMessageBubble: React.FC<GroupMessageBubbleProps> = ({
               </Text>
             )}
           </View>
+        );
+
+      case 'location':
+        return (
+          <LocationMessageBubble
+            locationData={message.vishayah}
+            isOutgoing={isOutgoing}
+          />
         );
 
       default:
@@ -412,6 +421,29 @@ const styles = StyleSheet.create({
   videoIcon: {
     fontSize: 48,
     color: '#FFF',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 6,
+    minWidth: 220,
+  },
+  locationContent: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  locationTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  locationCoords: {
+    fontSize: 12,
+    color: '#666666',
+    marginTop: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   senderRow: {
     flexDirection: 'row',

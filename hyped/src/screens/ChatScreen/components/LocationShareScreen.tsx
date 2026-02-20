@@ -13,10 +13,13 @@ import MapView, { Marker, Region } from 'react-native-maps';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import Geolocation from 'react-native-geolocation-service';
+import Toast from 'react-native-toast-message';
 import { useAppSelector } from '../../../state/hooks';
 import { getAppTranslations } from '../../../translations';
 import { showPermissionDeniedWithSettings } from '../../../utils/permissions';
 import { useMediaPermission } from '../../../hooks/useMediaPermission';
+import { OutgoingMessageManager } from '../../../services/OutgoingMessageManager';
+import { GroupChatManager } from '../../../services/GroupChatManager';
 
 type LocationShareRouteParams = {
   chatId: string;
@@ -34,6 +37,7 @@ const LocationShareScreen: React.FC = () => {
 
   const [region, setRegion] = useState<Region | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSending, setIsSending] = useState<boolean>(false);
 
   const loadCurrentLocation = useCallback(async () => {
     setIsLoading(true);
@@ -125,28 +129,71 @@ const LocationShareScreen: React.FC = () => {
     navigation.goBack();
   };
 
-  const handleSendCurrentLocation = () => {
-    if (!region) return;
-    // TODO: Integrate with OutgoingMessageManager / GroupChatManager to send a location message
-    console.log(
-      '[LocationShareScreen] Send current location pressed',
-      chatId,
-      isGroup,
-      region,
-    );
-    navigation.goBack();
-  };
+  const handleSendCurrentLocation = useCallback(async () => {
+    if (!region) {
+      console.warn('[LocationShareScreen] No region available');
+      return;
+    }
+
+    setIsSending(true);
+    const { latitude, longitude } = region;
+
+    try {
+      console.log('[LocationShareScreen] Sending location:', {
+        chatId,
+        isGroup,
+        latitude,
+        longitude,
+      });
+
+      if (isGroup) {
+        // Send to group
+        await GroupChatManager.sendGroupLocationMessage(
+          chatId,
+          latitude,
+          longitude,
+        );
+        Toast.show({
+          type: 'success',
+          text1: 'Location sent',
+          text2: 'Location shared with group',
+        });
+      } else {
+        // Send to 1-to-1 chat
+        await OutgoingMessageManager.sendLocationMessage(
+          chatId,
+          latitude,
+          longitude,
+        );
+        Toast.show({
+          type: 'success',
+          text1: 'Location sent',
+          text2: 'Location shared with contact',
+        });
+      }
+
+      // Navigate back after successful send
+      navigation.goBack();
+    } catch (error) {
+      console.error('[LocationShareScreen] Error sending location:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to send location',
+        text2: (error as any)?.message || 'Please try again',
+      });
+    } finally {
+      setIsSending(false);
+    }
+  }, [region, chatId, isGroup, navigation]);
 
   const handleSendLiveLocation = () => {
     if (!region) return;
     // TODO: Integrate live location flow similar to legacy implementation
-    console.log(
-      '[LocationShareScreen] Send live location pressed',
-      chatId,
-      isGroup,
-      region,
-    );
-    navigation.goBack();
+    Toast.show({
+      type: 'info',
+      text1: 'Feature coming soon',
+      text2: 'Live location sharing will be available soon',
+    });
   };
 
   return (
@@ -204,7 +251,7 @@ const LocationShareScreen: React.FC = () => {
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={handleSendCurrentLocation}
-            disabled={!region || isLoading}
+            disabled={!region || isLoading || isSending}
           >
             <LinearGradient
               colors={['#6462AC', '#028BD3']}
@@ -212,24 +259,30 @@ const LocationShareScreen: React.FC = () => {
               end={{ x: 1, y: 0 }}
               style={[
                 styles.actionButton,
-                (!region || isLoading) && styles.actionButtonDisabled,
+                (!region || isLoading || isSending) && styles.actionButtonDisabled,
               ]}
             >
-              <Ionicons
-                name={
-                  Platform.OS === 'ios' ? 'location' : 'location-outline'
-                }
-                size={22}
-                color="#ffffff"
-              />
-              <Text style={styles.actionButtonText}>Send your current location</Text>
+              {isSending ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Ionicons
+                  name={
+                    Platform.OS === 'ios' ? 'location' : 'location-outline'
+                  }
+                  size={22}
+                  color="#ffffff"
+                />
+              )}
+              <Text style={styles.actionButtonText}>
+                {isSending ? 'Sending location...' : 'Send your current location'}
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
 
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={handleSendLiveLocation}
-            disabled={!region || isLoading}
+            disabled={!region || isLoading || isSending}
           >
             <LinearGradient
               colors={['#fc8e5f', '#fc8e5f']}
@@ -237,7 +290,7 @@ const LocationShareScreen: React.FC = () => {
               end={{ x: 1, y: 0 }}
               style={[
                 styles.actionButton,
-                (!region || isLoading) && styles.actionButtonDisabled,
+                (!region || isLoading || isSending) && styles.actionButtonDisabled,
               ]}
             >
               <Ionicons name="radio-outline" size={22} color="#ffffff" />
