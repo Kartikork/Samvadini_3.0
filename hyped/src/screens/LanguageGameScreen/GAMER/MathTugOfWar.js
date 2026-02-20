@@ -126,12 +126,19 @@ const MathTugOfWar = ({ navigation }) => {
     }, [gameState, gameMode, p2Problem]);
 
     useEffect(() => {
-        const onBackPress = () => {
-            handleExit();
-            return true;
+            const onBackPress = () => {
+            // if the user is still on the mode‑selection menu, just go back
+            // to the previous screen instead of resetting the whole game
+            if (gameState === 'menu') {
+                navigation.goBack();
+            } else {
+                // during play or after a game over we clear state and leave
+                handleExit();
+            }
+            return true; // indicate we've handled it
         };
 
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+        const backHandlerSub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
         const subscription = AppState.addEventListener('change', nextAppState => {
             if (nextAppState.match(/inactive|background/)) {
                 console.log('App in background');
@@ -139,10 +146,12 @@ const MathTugOfWar = ({ navigation }) => {
         });
 
         return () => {
-            backHandler.remove();
+            if (backHandlerSub && typeof backHandlerSub.remove === 'function') {
+                backHandlerSub.remove();
+            }
             subscription.remove();
         };
-    }, [navigation]);
+    }, [navigation, gameState, handleExit]);
 
     useEffect(() => {
         let interval;
@@ -340,7 +349,15 @@ const MathTugOfWar = ({ navigation }) => {
             </View>
 
             {/* Modals */}
-            <Modal visible={gameState === 'menu'} transparent animationType="slide">
+            <Modal
+                visible={gameState === 'menu'}
+                transparent
+                animationType="slide"
+                onRequestClose={() => {
+                    // hardware back while menu is up should leave the screen
+                    navigation.goBack();
+                }}
+            >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Math Tug of War</Text>
@@ -357,7 +374,15 @@ const MathTugOfWar = ({ navigation }) => {
                 </View>
             </Modal>
 
-            <Modal visible={gameState === 'gameOver'} transparent animationType="fade">
+            <Modal
+                visible={gameState === 'gameOver'}
+                transparent
+                animationType="fade"
+                onRequestClose={() => {
+                    // close gameOver modal by going back to menu state
+                    setGameState('menu');
+                }}
+            >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.winnerTitle}>{winner === 'Draw' ? "It's a Draw!" : `${winner} Wins!`}</Text>
