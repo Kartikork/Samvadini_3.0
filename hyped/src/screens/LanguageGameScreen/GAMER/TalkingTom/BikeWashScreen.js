@@ -360,7 +360,7 @@ const BikeWashScreen = ({ onBack, onCleanFinished, coins, selectedCharacter, nav
 
         // Remove the event listener when the component unmounts
         return () => {
-            BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+            // BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
         };
     }, [introVisible, navigation, onBack]); // Dependencies: Re-run if these values change
 

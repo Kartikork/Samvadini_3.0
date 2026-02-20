@@ -67,7 +67,7 @@ const BikeServiceScreen = ({ onBack, onServiceFinished, coins, selectedCharacter
       } else {
         // Fallback for cases where navigation prop might not be available
         // Or if you want to use the onBack prop for a different purpose
-        onBack();
+        // onBack();
       }
       return true; // Always return true to prevent default back button behavior (exiting app)
     };
@@ -77,7 +77,7 @@ const BikeServiceScreen = ({ onBack, onServiceFinished, coins, selectedCharacter
 
     // Clean up event listener when component unmounts
     return () => {
-      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+      // BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
     };
   }, [activeMiniGame, showInstructions, navigation, onBack]); // Depend on activeMiniGame, showInstructions, navigation, and onBack
 

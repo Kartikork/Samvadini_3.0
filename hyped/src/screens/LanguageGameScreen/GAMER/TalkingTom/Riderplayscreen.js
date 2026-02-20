@@ -255,10 +255,10 @@ export default function RacingGame({ onBack }) { // Accept onBack prop
         }
     }, [introStep]);
 
-    useEffect(() => {
-        soundEngine.current = new Sound(SOUND_ENGINE, (err) => { if (!err) soundEngine.current.setNumberOfLoops(-1); });
-        return () => soundEngine.current?.release();
-    }, []);
+    // useEffect(() => {
+    //     soundEngine.current = new Sound(SOUND_ENGINE, (err) => { if (!err) soundEngine.current.setNumberOfLoops(-1); });
+    //     return () => soundEngine.current?.release();
+    // }, []);
 
     const onEvent = (e) => {
         if (e.type === 'game-over') {
