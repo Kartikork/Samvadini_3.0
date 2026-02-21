@@ -298,7 +298,7 @@ export const Header = React.memo(() => {
 
         <View>
           <TouchableOpacity
-            onPress={() => navigation.navigate('talkingtom')}
+            onPress={() => navigation.navigate('TalkingTom')}
             style={headerStyles.babyBossIcon}
           >
             <Image

@@ -1,0 +1,49 @@
+> Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:shared:compileJava NO-SOURCE
+> Task :gradle-plugin:shared:processResources NO-SOURCE
+> Task :gradle-plugin:shared:classes UP-TO-DATE
+> Task :gradle-plugin:shared:jar UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:settings-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:processResources UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:classes UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:jar UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:react-native-gradle-plugin:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:react-native-gradle-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:processResources UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:classes UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:jar UP-TO-DATE
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+A problem occurred configuring root project 'friends'.
+> Could not resolve all artifacts for configuration 'classpath'.
+   > Could not find com.facebook.react:react-native-gradle-plugin:0.83.1.
+     Searched in the following locations:
+       - https://dl.google.com/dl/android/maven2/com/facebook/react/react-native-gradle-plugin/0.83.1/react-native-gradle-plugin-0.83.1.pom
+       - https://repo.maven.apache.org/maven2/com/facebook/react/react-native-gradle-plugin/0.83.1/react-native-gradle-plugin-0.83.1.pom
+       - https://plugins.gradle.org/m2/com/facebook/react/react-native-gradle-plugin/0.83.1/react-native-gradle-plugin-0.83.1.pom
+     Required by:
+         root project :
+   > Could not find com.facebook.react:react-native-gradle-plugin:0.83.1.
+     Searched in the following locations:
+       - https://dl.google.com/dl/android/maven2/com/facebook/react/react-native-gradle-plugin/0.83.1/react-native-gradle-plugin-0.83.1.pom
+       - https://repo.maven.apache.org/maven2/com/facebook/react/react-native-gradle-plugin/0.83.1/react-native-gradle-plugin-0.83.1.pom
+       - https://plugins.gradle.org/m2/com/facebook/react/react-native-gradle-plugin/0.83.1/react-native-gradle-plugin-0.83.1.pom
+     Required by:
+         root project :
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2s
+10 actionable tasks: 10 up-to-date

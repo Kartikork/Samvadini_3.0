@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { GameEngine } from 'react-native-game-engine';
 // import Sound from 'react-native-sound'; 
+import SoundPlayer from 'react-native-sound-player';
 import { accelerometer, setUpdateIntervalForType, SensorTypes } from "react-native-sensors";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -70,7 +71,8 @@ const PLAYER_IMG = require('../cargame/car1.png');
 const ENEMY_CAR_IMG = require('../cargame/car2.png');
 const TRUCK_IMG = require('../cargame/truck.png');
 const AUTO_IMG = require('../cargame/auto1.png');
-const SOUND_ENGINE = require('../cargame/go.mp3');
+// Engine sound placed in android/app/src/main/res/raw as go.mp3 — play by name
+const ENGINE_SOUND_NAME = 'go';
 
 // Sound.setCategory('Playback');
 
@@ -238,7 +240,7 @@ export default function RacingGame(): ReactElement {
         };
         const appStateListener = AppState.addEventListener("change", handleAppStateChange);
 
-        return () => { backHandler.remove(); appStateListener.remove(); };
+        return () => { backHandler.remove(); appStateListener.remove(); try { SoundPlayer.stop(); } catch (e) {} };
     }, [running, introStep, navigation]);
 
     useEffect(() => {
@@ -262,13 +264,29 @@ export default function RacingGame(): ReactElement {
     }, [introStep, tiltAnim]);
 
     useEffect(() => {
-        return () => { };
-    }, []);
+        const onFinished = () => {
+            if (running && !isGameOver) {
+                try { SoundPlayer.playSoundFile(ENGINE_SOUND_NAME, 'mp3'); } catch (e) { console.log('engine replay failed', e); }
+            }
+        };
+        SoundPlayer.addEventListener('FinishedPlaying', onFinished);
+
+        if (running && !isGameOver) {
+            try { SoundPlayer.playSoundFile(ENGINE_SOUND_NAME, 'mp3'); } catch (e) { console.log('engine start failed', e); }
+        } else {
+            try { SoundPlayer.stop(); } catch (e) {}
+        }
+
+        return () => {
+            try { SoundPlayer.stop(); } catch (e) {}
+            // SoundPlayer.removeEventListener('FinishedPlaying');
+        };
+    }, [running, isGameOver]);
 
     const onEvent = (e: any): void => {
         if (e.type === 'game-over') {
             setTimeout(() => { setRunning(false); setIsGameOver(true); }, 150);
-            soundEngine.current?.stop();
+            try { SoundPlayer.stop(); } catch (e) {}
         }
         if (e.type === 'score-update') setStats({ score: e.score, speed: e.speed, level: e.level });
     };

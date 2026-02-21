@@ -1,10 +1,10 @@
 buildscript {
     ext {
-        buildToolsVersion = "36.0.0"
+        buildToolsVersion = "35.0.0"
         minSdkVersion = 24
-        compileSdkVersion = 36
-        targetSdkVersion = 36
-        ndkVersion = "27.1.12297006"
+        compileSdkVersion = 35
+        targetSdkVersion = 35
+        ndkVersion = "29.0.14206865"
         kotlinVersion = "2.0.21"
         // Ensure a consistent Play Services Location version across all modules.
         // This avoids runtime crashes in react-native-geolocation-service (RNFusedLocation)
@@ -16,12 +16,13 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:8.9.2")
+        classpath("com.android.tools.build:gradle:8.12.0")
+        classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
         classpath("com.google.gms:google-services:4.4.2")
     }
 }
 
 plugins {
-    id("com.facebook.react.rootproject")
+    id("com.facebook.react.rootproject")    
 }

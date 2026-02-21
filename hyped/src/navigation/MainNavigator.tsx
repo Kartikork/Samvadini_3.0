@@ -30,71 +30,42 @@ import NewContactFormScreen from '../screens/NewContactFormScreen';
 import CreateNewGroupScreen from '../screens/CreateNewGroup';
 import CallScreen from '../screens/CallScreen';
 import SnakeLaddersGame from '../screens/LanguageGameScreen/GAMER/SnakeLaddersGame/SnakeLaddersGame.js';
-const MemoryGame = lazy(
-  () => import('../screens/LanguageGameScreen/GAMER/MemoryGame'),
-);
-const SnakeGameIntroScreen = lazy(
-  () =>
-    import(
-      '../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameIntroScreen.js'
-    ),
-);
-const SnakeGameScreen = lazy(
-  () =>
-    import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameScreen.js'),
-);
-const BubbleShooterGame = lazy(
-  () =>
-    import(
-      '../screens/LanguageGameScreen/GAMER/BubbleShooter/BubbleShooterGame.js'
-    ),
-);
-const CarGame = lazy(
-  () => import('../screens/LanguageGameScreen/GAMER/cargame/CarGame'),
-);
-const BalloonShootingGame = lazy(
-  () =>
-    import(
-      '../screens/LanguageGameScreen/GAMER/BalloonShootingGame/BalloonShootingGame'
-    ),
-);
-const TicTacToe = lazy(
-  () => import('../screens/LanguageGameScreen/GAMER/TicTacToe'),
-);
-const NumberSortIntroScreen = lazy(
-  () =>
-    import(
-      '../screens/LanguageGameScreen/GAMER/NumberSort/NumberSortIntroScreen'
-    ),
-);
-const SortGameScreen = lazy(
-  () => import('../screens/LanguageGameScreen/GAMER/NumberSort/SortGameScreen'),
-);
-const DrumGame = lazy(
-  () => import('../screens/LanguageGameScreen/GAMER/DrumGame/Game'),
-);
-const Carrom = lazy(
-  () => import('../screens/LanguageGameScreen/GAMER/CarromGame/CarromGame.js'),
-);
-const chess = lazy(
-  () => import('../screens/LanguageGameScreen/GAMER/Chess/chess.js'),
-);
-const pong = lazy(
-  () => import('../screens/LanguageGameScreen/GAMER/pong/footballNet.js'),
-);
-const homescreen = lazy(
-  () =>
-    import(
-      '../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/HomeScreen.js'
-    ),
-);
-const roomscreen = lazy(
-  () =>
-    import(
-      '../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/RoomScreen.js'
-    ),
-);
+const MemoryGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MemoryGame'));
+const SnakeGameIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameIntroScreen.js'));
+const SnakeGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/SnakeStack/SnakeGameScreen.js'));
+const BubbleShooterGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/BubbleShooter/BubbleShooterGame.js'));
+const CarGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/cargame/CarGame'));
+const BalloonShootingGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/BalloonShootingGame/BalloonShootingGame'));
+const TicTacToe = lazy(() => import('../screens/LanguageGameScreen/GAMER/TicTacToe'));
+const NumberSortIntroScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/NumberSortIntroScreen'));
+const SortGameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/NumberSort/SortGameScreen'));
+const DrumGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/DrumGame/Game'));
+const CarromGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/CarromGame/CarromGame.js'));
+const TipCat = lazy(() => import('../screens/LanguageGameScreen/GAMER/GilliDanda/TipCat'));
+const Crossword = lazy(() => import('../screens/LanguageGameScreen/GAMER/Crossword/crossword'));
+const MazeGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/MazeGame'));
+const SliceGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/FruitSlice/SliceGame'));
+const Carrom = lazy(() => import('../screens/LanguageGameScreen/GAMER/CarromGame/CarromGame.js'));
+const chess = lazy(() => import('../screens/LanguageGameScreen/GAMER/Chess/chess.js'));
+const pong = lazy(() => import('../screens/LanguageGameScreen/GAMER/pong/footballNet.js'));
+const homescreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/HomeScreen.js'));
+const roomscreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/antarakshari/src/screens/RoomScreen.js'));
+const LudoWelcomeScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/Screens/WelcomeScreen'));
+const LudoColorSelectionScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/Screens/ColorSelectionScreen'));
+const ludoGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/ludogame/utils/Index'));
+const Basketball = lazy(() => import('../screens/LanguageGameScreen/GAMER/Basketball/main/BasketBall'));
+const PianoGame = lazy(() => import('../screens/LanguageGameScreen/GAMER/piano/PianoGame'));
+const MathTugOfWar = lazy(() => import('../screens/LanguageGameScreen/GAMER/MathTugOfWar'));
 const ChatProfile = lazy(() => import('../screens/Profile/ChatProfile.js'));
+const PlanetSelectionScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/PlanetSelectionScreen.js'));
+const MiniGamesHubScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGamesHubScreen.js'));
+const MiniGame1 = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGame1.js'));
+const MiniGame2 = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGame2.js'));
+const MiniGame3 = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGame3.js'));
+const MiniGame4 = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/MiniGame4.js'));
+const GameScreen = lazy(() => import('../screens/LanguageGameScreen/GAMER/AstronautGame/screens/gamescreen.js'));
+const TalkingTom = lazy(() => import('../screens/LanguageGameScreen/GAMER/TalkingTom/talkingtom.js'));
+
 import Header from '../components/Header';
 import SelectedFilesScreen from '../screens/ChatScreen/components/SelectedFilesScreen';
 import LocationShareScreen from '../screens/ChatScreen/components/LocationShareScreen';
@@ -233,6 +204,21 @@ export type RootStackParamList = {
   NumberSortIntroScreen: undefined;
   SortGameScreen: undefined;
   DrumGame: undefined;
+  CarromGame: undefined;
+  TipCat: undefined;
+  crossword: undefined;
+  pong: undefined;
+  chess: undefined;
+  homescreen: undefined;
+  roomscreen: undefined;
+  MazeGame: undefined;
+  SliceGame: undefined;
+  Basketball: undefined;
+  PianoGame: undefined;
+  MathTugOfWar: undefined;
+  LudoWelcomeScreen: undefined;
+  LudoColorSelectionScreen: undefined;
+  ludoGame: { gameMode: string; playerColors: string[] };
   LRNScreen: undefined;
   DailyPlanner: undefined;
   AddPlan: undefined;
@@ -250,6 +236,14 @@ export type RootStackParamList = {
   Call: { callId: string; peerId: string; isVideo: boolean };
   SelectedFiles: { assets: any[] } | undefined;
   LocationShare: { chatId: string; isGroup?: boolean };
+  PlanetSelectionScreen: undefined;
+  MiniGamesHubScreen: undefined;
+  MiniGame1: undefined;
+  MiniGame2: undefined;
+  MiniGame3: undefined;
+  MiniGame4: undefined;
+  GameScreen: undefined;
+  TalkingTom: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -508,16 +502,13 @@ export default function MainNavigator() {
           component={roomscreen}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
+        
         <Stack.Screen
           name="SnakeLaddersGame"
           component={SnakeLaddersGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
-        <Stack.Screen
-          name="Carrom"
-          component={Carrom}
-          options={{ animation: 'slide_from_right', headerShown: false }}
-        />
+
 
         <Stack.Screen
           name="MemoryGame"
@@ -577,12 +568,107 @@ export default function MainNavigator() {
           component={DrumGame}
           options={{ animation: 'slide_from_right', headerShown: false }}
         />
+                <Stack.Screen
+          name="CarromGame"
+          component={CarromGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="TipCat"
+          component={TipCat}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="crossword"
+          component={Crossword}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="MazeGame"
+          component={MazeGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="SliceGame"
+          component={SliceGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="Basketball"
+          component={Basketball}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="PianoGame"
+          component={PianoGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="MathTugOfWar"
+          component={MathTugOfWar}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="LudoWelcomeScreen"
+          component={LudoWelcomeScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="LudoColorSelectionScreen"
+          component={LudoColorSelectionScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="ludoGame"
+          component={ludoGame}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
 
         {/* Group Chat Screen */}
         <Stack.Screen
           name="GroupChat"
           component={GroupChatScreen}
           options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="PlanetSelectionScreen"
+          component={PlanetSelectionScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="MiniGamesHubScreen"
+          component={MiniGamesHubScreen}
+          options={{ animation: 'slide_from_right', headerShown: false }}
+        />
+        <Stack.Screen
+          name="MiniGame1"
+          component={MiniGame1}
+          options={{ animation: 'slide_from_right', headerShown: true }}
+        />
+        <Stack.Screen
+          name="MiniGame2"
+          component={MiniGame2}
+          options={{ animation: 'slide_from_right', headerShown: true }}
+        />
+        <Stack.Screen
+          name="MiniGame3"
+          component={MiniGame3}
+          options={{ animation: 'slide_from_right', headerShown: true }}
+        />
+        <Stack.Screen
+          name="MiniGame4"
+          component={MiniGame4}
+          options={{ animation: 'slide_from_right', headerShown: true }}
+        />
+        <Stack.Screen
+          name="GameScreen"
+          component={GameScreen}
+          options={{ animation: 'slide_from_right', headerShown: true }}
+        />
+        <Stack.Screen
+          name="TalkingTom"
+          component={TalkingTom}
+          options={{ animation: 'slide_from_right', headerShown: false }}
         />
 
         {/* TODO: Add these screens

@@ -12,10 +12,13 @@ import {
   ScrollView,
   Image,
   StatusBar,
-  AppState, // --- AppState Feature --- Import AppState
+  AppState,
+  BackHandler,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { GameEngine } from 'react-native-game-engine';
 import Matter from 'matter-js';
+import SoundPlayer from 'react-native-sound-player';
 // import Sound from 'react-native-sound';
 
 const { width, height } = Dimensions.get('window');
@@ -280,24 +283,24 @@ function GameControls({
       </View>
 
       <View style={styles.controlsRight}>
-  <Text style={styles.powerLabel}>Power</Text>
-  <View style={styles.powerMeter}>
-    <View
-      style={[
-        styles.powerFill,
-        {
-          width: `${powerLevel}%`,
-          backgroundColor:
-            powerLevel > 75
-              ? COLORS.UI_ERROR
-              : powerLevel > 50
-              ? COLORS.UI_WARNING
-              : COLORS.UI_SUCCESS,
-        },
-      ]}
-    />
-  </View>
-</View>
+        <Text style={styles.powerLabel}>Power</Text>
+        <View style={styles.powerMeter}>
+          <View
+            style={[
+              styles.powerFill,
+              {
+                width: `${powerLevel}%`,
+                backgroundColor:
+                  powerLevel > 75
+                    ? COLORS.UI_ERROR
+                    : powerLevel > 50
+                      ? COLORS.UI_WARNING
+                      : COLORS.UI_SUCCESS,
+              },
+            ]}
+          />
+        </View>
+      </View>
 
     </View>
   );
@@ -382,8 +385,25 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
   const coinsRef = useRef({});
   const queenRef = useRef(null);
   const runnerRef = useRef(null);
-  const soundRef = useRef(null);
-  const backgroundMusicRef = useRef(null);
+  // Sound resource names (must match files in android/app/src/main/res/raw)
+  const POCKET_SOUND_NAME = 'good_job';
+  const BG_MUSIC_NAME = 'maze_bm';
+  const navigation = useNavigation();
+
+  // Handle hardware back button
+  useEffect(() => {
+    const backAction = () => {
+      navigation.navigate('LanguageGameScreen');
+      return true; // Prevent default behavior (exit app)
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [navigation]);
 
   // Game State
   const [gameState, setGameState] = useState(GAME_STATES.SETUP);
@@ -451,50 +471,29 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
   const dragVector = useRef({ dx: 0, dy: 0 });
   const [isAiming, setIsAiming] = useState(false);
 
+  // Use SoundPlayer to play sounds by raw resource name
+  useEffect(() => {
+    // Loop background music by replaying on FinishedPlaying
+    const onFinished = () => {
+      if (!areSoundsMuted && gameState === GAME_STATES.PLAYING) {
+        try { SoundPlayer.playSoundFile(BG_MUSIC_NAME, 'mp3'); } catch (e) { console.log('bg replay failed', e); }
+      }
+    };
 
+    try {
+      if (!areSoundsMuted && gameState === GAME_STATES.PLAYING) {
+        SoundPlayer.playSoundFile(BG_MUSIC_NAME, 'mp3');
+      }
+    } catch (e) {
+      console.log('bg start failed', e);
+    }
+    SoundPlayer.addEventListener('FinishedPlaying', onFinished);
 
-
-
-  // Load Sounds
-
-
-  // useEffect(() => {
-  //   Sound.setCategory('Playback');
-
-  //   const pocketSound = new Sound(require('../Assets/good_job.mp3'), (error) => {
-  //     if (error) {
-  //       console.log('Failed to load the pocket sound', error);
-  //       return;
-  //     }
-  //     soundRef.current = pocketSound;
-  //   });
-
-  //   const music = new Sound(require('../Assets/maze_bm.mp3'), (error) => {
-  //       if (error) {
-  //           console.log('Failed to load the background music', error);
-  //           return;
-  //       }
-  //       backgroundMusicRef.current = music;
-  //       music.setNumberOfLoops(-1);
-  //       music.setVolume(areSoundsMuted ? 0 : 0.5); // Respect initial mute state
-  //       if (!isPaused) {
-  //         music.play();
-  //       }
-  //   });
-
-  //   return () => {
-  //     if (soundRef.current) {
-  //       soundRef.current.release();
-  //     }
-  //     if (backgroundMusicRef.current) {
-  //       backgroundMusicRef.current.release();
-  //     }
-  //   };
-  // }, []);
-
-
-
-
+    return () => {
+      try { SoundPlayer.stop(); } catch (e) {}
+      // SoundPlayer.removeEventListener('FinishedPlaying');
+    };
+  }, [areSoundsMuted, gameState]);
 
 
   // --- AppState Feature --- Handle app minimize/background
@@ -529,10 +528,10 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
     setGameState(GAME_STATES.PLAYING);
 
     return () => {
-        if (runnerRef.current && engineRef.current) {
-            Matter.Runner.stop(runnerRef.current);
-            Matter.Engine.clear(engineRef.current);
-        }
+      if (runnerRef.current && engineRef.current) {
+        Matter.Runner.stop(runnerRef.current);
+        Matter.Engine.clear(engineRef.current);
+      }
     }
   }, []);
 
@@ -594,18 +593,18 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
     ];
 
     coinPositions.forEach((pos, idx) => {
-        const id = pos.type === 'queen' ? 'queen' : `coin_${idx}`;
-        const radius = pos.type === 'queen' ? QUEEN_RADIUS : COIN_RADIUS;
-        const body = Matter.Bodies.circle(centerX + pos.x, centerY + pos.y, radius, {
-            restitution: RESTITUTION,
-            frictionAir: FRICTION_AIR,
-            label: pos.type,
-        });
+      const id = pos.type === 'queen' ? 'queen' : `coin_${idx}`;
+      const radius = pos.type === 'queen' ? QUEEN_RADIUS : COIN_RADIUS;
+      const body = Matter.Bodies.circle(centerX + pos.x, centerY + pos.y, radius, {
+        restitution: RESTITUTION,
+        frictionAir: FRICTION_AIR,
+        label: pos.type,
+      });
 
-        coins[id] = { body, color: pos.color, type: pos.type };
-        if (pos.type === 'queen') {
-            queenRef.current = body;
-        }
+      coins[id] = { body, color: pos.color, type: pos.type };
+      if (pos.type === 'queen') {
+        queenRef.current = body;
+      }
     });
 
     const strikerStartX = centerX;
@@ -648,17 +647,11 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
     Matter.Runner.run(runner, engine);
   }, []);
 
-  // const playPocketSound = () => {
-  //   if (soundRef.current && !areSoundsMuted) { // --- Settings Feature --- Check if muted
-  //     soundRef.current.stop(() => {
-  //       soundRef.current.play((success) => {
-  //         if (!success) {
-  //           console.log('Sound playback failed');
-  //         }
-  //       });
-  //     });
-  //   }
-  // };
+  const playPocketSound = () => {
+    if (!areSoundsMuted) {
+      try { SoundPlayer.playSoundFile(POCKET_SOUND_NAME, 'mp3'); } catch (e) { console.log('pocket sound failed', e); }
+    }
+  };
 
   const handleCollisions = useCallback((pairs) => {
     pairs.forEach((pair) => {
@@ -693,35 +686,35 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
 
 
   const handleCoinPocketed = useCallback((coinBody) => {
-    // playPocketSound();
+    playPocketSound();
 
     setPlayers(currentPlayers => {
-        let scoreChange = 0;
-        let newPlayers = JSON.parse(JSON.stringify(currentPlayers));
+      let scoreChange = 0;
+      let newPlayers = JSON.parse(JSON.stringify(currentPlayers));
 
-        if (coinBody.label === 'queen') {
-          newPlayers[currentPlayerIndex].hasQueen = true;
-          scoreChange = POINTS.QUEEN;
-        } else if (coinBody.label === 'white') {
-          newPlayers[currentPlayerIndex].whiteCoinsPocketed++;
-          scoreChange = POINTS.WHITE_COIN;
-        } else if (coinBody.label === 'black') {
-          newPlayers[currentPlayerIndex].blackCoinsPocketed++;
-          scoreChange = POINTS.BLACK_COIN;
-        }
+      if (coinBody.label === 'queen') {
+        newPlayers[currentPlayerIndex].hasQueen = true;
+        scoreChange = POINTS.QUEEN;
+      } else if (coinBody.label === 'white') {
+        newPlayers[currentPlayerIndex].whiteCoinsPocketed++;
+        scoreChange = POINTS.WHITE_COIN;
+      } else if (coinBody.label === 'black') {
+        newPlayers[currentPlayerIndex].blackCoinsPocketed++;
+        scoreChange = POINTS.BLACK_COIN;
+      }
 
-        if (activeCards.includes('golden_strike')) {
-          scoreChange *= 2;
-          setActiveCards(prev => prev.filter(id => id !== 'golden_strike'));
-        }
+      if (activeCards.includes('golden_strike')) {
+        scoreChange *= 2;
+        setActiveCards(prev => prev.filter(id => id !== 'golden_strike'));
+      }
 
-        newPlayers[currentPlayerIndex].score += scoreChange;
+      newPlayers[currentPlayerIndex].score += scoreChange;
 
-        if (scoreChange > 0) {
-          pocketedInTurn.current = true;
-        }
+      if (scoreChange > 0) {
+        pocketedInTurn.current = true;
+      }
 
-        return newPlayers;
+      return newPlayers;
     });
 
     Matter.Body.setPosition(coinBody, { x: -1000, y: -1000 });
@@ -738,9 +731,9 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
     Matter.Body.setVelocity(strikerRef.current, { x: 0, y: 0 });
 
     setPlayers(currentPlayers => {
-        const newPlayers = JSON.parse(JSON.stringify(currentPlayers));
-        newPlayers[currentPlayerIndex].score += POINTS.STRIKER_PENALTY;
-        return newPlayers;
+      const newPlayers = JSON.parse(JSON.stringify(currentPlayers));
+      newPlayers[currentPlayerIndex].score += POINTS.STRIKER_PENALTY;
+      return newPlayers;
     });
 
     pocketedInTurn.current = false;
@@ -759,9 +752,9 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
         const strikerResetX = 10 + BOARD_SIZE / 2;
         const strikerResetY = 10 + BOARD_SIZE - 60;
         if (strikerRef.current) {
-            Matter.Body.setPosition(strikerRef.current, { x: strikerResetX, y: strikerResetY });
-            Matter.Body.setVelocity(strikerRef.current, { x: 0, y: 0 });
-            Matter.Sleeping.set(strikerRef.current, true);
+          Matter.Body.setPosition(strikerRef.current, { x: strikerResetX, y: strikerResetY });
+          Matter.Body.setVelocity(strikerRef.current, { x: 0, y: 0 });
+          Matter.Sleeping.set(strikerRef.current, true);
         }
 
         if (!pocketedInTurn.current) {
@@ -807,8 +800,8 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
         aimLine.setValue(1);
 
         if (strikerRef.current) {
-            strikerRef.current.sleepThreshold = Infinity;
-            Matter.Sleeping.set(strikerRef.current, false);
+          strikerRef.current.sleepThreshold = Infinity;
+          Matter.Sleeping.set(strikerRef.current, false);
         }
       },
       onPanResponderMove: (_, gesture) => {
@@ -878,26 +871,26 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
 
   const performReset = () => {
     if (runnerRef.current && engineRef.current) {
-        Matter.Runner.stop(runnerRef.current);
-        Matter.World.clear(engineRef.current.world, false);
-        Matter.Engine.clear(engineRef.current);
-        runnerRef.current = null;
-        engineRef.current = null;
-        worldRef.current = null;
+      Matter.Runner.stop(runnerRef.current);
+      Matter.World.clear(engineRef.current.world, false);
+      Matter.Engine.clear(engineRef.current);
+      runnerRef.current = null;
+      engineRef.current = null;
+      worldRef.current = null;
     }
 
     setEntities({});
     setShowGameOver(false);
     setIsPaused(false);
     setPlayers(prev => prev.map(player => ({
-        ...player,
-        score: 0,
-        whiteCoinsPocketed: 0,
-        blackCoinsPocketed: 0,
-        hasQueen: false,
-        queenCovered: false,
-        energy: 10,
-        cards: generateRandomCards(3)
+      ...player,
+      score: 0,
+      whiteCoinsPocketed: 0,
+      blackCoinsPocketed: 0,
+      hasQueen: false,
+      queenCovered: false,
+      energy: 10,
+      cards: generateRandomCards(3)
     })));
     setCurrentPlayerIndex(0);
     setActiveCards([]);
@@ -905,8 +898,8 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
     pocketedInTurn.current = false;
 
     setTimeout(() => {
-        initializeGame();
-        setGameState(GAME_STATES.PLAYING);
+      initializeGame();
+      setGameState(GAME_STATES.PLAYING);
     }, 100);
   };
 
@@ -927,13 +920,11 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
       if (engineRef.current && runnerRef.current) {
         if (nextIsPaused) {
           Matter.Runner.stop(runnerRef.current);
-          if (backgroundMusicRef.current) {
-            backgroundMusicRef.current.pause();
-          }
+          try { SoundPlayer.stop(); } catch (e) {}
         } else {
           Matter.Runner.run(runnerRef.current, engineRef.current);
-          if (backgroundMusicRef.current && !areSoundsMuted) { // --- Settings Feature --- Check mute state
-            backgroundMusicRef.current.play();
+          if (!areSoundsMuted) {
+            try { SoundPlayer.playSoundFile(BG_MUSIC_NAME, 'mp3'); } catch (e) {}
           }
         }
       }
@@ -945,8 +936,10 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
   const toggleMute = () => {
     setAreSoundsMuted(currentMuteState => {
       const nextMuteState = !currentMuteState;
-      if (backgroundMusicRef.current) {
-        backgroundMusicRef.current.setVolume(nextMuteState ? 0 : 0.5);
+      if (nextMuteState) {
+        try { SoundPlayer.stop(); } catch (e) {}
+      } else {
+        if (gameState === GAME_STATES.PLAYING) try { SoundPlayer.playSoundFile(BG_MUSIC_NAME, 'mp3'); } catch (e) {}
       }
       return nextMuteState;
     });
@@ -968,142 +961,142 @@ export default function CarromGame({ opponents = 1, gameMode = GAME_MODES.SINGLE
 
       <ScrollView scrollEnabled={!isAiming}>
 
-      <Scoreboard
-        players={players}
-        currentPlayerIndex={currentPlayerIndex}
-        gameMode={gameMode}
-      />
+        <Scoreboard
+          players={players}
+          currentPlayerIndex={currentPlayerIndex}
+          gameMode={gameMode}
+        />
 
-      <GameControls
-        onPause={pauseGame}
-        onReset={resetGameWithConfirmation}
-        onSettings={showSettingsHandler}
-        isPaused={isPaused}
-        powerLevel={powerLevel}
-        currentPlayer={players[currentPlayerIndex]?.name}
-      />
+        <GameControls
+          onPause={pauseGame}
+          onReset={resetGameWithConfirmation}
+          onSettings={showSettingsHandler}
+          isPaused={isPaused}
+          powerLevel={powerLevel}
+          currentPlayer={players[currentPlayerIndex]?.name}
+        />
 
-      <View style={styles.boardContainer}>
-        <View style={styles.boardBackground}>
-          <BoardMarkings />
-        </View>
-
-        {[0, 1, 2, 3].map(index => {
-          const positions = [
-            { left: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS, top: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS },
-            { right: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS, top: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS },
-            { left: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS, bottom: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS },
-            { right: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS, bottom: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS }
-          ];
-
-          return (
-            <View key={index} style={[styles.pocket, positions[index]]}>
-              <View style={styles.pocketNet} />
-            </View>
-          );
-        })}
-
-        {engineRef.current && (
-          <View
-            style={styles.gameArea}
-            {...panResponder.panHandlers}
-          >
-            <GameEngine
-              style={{ flex: 1 }}
-              systems={[]}
-              entities={entities}
-            />
-            {renderAimLine()}
+        <View style={styles.boardContainer}>
+          <View style={styles.boardBackground}>
+            <BoardMarkings />
           </View>
-        )}
 
-        {isPaused && (
-          <View style={styles.pauseOverlay}>
-            <Text style={styles.pauseText}>GAME PAUSED</Text>
-            <TouchableOpacity style={styles.resumeButton} onPress={pauseGame}>
-              <Text style={styles.resumeButtonText}>Resume</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+          {[0, 1, 2, 3].map(index => {
+            const positions = [
+              { left: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS, top: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS },
+              { right: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS, top: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS },
+              { left: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS, bottom: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS },
+              { right: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS, bottom: POCKET_DISTANCE_FROM_CORNER - POCKET_RADIUS }
+            ];
 
-      {/* Settings Modal */}
-      <Modal
-        visible={showSettingsModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowSettingsModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.settingsModal}>
-            <Text style={styles.modalTitle}>Game Settings</Text>
+            return (
+              <View key={index} style={[styles.pocket, positions[index]]}>
+                <View style={styles.pocketNet} />
+              </View>
+            );
+          })}
 
-            {/* --- Settings Feature --- Make the sound button functional */}
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>Sounds</Text>
-              <TouchableOpacity style={styles.toggleButton} onPress={toggleMute}>
-                <Text style={styles.toggleText}>{areSoundsMuted ? 'UNMUTE' : 'MUTE'}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>Vibration</Text>
-              <TouchableOpacity style={styles.toggleButton}>
-                <Text style={styles.toggleText}>ON</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>Show Aim Line</Text>
-              <TouchableOpacity style={styles.toggleButton}>
-                <Text style={styles.toggleText}>ON</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowSettingsModal(false)}
+          {engineRef.current && (
+            <View
+              style={styles.gameArea}
+              {...panResponder.panHandlers}
             >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Game Over Modal */}
-      <Modal
-        visible={showGameOver}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setShowGameOver(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.gameOverModal}>
-            <Text style={styles.gameOverTitle}>🏆 GAME OVER!</Text>
-
-            <View style={styles.finalScores}>
-              {players.map((player, index) => (
-                <View key={index} style={styles.finalScoreItem}>
-                  <Text style={styles.finalPlayerName}>{player.name}</Text>
-                  <Text style={styles.finalPlayerScore}>{player.score} points</Text>
-                </View>
-              ))}
+              <GameEngine
+                style={{ flex: 1 }}
+                systems={[]}
+                entities={entities}
+              />
+              {renderAimLine()}
             </View>
+          )}
 
-            <View style={styles.gameOverButtons}>
-              <TouchableOpacity style={styles.playAgainButton} onPress={performReset}>
-                <Text style={styles.playAgainText}>Play Again</Text>
+          {isPaused && (
+            <View style={styles.pauseOverlay}>
+              <Text style={styles.pauseText}>GAME PAUSED</Text>
+              <TouchableOpacity style={styles.resumeButton} onPress={pauseGame}>
+                <Text style={styles.resumeButtonText}>Resume</Text>
               </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* Settings Modal */}
+        <Modal
+          visible={showSettingsModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowSettingsModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.settingsModal}>
+              <Text style={styles.modalTitle}>Game Settings</Text>
+
+              {/* --- Settings Feature --- Make the sound button functional */}
+              <View style={styles.settingItem}>
+                <Text style={styles.settingLabel}>Sounds</Text>
+                <TouchableOpacity style={styles.toggleButton} onPress={toggleMute}>
+                  <Text style={styles.toggleText}>{areSoundsMuted ? 'UNMUTE' : 'MUTE'}</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.settingItem}>
+                <Text style={styles.settingLabel}>Vibration</Text>
+                <TouchableOpacity style={styles.toggleButton}>
+                  <Text style={styles.toggleText}>ON</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.settingItem}>
+                <Text style={styles.settingLabel}>Show Aim Line</Text>
+                <TouchableOpacity style={styles.toggleButton}>
+                  <Text style={styles.toggleText}>ON</Text>
+                </TouchableOpacity>
+              </View>
+
               <TouchableOpacity
-                style={styles.menuButton}
-                onPress={() => setShowGameOver(false)}
+                style={styles.closeButton}
+                onPress={() => setShowSettingsModal(false)}
               >
-                <Text style={styles.menuButtonText}>Main Menu</Text>
+                <Text style={styles.closeButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+
+        {/* Game Over Modal */}
+        <Modal
+          visible={showGameOver}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setShowGameOver(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.gameOverModal}>
+              <Text style={styles.gameOverTitle}>🏆 GAME OVER!</Text>
+
+              <View style={styles.finalScores}>
+                {players.map((player, index) => (
+                  <View key={index} style={styles.finalScoreItem}>
+                    <Text style={styles.finalPlayerName}>{player.name}</Text>
+                    <Text style={styles.finalPlayerScore}>{player.score} points</Text>
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.gameOverButtons}>
+                <TouchableOpacity style={styles.playAgainButton} onPress={performReset}>
+                  <Text style={styles.playAgainText}>Play Again</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuButton}
+                  onPress={() => setShowGameOver(false)}
+                >
+                  <Text style={styles.menuButtonText}>Main Menu</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </View>
   );
@@ -1163,18 +1156,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   playersContainer: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-},
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
 
-playerScore: {
-  flex: 1,
-  alignItems: 'center',
-  padding: 10,
-  borderRadius: 8,
-  backgroundColor: '#F5F5F5',
-  marginHorizontal: 5,
-},
+  playerScore: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#F5F5F5',
+    marginHorizontal: 5,
+  },
   activePlayer: {
     backgroundColor: COLORS.UI_SUCCESS,
     transform: [{ scale: 1.05 }],
