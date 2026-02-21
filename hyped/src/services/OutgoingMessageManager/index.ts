@@ -322,6 +322,152 @@ class OutgoingMessageManagerClass {
   }
 
   /**
+   * Public API: Send location message
+   * Sends location with metadata in JSON format
+   */
+  public async sendLocationMessage(
+    chatId: string,
+    latitude: number,
+    longitude: number,
+    options?: {
+      address?: string;
+      replyMessage?: any;
+      blockedIds?: string[];
+      disappearTime?: { disappear_at: string | null; is_disappearing: boolean };
+    }
+  ): Promise<void> {
+    // 1. Auth / validation
+    const { auth } = store.getState();
+    const currentUserId = auth.uniqueId;
+    if (!currentUserId) {
+      console.warn('[OutgoingMessageManager] Cannot send location message, no current user id');
+      return;
+    }
+
+    if (!chatId) {
+      console.warn('[OutgoingMessageManager] Cannot send location message, no chatId');
+      return;
+    }
+
+    // 2. Create location data as JSON with metadata
+    const locationData = {
+      latitude,
+      longitude,
+      address: options?.address || null,
+      timestamp: new Date().toISOString(),
+    };
+
+    const locationDataStr = JSON.stringify(locationData);
+    const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+    // Create metadata
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const refrenceId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Disappear time (default: not disappearing)
+    const disappearTime = options?.disappearTime || {
+      disappear_at: null,
+      is_disappearing: false,
+    };
+
+    // Blocked IDs (default: empty array)
+    const blockedIds = options?.blockedIds || [];
+    const samvada_spashtam = blockedIds.length > 0 && blockedIds.includes(currentUserId)
+      ? blockedIds
+      : null;
+
+    // Reply message (pratisandeshah)
+    const pratisandeshah = options?.replyMessage
+      ? JSON.stringify({
+          lastRefrenceId: options.replyMessage.refrenceId,
+          lastSenderId: options.replyMessage.pathakah_chinha,
+          lastType: options.replyMessage.sandesha_prakara,
+          lastContent: options.replyMessage.vishayah,
+          lastUkti: options.replyMessage.ukti || '',
+        })
+      : '';
+
+    const basePayload = {
+      samvada_chinha: chatId,
+      pathakah_chinha: currentUserId,
+      vishayah: locationDataStr,  // Send as JSON with metadata
+      sandesha_prakara: 'location',
+      anuvadata_sandesham: false,
+      pratisandeshah,
+      refrenceId,
+      samvada_spashtam,
+      kimFwdSandesha: false,
+      preritam_tithih: nowIso,
+      nirastah: false,
+      avastha: 'sent',
+      disappear_at: disappearTime.disappear_at,
+      is_disappearing: disappearTime.is_disappearing,
+      ukti: locationUrl,  // Store Google Maps URL in caption field for fallback
+      kimTaritaSandesha: false,
+      sthapitam_sandesham: null,
+      sampaditam: false,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      prasaranamId: '',
+    };
+
+    try {
+      await insertChatMessage(basePayload);
+      console.log('[OutgoingMessageManager] Inserted location message into DB:', {
+        chatId,
+        refrenceId,
+        location: locationData,
+      });
+    } catch (error) {
+      console.error('[OutgoingMessageManager] Failed to insert location message into DB:', error);
+    }
+
+    // Get other participant's public key (required for encryption)
+    const otherParticipant = await getOtherParticipantPublicKey(chatId, currentUserId);
+    if (!otherParticipant || !otherParticipant.publicKey) {
+      console.error('[OutgoingMessageManager] No public key found for other participant. Cannot send location message without encryption.');
+      return;
+    }
+
+    // Encrypt message (required - no plaintext fallback)
+    let encryptedPayload;
+    try {
+      const encryptedBody = await encryptMessage(basePayload.vishayah, otherParticipant.publicKey);
+      encryptedPayload = {
+        ...basePayload,
+        samvada_spashtam: blockedIds,
+        vishayah: encryptedBody,
+      };
+      console.log('[OutgoingMessageManager] Location message encrypted successfully');
+    } catch (error) {
+      console.error('[OutgoingMessageManager] Location encryption failed. Cannot send message without encryption:', error);
+      return;
+    }
+
+    // Send encrypted message via socket FIRST (for real-time delivery)
+    await this.sendViaSocket(encryptedPayload);
+
+    // Send encrypted message to API (for persistence/confirmation)
+    try {
+      const encryptedPayloadWithIP = {
+        ...encryptedPayload,
+        ip_address: 'Unknown',
+      };
+      
+      await chatAPI.sendEncryptedMessage(encryptedPayloadWithIP);
+      console.log('[OutgoingMessageManager] Location message sent to API:', {
+        chatId,
+        refrenceId,
+        location: locationData,
+      });
+    } catch (error) {
+      console.error('[OutgoingMessageManager] Error sending location message to API:', error);
+      // Continue even if API call fails - socket send already succeeded
+    }
+  }
+
+  /**
    * Send message via socket (with retry logic)
    */
   private async sendViaSocket(payload: any): Promise<void> {
